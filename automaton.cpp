@@ -15,14 +15,14 @@ double inline clamp(const double value, const double min, const double max)
 }
 
 Automaton::Automaton(unsigned int width, unsigned int height,
+		double flowFriction, double flowDamping,
 		double initialPressure, double initialTemperature):
 	_width(width),
 	_height(height),
 	_cells(new Cell[width*height]()),
 	_backbuffer(new Cell[width*height]()),
-	_flowSpeed(0.01),
-	_flowDamping(0.2),
-	_flowFriction(0.1),
+	_flowFriction(flowFriction),
+	_flowDamping(flowDamping),
 	_odd(false)
 {
 	for (unsigned int y = 0; y < _height; y++) {
@@ -78,6 +78,11 @@ double Automaton::flow(const Cell *b_cellA, Cell *f_cellA,
 	f_cellA->airPressure -= applicableFlow;
 	f_cellB->airPressure += applicableFlow;
 	f_cellA->flow[direction] = flow;
+	
+	Cell *const flowChange = (flow > 0) ? f_cellB : f_cellA;
+	const double factor = flow / flowChange->airPressure;
+	flowChange->flow[direction] =
+		applicableFlow * factor + flowChange->flow[direction] * (1.0 - factor);
 	return flow;
 }
 
@@ -122,8 +127,8 @@ void Automaton::printCells()
 		" ", "░", "▒", "▓", "█"
 	};
 	static const int maxMap = 5;
-	static const double minVal = 0.0;
-	static const double maxVal = 2.0;
+	static const double minVal = 4.5;
+	static const double maxVal = 5.5;
 	
 	for (unsigned int y = 0; y < _height; y++) {
 		for (unsigned int x = 0; x < _width; x++) {
@@ -154,7 +159,7 @@ void Automaton::printFlow()
 	static const char *map[8] = {
 		"→", "↘", "↓", "↙", "←", "↖", "↑", "↗"
 	};
-	static const char *none = "•";
+	static const char *none = "⋅";
 	
 	for (unsigned int y = 0; y < _height; y++) {
 		for (unsigned int x = 0; x < _width; x++) {
@@ -162,7 +167,7 @@ void Automaton::printFlow()
 			if (sqrt(cell->flow[0]*cell->flow[0] + cell->flow[1]*cell->flow[1]) < 0.0001) {
 				std::cout << none;
 			} else {
-				double angle = atan2(cell->flow[0], cell->flow[1]) + M_PI + M_PI / 4.;
+				double angle = atan2(cell->flow[0], cell->flow[1]) + M_PI - M_PI / 4.;
 				if (angle >= 2*M_PI) {
 					angle -= 2*M_PI;
 				}
