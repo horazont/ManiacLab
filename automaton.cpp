@@ -121,20 +121,18 @@ void Automaton::updateCells()
 	}
 }
 
-void Automaton::printCells()
+void Automaton::printCells(const double min, const double max)
 {
 	static const char *map[5] = {
 		" ", "░", "▒", "▓", "█"
 	};
 	static const int maxMap = 5;
-	static const double minVal = 4.5;
-	static const double maxVal = 5.5;
 	
 	for (unsigned int y = 0; y < _height; y++) {
 		for (unsigned int x = 0; x < _width; x++) {
 			Cell *cell = cellAt(x, y);
 			const double val = cell->airPressure;
-			const double scaled = (val - minVal) / (maxVal - minVal);
+			const double scaled = (val - min) / (max - min);
 			/*int index = (int)(scaled * 9);
 			char ch = index + 48;
 			if (index < 0) 

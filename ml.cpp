@@ -5,15 +5,13 @@
 
 int main()
 {
-	const unsigned int width = 100, height = 26;
+	const unsigned int width = 16, height = 20;
 	Automaton *automat = new Automaton(width, height, 0.5, 0.995, 5.0);
 	
 	unsigned int oscX = 20, oscY = 10;
-	double oscPhase[2] = { 0., 0.}, oscStep = 0.02*M_PI;
+	double oscPhase[2] = { 0., 0.}, oscStep = 0.005*M_PI;
 	unsigned int oscCount = 2;
 	bool oscillating = true;
-	
-	automat->printCells();
 	
 	while (1) {
 		usleep(100000);
@@ -36,19 +34,20 @@ int main()
 				// automat->cellAt((int)(sin(oscPhase) * oscX + width/2), (int)(cos(oscPhase) * oscY + height/2))->airPressure = 10.0;
 				//automat->cellAt(width / 2, height / 2)->airPressure = ;
 			}
-			for (unsigned int x = 0; x < width; x++) {
+			/*for (unsigned int x = 0; x < width; x++) {
 				automat->cellAt(x, 0)->airPressure = 5.;
 				automat->cellAt(x, height-1)->airPressure = 5.;
-			}
+			}*/
 			for (unsigned int y = 0; y < height; y++) {
-				const double phase = (y > height / 2) ? (oscPhase[1]) : (oscPhase[0]);
+				//const double phase = (y > height / 2) ? (oscPhase[1]) : (oscPhase[0]);
+				const double phase = oscPhase[0];
 				automat->cellAt(0, y)->airPressure = 1.0 * sin(phase) + 5.0;
-				automat->cellAt(width - 1, y)->airPressure = 5.;
+				//automat->cellAt(width - 1, y)->airPressure = 5.;
 			}
 			automat->updateCells();
 		}
 		//automat->printFlow();
-		automat->printCells();
+		automat->printCells(0.0, 10.0);
 	}
 	delete automat;
 	
