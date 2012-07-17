@@ -5,7 +5,7 @@
 
 int main()
 {
-	const unsigned int width = 16, height = 20;
+	const unsigned int width = 50, height = 10;
 	Automaton *automat = new Automaton(width, height, 0.5, 0.995, 5.0);
 	
 	unsigned int oscX = 20, oscY = 10;
@@ -47,7 +47,7 @@ int main()
 			automat->updateCells();
 		}
 		//automat->printFlow();
-		automat->printCells256(2.0, 8.0);
+		automat->printCells256(3.0, 7.0);
 	}
 	delete automat;
 	
