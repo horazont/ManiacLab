@@ -121,35 +121,65 @@ void Automaton::updateCells()
 	}
 }
 
-void Automaton::printCells(const double min, const double max)
+void Automaton::printCells(const double min, const double max,
+	const char **map, const int mapLen)
 {
-	static const char *map[5] = {
-		" ", "░", "▒", "▓", "█"
-	};
-	static const int maxMap = 5;
-	
 	for (unsigned int y = 0; y < _height; y++) {
 		for (unsigned int x = 0; x < _width; x++) {
 			Cell *cell = cellAt(x, y);
 			const double val = cell->airPressure;
 			const double scaled = (val - min) / (max - min);
-			/*int index = (int)(scaled * 9);
-			char ch = index + 48;
-			if (index < 0) 
-				ch = '-';
-			if (index > 9)
-				ch = '+';*/
-			
-			int index = (int)(scaled * maxMap);
+			int index = (int)(scaled * mapLen);
 			if (index < 0)
 				index = 0;
-			if (index >= maxMap)
-				index = maxMap-1;
+			if (index >= mapLen)
+				index = mapLen-1;
 			
 			std::cout << map[index];
 		}
 		std::cout << std::endl;
 	}
+}
+
+void Automaton::printCellsBlock(const double min, const double max)
+{
+	static const char *map[5] = {
+        " ", "░", "▒", "▓", "█"
+    };
+    static const int maxMap = 5;
+	printCells(min, max, map, maxMap);
+}
+
+void Automaton::printCells256(const double min, const double max)
+{
+	static const char *map[24] = {
+		"\x1b[38;5;232m█",
+		"\x1b[38;5;233m█",
+		"\x1b[38;5;234m█",
+		"\x1b[38;5;235m█",
+		"\x1b[38;5;236m█",
+		"\x1b[38;5;237m█",
+		"\x1b[38;5;238m█",
+		"\x1b[38;5;239m█",
+		"\x1b[38;5;240m█",
+		"\x1b[38;5;241m█",
+		"\x1b[38;5;242m█",
+		"\x1b[38;5;243m█",
+		"\x1b[38;5;244m█",
+		"\x1b[38;5;245m█",
+		"\x1b[38;5;246m█",
+		"\x1b[38;5;247m█",
+		"\x1b[38;5;248m█",
+		"\x1b[38;5;249m█",
+		"\x1b[38;5;250m█",
+		"\x1b[38;5;251m█",
+		"\x1b[38;5;252m█",
+		"\x1b[38;5;253m█",
+		"\x1b[38;5;254m█",
+		"\x1b[38;5;255m█"
+	};
+	static const int maxMap = 24;
+	printCells(min, max, map, maxMap);
 }
 
 void Automaton::printFlow()

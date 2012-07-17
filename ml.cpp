@@ -47,7 +47,7 @@ int main()
 			automat->updateCells();
 		}
 		//automat->printFlow();
-		automat->printCells(0.0, 10.0);
+		automat->printCells256(2.0, 8.0);
 	}
 	delete automat;
 	

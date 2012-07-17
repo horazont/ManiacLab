@@ -79,7 +79,10 @@ protected:
 	
 public:
 	Cell inline *cellAt(unsigned int x, unsigned int y) { return &_cells[x+_width*y]; };
-	void printCells(const double min, const double max);
+	void printCells(const double min, const double max,
+		const char **map, const int mapLen);
+	void printCellsBlock(const double min, const double max);
+	void printCells256(const double min, const double max);
 	void printFlow();
 	void updateCells();
 };
