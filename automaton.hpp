@@ -17,6 +17,8 @@ struct Cell {
 	bool odd;
 	double airPressure;
 	double temperature;
+	
+	// flow is in relation to upper left neighbour!
 	double flow[2];
 	double fogDensity;
 	
@@ -33,7 +35,7 @@ class Automaton {
 	private:
 	unsigned int _width, _height;
 	Cell *_cells, *_backbuffer;
-	double _flowSpeed, _minFlow, _flowDamping;
+	double _flowSpeed, _flowDamping, _flowFriction;
 	bool _odd;
 	
 	private:
@@ -45,12 +47,13 @@ class Automaton {
 		const Cell *b_cellB, Cell *f_cellB,
 		unsigned int direction);
 	void getCellAndNeighbours(Cell *buffer, Cell **cell, 
-		Cell *(*neighbours)[4], unsigned int x, unsigned int y);
+		Cell *(*neighbours)[2], unsigned int x, unsigned int y);
 	void updateCell(unsigned int x, unsigned int y);
 	
 	public:
 	Cell inline *cellAt(unsigned int x, unsigned int y) { return &_cells[x+_width*y]; };
 	void printCells();
+	void printFlow();
 	void updateCells();
 };
 
