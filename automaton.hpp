@@ -4,25 +4,25 @@
 struct Cell;
 
 class GameObject {
-	protected:
-	double _tempCoefficient;
-	
-	public:
-	double inline getTemperatureCoefficient() { return _tempCoefficient; };
-	virtual void update(const Cell *cell);
+    protected:
+    double _tempCoefficient;
+    
+    public:
+    double inline getTemperatureCoefficient() { return _tempCoefficient; };
+    virtual void update(const Cell *cell);
 };
 
 struct Cell {
-	bool blocked;
-	bool odd;
-	double airPressure;
-	double temperature;
-	
-	// flow is in relation to upper left neighbour!
-	double flow[2];
-	double fogDensity;
-	
-	GameObject *obj;
+    bool blocked;
+    bool odd;
+    double airPressure;
+    double temperature;
+    
+    // flow is in relation to upper left neighbour!
+    double flow[2];
+    double fogDensity;
+    
+    GameObject *obj;
 };
 
 /** \rst
@@ -33,11 +33,11 @@ to adapt the simulation to your needs.
 *flowFriction* is used to damp the initial creation of flow between two cells.
 The “wanted” flow for a pressure gradient is given by:
 
-	newFlow = (cellA->pressure - cellB->pressure) * flowFriction
+    newFlow = (cellA->pressure - cellB->pressure) * flowFriction
 
 Then the old flow value (i.e. momentum of the air) is taken into account using:
 
-	flow = oldFlow * flowDamping + newFlow * (1.0 - flowDamping)
+    flow = oldFlow * flowDamping + newFlow * (1.0 - flowDamping)
 
 making the flow work like a moving average.
 
@@ -52,39 +52,39 @@ used as initial values for the cells in the automaton.
 
 class Automaton {
 public:
-	Automaton(unsigned int width, unsigned int height,
-		double flowFriction = 0.1,
-		double flowDamping = 0.5,
-		double initialPressure = 1.0, 
-		double initialTemperature = 1.0);
-	~Automaton();
-	
+    Automaton(unsigned int width, unsigned int height,
+        double flowFriction = 0.1,
+        double flowDamping = 0.5,
+        double initialPressure = 1.0, 
+        double initialTemperature = 1.0);
+    ~Automaton();
+    
 private:
-	unsigned int _width, _height;
-	Cell *_cells, *_backbuffer;
-	double _flowFriction, _flowDamping;
-	bool _odd;
-	
+    unsigned int _width, _height;
+    Cell *_cells, *_backbuffer;
+    double _flowFriction, _flowDamping;
+    bool _odd;
+    
 private:
-	void initCell(Cell *buffer, unsigned int x, unsigned int y,
-		double initialPressure, double initialTemperature, bool odd);
-	
+    void initCell(Cell *buffer, unsigned int x, unsigned int y,
+        double initialPressure, double initialTemperature, bool odd);
+    
 protected:
-	void flow(const Cell *b_cellA, Cell *f_cellA, 
-		const Cell *b_cellB, Cell *f_cellB,
-		unsigned int direction);
-	void getCellAndNeighbours(Cell *buffer, Cell **cell, 
-		Cell *(*neighbours)[2], unsigned int x, unsigned int y);
-	void updateCell(unsigned int x, unsigned int y);
-	
+    void flow(const Cell *b_cellA, Cell *f_cellA, 
+        const Cell *b_cellB, Cell *f_cellB,
+        unsigned int direction);
+    void getCellAndNeighbours(Cell *buffer, Cell **cell, 
+        Cell *(*neighbours)[2], unsigned int x, unsigned int y);
+    void updateCell(unsigned int x, unsigned int y);
+    
 public:
-	Cell inline *cellAt(unsigned int x, unsigned int y) { return &_cells[x+_width*y]; };
-	void printCells(const double min, const double max,
-		const char **map, const int mapLen);
-	void printCellsBlock(const double min, const double max);
-	void printCells256(const double min, const double max);
-	void printFlow();
-	void updateCells();
+    Cell inline *cellAt(unsigned int x, unsigned int y) { return &_cells[x+_width*y]; };
+    void printCells(const double min, const double max,
+        const char **map, const int mapLen);
+    void printCellsBlock(const double min, const double max);
+    void printCells256(const double min, const double max);
+    void printFlow();
+    void updateCells();
 };
 
 #endif
