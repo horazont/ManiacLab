@@ -60,7 +60,7 @@ void Automaton::getCellAndNeighbours(Cell *buffer, Cell **cell,
 
 }
 
-double Automaton::flow(const Cell *b_cellA, Cell *f_cellA, 
+void Automaton::flow(const Cell *b_cellA, Cell *f_cellA, 
 	const Cell *b_cellB, Cell *f_cellB, 
 	unsigned int direction)
 {
@@ -83,7 +83,6 @@ double Automaton::flow(const Cell *b_cellA, Cell *f_cellA,
 	const double factor = flow / flowChange->airPressure;
 	flowChange->flow[direction] =
 		applicableFlow * factor + flowChange->flow[direction] * (1.0 - factor);
-	return flow;
 }
 
 void inline activateCell(Cell *front, Cell *back, const bool odd)
@@ -101,7 +100,7 @@ void Automaton::updateCell(unsigned int x, unsigned int y)
 	activateCell(f_self, b_self, _odd);
 	for (unsigned int i = 0; i < 2; i++) {
 		if (b_neighbours[i]) {
-			double fl = flow(b_self, f_self, b_neighbours[i], f_neighbours[i], i);
+			flow(b_self, f_self, b_neighbours[i], f_neighbours[i], i);
 		}
 	}
 }
@@ -137,8 +136,9 @@ void Automaton::printCells(const double min, const double max,
 			
 			std::cout << map[index];
 		}
-		std::cout << std::endl;
+		std::cout << "\n";
 	}
+	std::cout.flush();
 }
 
 void Automaton::printCellsBlock(const double min, const double max)

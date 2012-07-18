@@ -1,7 +1,7 @@
 #ifndef AUTOMATON_H
 #define AUTOMATON_H
 
-class Cell;
+struct Cell;
 
 class GameObject {
 	protected:
@@ -70,7 +70,7 @@ private:
 		double initialPressure, double initialTemperature, bool odd);
 	
 protected:
-	double flow(const Cell *b_cellA, Cell *f_cellA, 
+	void flow(const Cell *b_cellA, Cell *f_cellA, 
 		const Cell *b_cellB, Cell *f_cellB,
 		unsigned int direction);
 	void getCellAndNeighbours(Cell *buffer, Cell **cell, 
