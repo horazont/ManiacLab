@@ -40,58 +40,80 @@ named in the AUTHORS file.
 #include "PythonInterface/Package.hpp"
 #include "PythonInterface/CairoHelpers.hpp"
 
+using namespace PyEngine;
+
 PyEngine::Display *disp = 0;
 
 int main(int argc, char** argv) {
-    PyEngine::StreamHandle xmlFile(new PyEngine::FileStream("log.xml", PyEngine::OM_WRITE, PyEngine::WM_OVERWRITE));
-    PyEngine::log->addSink(PyEngine::LogSinkHandle(new PyEngine::LogStreamSink(PyEngine::All, PyEngine::stdout)));
-    PyEngine::log->logf(PyEngine::Debug, "Set up stdout sink");
-    PyEngine::log->addSink(PyEngine::LogSinkHandle(new PyEngine::LogXMLSink(PyEngine::All & (~PyEngine::Debug), xmlFile, "log.xsl")));
-    PyEngine::log->logf(PyEngine::Debug, "Set up xml sink");
-    PyEngine::log->logf(PyEngine::Information, "Log system started up successfully.");
+    int exitCode = 0;
+    
+    StreamHandle xmlFile(new FileStream("log.xml", OM_WRITE, WM_OVERWRITE));
+    PyEngine::log->addSink(LogSinkHandle(
+        new PyEngine::LogStreamSink(PyEngine::All, PyEngine::stdout)
+    ));
+    PyEngine::log->logf(Debug, "Set up stdout sink");
+    PyEngine::log->addSink(LogSinkHandle(
+        new LogXMLSink(All & (~Debug), xmlFile, "log.xsl", "ManiacLab")
+    ));
+    PyEngine::log->logf(Debug, "Set up xml sink");
+    PyEngine::log->logf(Information, "Log system started up successfully.");
     try
     {
-        PyEngine::addCUniToInittab();
+        PyEngine::log->logf(Information, "Setting up boost/python environment");
+        addCUniToInittab();
+        PyEngine::log->logf(Information, "Initializing python");
         Py_Initialize();
         PySys_SetArgv(argc, argv);
+        
         // this must happen after python was initialized. We're loading
         // a module here ;)
-        PyEngine::setupCairoHelpers();
+        PyEngine::log->logf(Information, "Load some cairo helpers");
+        setupCairoHelpers();
 
+        PyEngine::log->logf(Information, "Setting up python runtime");
         boost::python::object cuni_window_namespace = boost::python::import("_cuni_window").attr("__dict__");
-
         boost::python::object cuni_log_namespace = boost::python::import("_cuni_log").attr("__dict__");
-
         boost::python::object main_namespace = boost::python::import("__main__").attr("__dict__");
 
         // FIXME: Is this possible without explizit reference to the
         // platform?
         // Boost needs the explicit type for casting, but it would be
         // nice to force it somehow to do the right thing.
-        PyEngine::X11Display *x11 = new PyEngine::X11Display();
+        PyEngine::log->logf(Information, "Setting up X11 environment");
+        X11Display *x11 = new X11Display();
         disp = x11;
 
         cuni_window_namespace["display"] = x11;
-        cuni_log_namespace["server"] = PyEngine::logHandle;
+        cuni_log_namespace["server"] = logHandle;
 
+        PyEngine::log->logf(Information, "Handing over control to python");
         std::string str;
         {
             std::stringstream s;
-            std::ifstream main("py-universe.py");
+            std::ifstream main("maniaclab.py");
+            if (!main.good()) {
+                PyEngine::log->logf(Panic, "Could not find python main file. Terminating.");
+                exitCode = 2;
+                goto error;
+            }
             s << main.rdbuf();
             main.close();
             str = std::string(s.str());
         }
         exec(str.c_str(), main_namespace);
-        delete PyEngine::log;
     }
     catch (boost::python::error_already_set const&)
     {
-        delete PyEngine::log;
         PyErr_Print();
-        return 1;
+        exitCode = 1;
+        goto error;
     }
-    return 0;
+
+    error:
+    // XXX: This is neccessary as python won't free it soon enough for the
+    // finalizing writes to happen.
+    delete PyEngine::log;
+    return exitCode;
 }
 
 // Local Variables:
