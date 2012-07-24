@@ -1,16 +1,7 @@
-#ifndef _ML_AUTOMATON_H
-#define _ML_AUTOMATON_H
+#ifndef _ML_PHYSICS_H
+#define _ML_PHYSICS_H
 
 struct Cell;
-
-class GameObject {
-protected:
-    double _tempCoefficient;
-    
-public:
-    double inline getTemperatureCoefficient() { return _tempCoefficient; };
-    virtual void update(const Cell *cell);
-};
 
 struct Cell {
     double airPressure;
