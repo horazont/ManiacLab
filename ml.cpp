@@ -5,7 +5,7 @@
 
 int main()
 {
-    const unsigned int width = 80, height = 20;
+    const unsigned int width = 40, height = 4;
     Automaton *automat = new Automaton(width, height, 0.5, 0.995, 5.0);
     
     unsigned int oscX = 20, oscY = 10;
@@ -13,12 +13,12 @@ int main()
     unsigned int oscCount = 2;
     bool oscillating = true;
     
-    for (unsigned int y = 0; y < height; y++)
+    /*for (unsigned int y = 0; y < height; y++)
     {
 		if ((y != 6) && (y != 14)) {
 			automat->setBlocked(10, y, true);
 		}
-	}
+	}*/
     
     while (1) {
         usleep(100000);
@@ -46,15 +46,14 @@ int main()
                 automat->cellAt(x, height-1)->airPressure = 5.;
             }*/
             for (unsigned int y = 0; y < height; y++) {
-                //const double phase = (y%2 == 0) ? (oscPhase[1]) : (oscPhase[0]);
-                const double phase = oscPhase[0];
+                const double phase = (y%2 == 0) ? (oscPhase[1]) : (oscPhase[0]);
+                //const double phase = oscPhase[0];
                 automat->cellAt(0, y)->airPressure = 1.0 * sin(phase) + 5.0;
                 //automat->cellAt(width - 1, y)->airPressure = 5.;
             }
             automat->updateCells();
         }
-        //automat->printFlow();
-        automat->printCells256(4.5, 5.5);
+        automat->printCells256(4.75, 5.25);
     }
     delete automat;
     

@@ -28,7 +28,7 @@ struct CellMetadata {
 
 /** \rst
 Create a cellular automaton which simulates air flow between a given grid of
-cells more or less correct. There are some free parameters you may change
+cells more or less correctly. There are some free parameters you may change
 to adapt the simulation to your needs.
 
 *flowFriction* is used to damp the initial creation of flow between two cells.

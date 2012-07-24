@@ -37,6 +37,8 @@ Automaton::Automaton(unsigned int width, unsigned int height,
 Automaton::~Automaton()
 {
     delete[] _cells;
+    delete[] _backbuffer;
+    delete[] _metadata;
 }
 
 void Automaton::initMetadata(CellMetadata *buffer, unsigned int x, 
