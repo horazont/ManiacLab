@@ -16,4 +16,7 @@ if __name__ == '__main__':
     from Engine.CEngine.Log import server as log, Severity
 
     log.log(Severity.Information, "Python is ready to rumble!")
-    
+
+    from ManiacLab.Application import ManiacLab
+    app = ManiacLab()
+    app.run()

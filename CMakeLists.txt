@@ -8,9 +8,14 @@ get_property(PYENGINE_LINK_TARGETS DIRECTORY PyEngine PROPERTY PYENGINE_LINK_TAR
 get_property(PYENGINE_DEFINITIONS DIRECTORY PyEngine PROPERTY PYENGINE_DEFINITIONS)
 get_property(PYENGINE_INCLUDE_DIRS DIRECTORY PyEngine PROPERTY PYENGINE_INCLUDE_DIRS)
 
+set(MANIACLAB_SOURCES
+    "CManiacLab/GameCore.cpp"
+    "CManiacLab/PythonInterface.cpp"
+)
+
 include_directories(${PYENGINE_INCLUDE_DIRS})
 add_definitions(${PYENGINE_DEFINITIONS})
 
-add_executable(ml maniaclab.cpp)
+add_executable(ml maniaclab.cpp ${MANIACLAB_SOURCES})
 add_dependencies(ml ${PYENGINE_DEPENDENCIES})
 target_link_libraries(ml ${PYENGINE_LINK_TARGETS})

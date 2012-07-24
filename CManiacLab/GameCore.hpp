@@ -1,5 +1,5 @@
-#ifndef AUTOMATON_H
-#define AUTOMATON_H
+#ifndef _ML_AUTOMATON_H
+#define _ML_AUTOMATON_H
 
 struct Cell;
 

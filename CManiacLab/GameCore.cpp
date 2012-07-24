@@ -1,4 +1,4 @@
-#include "automaton.hpp"
+#include "GameCore.hpp"
 
 #include <iostream>
 #include <cmath>
@@ -214,6 +214,11 @@ void Automaton::printFlow()
         for (unsigned int x = 0; x < _width; x++) {
             Cell *cell = cellAt(x, y);
             CellMetadata *meta = metaAt(x, y);
+            if (meta->blocked) {
+                std::cout << "x";
+                continue;
+            }
+            
             if (sqrt(cell->flow[0]*cell->flow[0] + cell->flow[1]*cell->flow[1]) < 0.0001) {
                 std::cout << none;
             } else {
