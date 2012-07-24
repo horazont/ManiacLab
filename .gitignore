@@ -1,1 +1,6 @@
 ml
+Makefile
+maniaclab
+*.cmake
+CMakeFiles
+CMakeCache.txt
