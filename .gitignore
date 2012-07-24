@@ -4,3 +4,4 @@ maniaclab
 *.cmake
 CMakeFiles
 CMakeCache.txt
+log.xml
