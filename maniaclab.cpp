@@ -50,19 +50,8 @@ int main(int argc, char** argv) {
     int exitCode = 0;
     
     StreamHandle xmlFile(new FileStream("log.xml", OM_WRITE, WM_OVERWRITE));
-    if (isatty(1)) {
-        // we're connected to a tty, let's make the output pretty
-        PyEngine::log->addSink(LogSinkHandle(
-            new LogTTYSink(All, PyEngine::stdout)
-        ));
-        PyEngine::log->logf(Debug, "Set up stdout sink (tty)");
-    } else {
-        // otherwise we'll just do plaintext
-        PyEngine::log->addSink(LogSinkHandle(
-            new LogStreamSink(All, PyEngine::stdout)
-        ));
-        PyEngine::log->logf(Debug, "Set up stdout sink (pipe)");
-    }
+    PyEngine::log->addSink(LogStdOutSink(All));
+    PyEngine::log->logf(Debug, "Set up stdout sink");
     
     PyEngine::log->addSink(LogSinkHandle(
         new LogXMLSink(All & (~Debug), xmlFile, "log.xsl", "ManiacLab")
@@ -123,7 +112,7 @@ int main(int argc, char** argv) {
     }
     catch (Exception const& err)
     {
-        PyEngine::log->log(Panic) << "Exception reached top-level: " << err.what() << submit;
+        PyEngine::log->logException(err, Panic);
         exitCode = 1;
         goto noPythonError;
     }

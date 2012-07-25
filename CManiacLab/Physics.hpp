@@ -3,6 +3,8 @@
 
 #include "Types.hpp"
 
+const CoordInt subdivisionCount = 4;
+
 class GameObject;
 
 struct Cell {
@@ -18,6 +20,9 @@ struct CellMetadata {
     bool blocked;
     GameObject *obj;
 };
+
+typedef Cell CellStamp[subdivisionCount*subdivisionCount];
+
 
 /** \rst
 Create a cellular automaton which simulates air flow between a given grid of
@@ -47,8 +52,6 @@ used as initial values for the cells in the automaton.
 class Automaton {
 public:
     Automaton(CoordInt width, CoordInt height,
-        double flowFriction = 0.1,
-        double flowDamping = 0.5,
         double initialPressure = 1.0, 
         double initialTemperature = 1.0);
     ~Automaton();
@@ -65,6 +68,7 @@ private:
         double initialPressure, double initialTemperature);
     
 protected:
+    void activateCell(Cell *front, Cell *back);
     void flow(const Cell *b_cellA, Cell *f_cellA, 
         const Cell *b_cellB, Cell *f_cellB,
         CoordInt direction);
@@ -75,14 +79,23 @@ protected:
     
 public:
     Cell inline *cellAt(CoordInt x, CoordInt y) { return &_cells[x+_width*y]; };
+    void getCellStampAt(const CoordInt left, const CoordInt top, CellStamp *stamp);
     CellMetadata inline *metaAt(CoordInt x, CoordInt y) { return &_metadata[x+_width*y]; };
+    void setBlocked(CoordInt x, CoordInt y, bool blocked);
+    void update();
+
+public:
+    double inline getFlowDamping() const { return _flowDamping; };
+    double inline getFlowFriction() const { return _flowFriction; };
+    void inline setFlowDamping(const double value) { _flowDamping = value; };
+    void inline setFlowFriction(const double value) { _flowFriction = value; };
+
+public:
     void printCells(const double min, const double max,
         const char **map, const int mapLen);
     void printCellsBlock(const double min, const double max);
     void printCells256(const double min, const double max);
     void printFlow();
-    void setBlocked(CoordInt x, CoordInt y, bool blocked);
-    void updateCells();
 };
 
 #endif

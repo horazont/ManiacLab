@@ -17,15 +17,14 @@ double inline clamp(const double value, const double min, const double max)
 }
 
 Automaton::Automaton(CoordInt width, CoordInt height,
-        double flowFriction, double flowDamping,
         double initialPressure, double initialTemperature):
     _width(width),
     _height(height),
     _metadata(new CellMetadata[width*height]()),
     _cells(new Cell[width*height]()),
     _backbuffer(new Cell[width*height]()),
-    _flowFriction(flowFriction),
-    _flowDamping(flowDamping)
+    _flowFriction(0.1),
+    _flowDamping(0.5)
 {
     for (CoordInt y = 0; y < _height; y++) {
         for (CoordInt x = 0; x < _width; x++) {
@@ -61,13 +60,9 @@ void Automaton::initCell(Cell *buffer, CoordInt x, CoordInt y,
     cell->flow[1] = 0;
 }
 
-template<class CType>
-void Automaton::getCellAndNeighbours(CType *buffer, CType **cell, 
-        CType *(*neighbours)[2], CoordInt x, CoordInt y)
+void Automaton::activateCell(Cell *front, Cell *back)
 {
-    *cell = &buffer[x+_width*y];
-    (*neighbours)[0] = (x > 0) ? &buffer[(x-1)+_width*y] : 0;
-    (*neighbours)[1] = (y > 0) ? &buffer[x+_width*(y-1)] : 0;
+    front->airPressure = back->airPressure;
 }
 
 void Automaton::flow(const Cell *b_cellA, Cell *f_cellA, 
@@ -95,9 +90,13 @@ void Automaton::flow(const Cell *b_cellA, Cell *f_cellA,
         applicableFlow * factor + flowChange->flow[direction] * (1.0 - factor);
 }
 
-void inline activateCell(Cell *front, Cell *back)
+template<class CType>
+void Automaton::getCellAndNeighbours(CType *buffer, CType **cell, 
+        CType *(*neighbours)[2], CoordInt x, CoordInt y)
 {
-    front->airPressure = back->airPressure;
+    *cell = &buffer[x+_width*y];
+    (*neighbours)[0] = (x > 0) ? &buffer[(x-1)+_width*y] : 0;
+    (*neighbours)[1] = (y > 0) ? &buffer[x+_width*(y-1)] : 0;
 }
 
 void Automaton::updateCell(CoordInt x, CoordInt y)
@@ -123,7 +122,26 @@ void Automaton::updateCell(CoordInt x, CoordInt y)
     }
 }
 
-void Automaton::updateCells()
+void Automaton::getCellStampAt(const CoordInt left, const CoordInt top,
+    CellStamp *stamp)
+{
+    Cell **currCell = (Cell**)stamp;
+    for (CoordInt x = left; x < left + subdivisionCount; x++)
+    {
+        for (CoordInt y = top; y < top + subdivisionCount; y++)
+        {
+            *currCell = (x >= 0 && x < _width && y >= 0 && y < _height) ? cellAt(x, y) : 0;
+            currCell++;
+        }
+    }
+}
+
+void Automaton::setBlocked(CoordInt x, CoordInt y, bool blocked)
+{
+	_metadata[x+_width*y].blocked = true;
+}
+
+void Automaton::update()
 {
     // flip buffers
     Cell *_tmp = _backbuffer;
@@ -136,6 +154,7 @@ void Automaton::updateCells()
         }
     }
 }
+
 
 void Automaton::printCells(const double min, const double max,
     const char **map, const int mapLen)
@@ -235,9 +254,4 @@ void Automaton::printFlow()
         }
         std::cout << std::endl;
     }
-}
-
-void Automaton::setBlocked(CoordInt x, CoordInt y, bool blocked)
-{
-	_metadata[x+_width*y].blocked = true;
 }
