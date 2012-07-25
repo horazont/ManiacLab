@@ -29,16 +29,16 @@ named in the AUTHORS file.
 #include <cassert>
 #include <boost/python.hpp>
 
-#include "IO/Log.hpp"
-#include "IO/FileStream.hpp"
-#include "IO/StdIOStream.hpp"
+#include "CEngine/IO/Log.hpp"
+#include "CEngine/IO/FileStream.hpp"
+#include "CEngine/IO/StdIOStream.hpp"
 
-#include "WindowInterface/Display.hpp"
-#include "WindowInterface/Window.hpp"
-#include "WindowInterface/X11/X11Display.hpp"
+#include "CEngine/WindowInterface/Display.hpp"
+#include "CEngine/WindowInterface/Window.hpp"
+#include "CEngine/WindowInterface/X11/X11Display.hpp"
 
-#include "PythonInterface/Package.hpp"
-#include "PythonInterface/CairoHelpers.hpp"
+#include "CEngine/PythonInterface/Package.hpp"
+#include "CEngine/PythonInterface/CairoHelpers.hpp"
 
 using namespace PyEngine;
 
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     
     StreamHandle xmlFile(new FileStream("log.xml", OM_WRITE, WM_OVERWRITE));
     PyEngine::log->addSink(LogSinkHandle(
-        new PyEngine::LogStreamSink(PyEngine::All, PyEngine::stdout)
+        new LogTTYSink(PyEngine::All, PyEngine::stdout)
     ));
     PyEngine::log->logf(Debug, "Set up stdout sink");
     PyEngine::log->addSink(LogSinkHandle(
@@ -79,14 +79,14 @@ int main(int argc, char** argv) {
         // platform?
         // Boost needs the explicit type for casting, but it would be
         // nice to force it somehow to do the right thing.
-        PyEngine::log->logf(Information, "Setting up X11 environment");
+        PyEngine::log->getChannel("platform")->logf(Information, "Setting up X11 environment");
         X11Display *x11 = new X11Display();
         disp = x11;
 
         cuni_window_namespace["display"] = x11;
         cuni_log_namespace["server"] = logHandle;
 
-        PyEngine::log->logf(Information, "Handing over control to python");
+        PyEngine::log->logf(Information, "Loading python main module");
         std::string str;
         {
             std::stringstream s;
@@ -100,6 +100,7 @@ int main(int argc, char** argv) {
             main.close();
             str = std::string(s.str());
         }
+        PyEngine::log->logf(Information, "Handing over control to python");
         exec(str.c_str(), main_namespace);
     }
     catch (boost::python::error_already_set const&)
@@ -108,11 +109,18 @@ int main(int argc, char** argv) {
         exitCode = 1;
         goto error;
     }
+    catch (Exception const& err)
+    {
+        PyEngine::log->log(Panic) << "Exception reached top-level: " << err.what() << submit;
+        exitCode = 1;
+        goto noPythonError;
+    }
 
     error:
     // XXX: This is neccessary as python won't free it soon enough for the
     // finalizing writes to happen.
     delete PyEngine::log;
+    noPythonError:
     return exitCode;
 }
 
