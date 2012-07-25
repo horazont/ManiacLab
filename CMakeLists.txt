@@ -11,6 +11,7 @@ get_property(PYENGINE_INCLUDE_DIRS DIRECTORY PyEngine PROPERTY PYENGINE_INCLUDE_
 set(MANIACLAB_SOURCES
     "CManiacLab/GameObject.cpp"
     "CManiacLab/Physics.cpp"
+    "CManiacLab/Level.cpp"
     "CManiacLab/PythonInterface.cpp"
 )
 

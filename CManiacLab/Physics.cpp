@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cassert>
 
+#include "GameObject.hpp"
+
 double inline clamp(const double value, const double min, const double max)
 {
     if (value > max)
@@ -14,7 +16,7 @@ double inline clamp(const double value, const double min, const double max)
         return value;
 }
 
-Automaton::Automaton(unsigned int width, unsigned int height,
+Automaton::Automaton(CoordInt width, CoordInt height,
         double flowFriction, double flowDamping,
         double initialPressure, double initialTemperature):
     _width(width),
@@ -25,8 +27,8 @@ Automaton::Automaton(unsigned int width, unsigned int height,
     _flowFriction(flowFriction),
     _flowDamping(flowDamping)
 {
-    for (unsigned int y = 0; y < _height; y++) {
-        for (unsigned int x = 0; x < _width; x++) {
+    for (CoordInt y = 0; y < _height; y++) {
+        for (CoordInt x = 0; x < _width; x++) {
 			initMetadata(_metadata, x, y);
             initCell(_cells, x, y, initialPressure, initialTemperature);
             initCell(_backbuffer, x, y, initialPressure, initialTemperature);
@@ -41,15 +43,15 @@ Automaton::~Automaton()
     delete[] _metadata;
 }
 
-void Automaton::initMetadata(CellMetadata *buffer, unsigned int x, 
-	unsigned int y)
+void Automaton::initMetadata(CellMetadata *buffer, CoordInt x, 
+	CoordInt y)
 {
 	CellMetadata *cell = &buffer[x+_width*y];
 	cell->blocked = false;
 	cell->obj = 0;
 }
 
-void Automaton::initCell(Cell *buffer, unsigned int x, unsigned int y,
+void Automaton::initCell(Cell *buffer, CoordInt x, CoordInt y,
     double initialPressure, double initialTemperature)
 {
     Cell *cell = &buffer[x+_width*y];
@@ -61,7 +63,7 @@ void Automaton::initCell(Cell *buffer, unsigned int x, unsigned int y,
 
 template<class CType>
 void Automaton::getCellAndNeighbours(CType *buffer, CType **cell, 
-        CType *(*neighbours)[2], unsigned int x, unsigned int y)
+        CType *(*neighbours)[2], CoordInt x, CoordInt y)
 {
     *cell = &buffer[x+_width*y];
     (*neighbours)[0] = (x > 0) ? &buffer[(x-1)+_width*y] : 0;
@@ -70,7 +72,7 @@ void Automaton::getCellAndNeighbours(CType *buffer, CType **cell,
 
 void Automaton::flow(const Cell *b_cellA, Cell *f_cellA, 
     const Cell *b_cellB, Cell *f_cellB, 
-    unsigned int direction)
+    CoordInt direction)
 {
     const double dPressure = b_cellA->airPressure - b_cellB->airPressure;
     //std::cout << b_cellA->airPressure << " " << b_cellB->airPressure << std::endl;
@@ -98,7 +100,7 @@ void inline activateCell(Cell *front, Cell *back)
     front->airPressure = back->airPressure;
 }
 
-void Automaton::updateCell(unsigned int x, unsigned int y)
+void Automaton::updateCell(CoordInt x, CoordInt y)
 {
     Cell *b_self, *f_self;
     CellMetadata *m_self;
@@ -112,7 +114,7 @@ void Automaton::updateCell(unsigned int x, unsigned int y)
     if (m_self->blocked) {
 		return;
 	}
-    for (unsigned int i = 0; i < 2; i++) {
+    for (CoordInt i = 0; i < 2; i++) {
         if (b_neighbours[i]) {
 			if (!m_neighbours[i]->blocked) {
 				flow(b_self, f_self, b_neighbours[i], f_neighbours[i], i);
@@ -128,8 +130,8 @@ void Automaton::updateCells()
     _backbuffer = _cells;
     _cells = _tmp;
     
-    for (unsigned int y = 0; y < _height; y++) {
-        for (unsigned int x = 0; x < _width; x++) {
+    for (CoordInt y = 0; y < _height; y++) {
+        for (CoordInt x = 0; x < _width; x++) {
             updateCell(x, y);
         }
     }
@@ -138,8 +140,8 @@ void Automaton::updateCells()
 void Automaton::printCells(const double min, const double max,
     const char **map, const int mapLen)
 {
-    for (unsigned int y = 0; y < _height; y++) {
-        for (unsigned int x = 0; x < _width; x++) {
+    for (CoordInt y = 0; y < _height; y++) {
+        for (CoordInt x = 0; x < _width; x++) {
             Cell *cell = cellAt(x, y);
             CellMetadata *meta = metaAt(x, y);
             if (meta->blocked) {
@@ -210,8 +212,8 @@ void Automaton::printFlow()
     };
     static const char *none = "⋅";
     
-    for (unsigned int y = 0; y < _height; y++) {
-        for (unsigned int x = 0; x < _width; x++) {
+    for (CoordInt y = 0; y < _height; y++) {
+        for (CoordInt x = 0; x < _width; x++) {
             Cell *cell = cellAt(x, y);
             CellMetadata *meta = metaAt(x, y);
             if (meta->blocked) {
@@ -235,7 +237,7 @@ void Automaton::printFlow()
     }
 }
 
-void Automaton::setBlocked(unsigned int x, unsigned int y, bool blocked)
+void Automaton::setBlocked(CoordInt x, CoordInt y, bool blocked)
 {
 	_metadata[x+_width*y].blocked = true;
 }

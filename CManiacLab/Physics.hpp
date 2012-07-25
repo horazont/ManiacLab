@@ -1,7 +1,9 @@
 #ifndef _ML_PHYSICS_H
 #define _ML_PHYSICS_H
 
-struct Cell;
+#include "Types.hpp"
+
+class GameObject;
 
 struct Cell {
     double airPressure;
@@ -44,7 +46,7 @@ used as initial values for the cells in the automaton.
 
 class Automaton {
 public:
-    Automaton(unsigned int width, unsigned int height,
+    Automaton(CoordInt width, CoordInt height,
         double flowFriction = 0.1,
         double flowDamping = 0.5,
         double initialPressure = 1.0, 
@@ -52,34 +54,34 @@ public:
     ~Automaton();
     
 private:
-    unsigned int _width, _height;
+    CoordInt _width, _height;
     CellMetadata *_metadata;
     Cell *_cells, *_backbuffer;
     double _flowFriction, _flowDamping;
     
 private:
-	void initMetadata(CellMetadata *buffer, unsigned int x, unsigned int y);
-    void initCell(Cell *buffer, unsigned int x, unsigned int y,
+	void initMetadata(CellMetadata *buffer, CoordInt x, CoordInt y);
+    void initCell(Cell *buffer, CoordInt x, CoordInt y,
         double initialPressure, double initialTemperature);
     
 protected:
     void flow(const Cell *b_cellA, Cell *f_cellA, 
         const Cell *b_cellB, Cell *f_cellB,
-        unsigned int direction);
+        CoordInt direction);
     template<class CType>
     void getCellAndNeighbours(CType *buffer, CType **cell, 
-        CType *(*neighbours)[2], unsigned int x, unsigned int y);
-    void updateCell(unsigned int x, unsigned int y);
+        CType *(*neighbours)[2], CoordInt x, CoordInt y);
+    void updateCell(CoordInt x, CoordInt y);
     
 public:
-    Cell inline *cellAt(unsigned int x, unsigned int y) { return &_cells[x+_width*y]; };
-    CellMetadata inline *metaAt(unsigned int x, unsigned int y) { return &_metadata[x+_width*y]; };
+    Cell inline *cellAt(CoordInt x, CoordInt y) { return &_cells[x+_width*y]; };
+    CellMetadata inline *metaAt(CoordInt x, CoordInt y) { return &_metadata[x+_width*y]; };
     void printCells(const double min, const double max,
         const char **map, const int mapLen);
     void printCellsBlock(const double min, const double max);
     void printCells256(const double min, const double max);
     void printFlow();
-    void setBlocked(unsigned int x, unsigned int y, bool blocked);
+    void setBlocked(CoordInt x, CoordInt y, bool blocked);
     void updateCells();
 };
 

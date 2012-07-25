@@ -27,6 +27,8 @@ named in the AUTHORS file.
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <unistd.h>
+
 #include <boost/python.hpp>
 
 #include "CEngine/IO/Log.hpp"
@@ -48,10 +50,20 @@ int main(int argc, char** argv) {
     int exitCode = 0;
     
     StreamHandle xmlFile(new FileStream("log.xml", OM_WRITE, WM_OVERWRITE));
-    PyEngine::log->addSink(LogSinkHandle(
-        new LogTTYSink(PyEngine::All, PyEngine::stdout)
-    ));
-    PyEngine::log->logf(Debug, "Set up stdout sink");
+    if (isatty(1)) {
+        // we're connected to a tty, let's make the output pretty
+        PyEngine::log->addSink(LogSinkHandle(
+            new LogTTYSink(All, PyEngine::stdout)
+        ));
+        PyEngine::log->logf(Debug, "Set up stdout sink (tty)");
+    } else {
+        // otherwise we'll just do plaintext
+        PyEngine::log->addSink(LogSinkHandle(
+            new LogStreamSink(All, PyEngine::stdout)
+        ));
+        PyEngine::log->logf(Debug, "Set up stdout sink (pipe)");
+    }
+    
     PyEngine::log->addSink(LogSinkHandle(
         new LogXMLSink(All & (~Debug), xmlFile, "log.xsl", "ManiacLab")
     ));

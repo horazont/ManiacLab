@@ -5,12 +5,13 @@ struct Cell;
 
 class GameObject {
 public:
+    GameObject();
     virtual ~GameObject() {};
 protected:
     double _tempCoefficient;
 public:
     double inline getTemperatureCoefficient() { return _tempCoefficient; };
-    virtual void update(const Cell *cell);
+    void update();
 };
 
 #endif
