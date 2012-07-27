@@ -67,6 +67,45 @@ bool Level::handleCAInteraction(const CoordInt x, const CoordInt y,
 bool Level::handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell,
     GameObject *obj)
 {
+    if (y == _height) {
+        // below is invalid!
+        // TODO: allow objects to leave the gamescope
+        return true;
+    }
+    
+    LevelCell *below = &_cells[x+(y+1)*_width];
+    if (!below->here && !below->reservedBy) {
+        obj->setMovement(new MovementStraight(cell, below, 0, 1));
+    } else if (below->here
+        && below->here->getIsRollable()
+        && obj->getIsRollable())
+    {
+        LevelCell *left = 0, *leftBelow = 0;
+        LevelCell *right = 0, *rightBelow = 0;
+        if (x > 0) {
+            getFallChannel(x-1, y, &left, &leftBelow);
+        }
+        if (x < _width-1) {
+            getFallChannel(x+1, y, &right, &rightBelow);
+        }
+
+        LevelCell *selected = 0, *selectedBelow = 0;
+        CoordInt xOffset = 0;
+        if (left) {
+            // TODO: Use random here?
+            selected = left;
+            selectedBelow = leftBelow;
+            xOffset = -1;
+        } else if (right) {
+            selected = right;
+            selectedBelow = rightBelow;
+            xOffset = 1;
+        }
+
+        if (selected) {
+            obj->setMovement(new MovementRoll(cell, selected, selectedBelow, xOffset, 1));
+        }
+    }
     return true;
 }
 
