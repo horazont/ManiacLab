@@ -1,19 +1,26 @@
 #include "Level.hpp"
 
+#include <cmath>
+
 #include "CEngine/Misc/Exception.hpp"
 
 /* Level */
 
-Level::Level(CoordInt width, CoordInt height):
+Level::Level(CoordInt width, CoordInt height, bool mp):
     _width(width),
     _height(height),
     _cells(new LevelCell[width*height]()),
-    _physics(Automaton(width*4, height*4)),
-    _objects()
+    _physics(Automaton(width*subdivisionCount, height*subdivisionCount, 0.5, 0.995, mp)),
+    _objects(),
+    _timeSlice(0.01),
+    _time(0)
 {
-    _physics.setFlowFriction(0.5);
-    _physics.setFlowDamping(0.995);
     initCells();
+}
+
+Level::~Level()
+{
+    delete[] _cells;
 }
 
 void Level::getFallChannel(const CoordInt x, const CoordInt y,
@@ -51,8 +58,26 @@ void Level::getPhysicsCellsAt(const double x, const double y, CellStamp *stamp)
     _physics.getCellStampAt(px, py, stamp);
 }
 
+bool Level::handleCAInteraction(const CoordInt x, const CoordInt y,
+    LevelCell *cell, GameObject *obj)
+{
+    return true;
+}
+
+bool Level::handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell,
+    GameObject *obj)
+{
+    return true;
+}
+
+void Level::physicsToGLTexture()
+{
+    _physics.toGLTexture(0.9, 1.1);
+}
+
 void Level::update()
 {
+    _physics.waitFor();
     LevelCell *cell = &_cells[-1];
     for (CoordInt x = 0; x < _width; x++)
     {
@@ -63,57 +88,37 @@ void Level::update()
             if (!obj)
                 continue;
 
-            // TODO: insert CA interaction here
+            if (!handleCAInteraction(x, y, cell, obj)) {
+                // object destroyed
+                continue;
+            }
 
-            Movement movement = obj->getCurrentMovement();
+            Movement *movement = obj->getCurrentMovement();
             if (movement) {
-                if (movement->update()) {
-                    obj->clearMovement();
+                if (movement->update(_timeSlice)) {
+                    movement = 0;
                 }
             }
 
             if (obj->getIsGravityAffected() && !movement) {
-                LevelCell *below = &_cells[x+(y+1)*_width];
-                if (y == _height) {
-                    // below is invalid!
-                    // TODO: allow objects to leave the gamescope
-                } else if (!below->here && !below->reservedBy) {
-                    below->here = obj;
-                    cell->here = 0;
-                    cell->reservedBy = obj;
-                    obj->setMovement(new MovementStraight(cell, below, 0, 1));
-                } else if (below->here
-                    && below->here->getIsRollable()
-                    && obj->getIsRollable())
-                {
-                    LevelCell *left = 0, *leftBelow = 0;
-                    LevelCell *right = 0, *rightBelow = 0;
-                    if (x > 0) {
-                        getFallChannel(x-1, y, &left, &leftBelow);
-                    }
-                    if (x < _width-1) {
-                        getFallChannel(x+1, y, &right, &rightBelow);
-                    }
-
-                    LevelCell *selected = 0, *selectedBelow = 0;
-                    CoordInt xOffset = 0;
-                    if (left) {
-                        // TODO: Use random here?
-                        selected = left;
-                        selectedBelow = leftBelow;
-                        xOffset = -1;
-                    } else if (right) {
-                        selected = right;
-                        selectedBelow = rightBelow;
-                        xOffset = 1;
-                    }
-
-                    if (selected) {
-                        obj->setMovement(new MovementRoll(cell, selected, selectedRight, xOffset, 1));
-                    }
+                if (!handleGravity(x, y, cell, obj)) {
+                    // object destroyed.
+                    continue;
                 }
             }
         }
     }
-    _physics.update();
+    _time += _timeSlice;
+    for (CoordInt y = 0; y < _height*subdivisionCount; y++) {
+        // const double factor = (y >= _height * subdivisionCount / 2) ? 4 : 5;
+        const double factor = 6;
+        _physics.cellAt(0, y)->airPressure = sin(_time * factor) + 1.1;
+        _physics.cellAt(0, y)->airPressure = sin(_time * factor) + 1.1;
+        _physics.cellAt(0, y)->airPressure = sin(_time * factor) + 1.1;
+
+        if (y % 15 != 0 && (y+1) % 15 != 0 && (y-1) % 15 != 0) {
+            _physics.setBlocked(15, y, true);
+        }
+    }
+    _physics.resume();
 }

@@ -20,4 +20,4 @@ add_definitions(${PYENGINE_DEFINITIONS})
 
 add_executable(ml maniaclab.cpp ${MANIACLAB_SOURCES})
 add_dependencies(ml ${PYENGINE_DEPENDENCIES})
-target_link_libraries(ml ${PYENGINE_LINK_TARGETS})
+target_link_libraries(ml ${PYENGINE_LINK_TARGETS} "pthread")

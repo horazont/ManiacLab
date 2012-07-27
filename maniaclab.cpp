@@ -28,12 +28,14 @@ named in the AUTHORS file.
 #include <fstream>
 #include <cassert>
 #include <unistd.h>
+#include <thread>
 
 #include <boost/python.hpp>
 
 #include "CEngine/IO/Log.hpp"
 #include "CEngine/IO/FileStream.hpp"
 #include "CEngine/IO/StdIOStream.hpp"
+#include "CEngine/IO/Thread.hpp"
 
 #include "CEngine/WindowInterface/Display.hpp"
 #include "CEngine/WindowInterface/Window.hpp"
@@ -41,6 +43,8 @@ named in the AUTHORS file.
 
 #include "CEngine/PythonInterface/Package.hpp"
 #include "CEngine/PythonInterface/CairoHelpers.hpp"
+
+#include "CManiacLab/PythonInterface.hpp"
 
 using namespace PyEngine;
 
@@ -50,7 +54,7 @@ int main(int argc, char** argv) {
     int exitCode = 0;
     
     StreamHandle xmlFile(new FileStream("log.xml", OM_WRITE, WM_OVERWRITE));
-    PyEngine::log->addSink(LogStdOutSink(All));
+    //PyEngine::log->addSink(LogStdOutSink(All));
     PyEngine::log->logf(Debug, "Set up stdout sink");
     
     PyEngine::log->addSink(LogSinkHandle(
@@ -58,10 +62,12 @@ int main(int argc, char** argv) {
     ));
     PyEngine::log->logf(Debug, "Set up xml sink");
     PyEngine::log->logf(Information, "Log system started up successfully.");
+    PyEngine::log->getChannel("system")->log(Information) << "Detected " << PyEngine::Thread::getHardwareThreadCount() << " hardware threads." << PyEngine::submit;
     try
     {
         PyEngine::log->logf(Information, "Setting up boost/python environment");
         addCUniToInittab();
+        addManiacLabToInittab();
         PyEngine::log->logf(Information, "Initializing python");
         Py_Initialize();
         PySys_SetArgv(argc, argv);
@@ -76,7 +82,7 @@ int main(int argc, char** argv) {
         boost::python::object cuni_log_namespace = boost::python::import("_cuni_log").attr("__dict__");
         boost::python::object main_namespace = boost::python::import("__main__").attr("__dict__");
 
-        // FIXME: Is this possible without explizit reference to the
+        // FIXME: Is this possible without explicit reference to the
         // platform?
         // Boost needs the explicit type for casting, but it would be
         // nice to force it somehow to do the right thing.

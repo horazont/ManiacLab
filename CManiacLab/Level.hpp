@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include <boost/shared_ptr.hpp>
+
 #include <CEngine/IO/Stream.hpp>
 
 #include "Types.hpp"
@@ -17,7 +19,7 @@ struct LevelCell {
 
 class Level {
 public:
-    Level(CoordInt width, CoordInt height);
+    Level(CoordInt width, CoordInt height, bool mp = true);
     ~Level();
 private:
     CoordInt _width, _height;
@@ -26,13 +28,19 @@ private:
     std::vector<GameObject*> _objects;
 
     double _timeSlice;
+    double _time;
 private:
     void getFallChannel(const CoordInt x, const CoordInt y, LevelCell **aside, LevelCell **asideBelow);
+    bool handleCAInteraction(const CoordInt x, const CoordInt y, LevelCell *cell, GameObject *obj);
+    bool handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell, GameObject *obj);
     void initCells();
 protected:
     void getPhysicsCellsAt(const double x, const double y, CellStamp *stamp);
 public:
+    void physicsToGLTexture();
     void update();
 };
+
+typedef boost::shared_ptr<Level> LevelHandle;
 
 #endif
