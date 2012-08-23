@@ -4,24 +4,25 @@
 struct Cell;
 
 class GameObject {
-    protected:
+protected:
     double _tempCoefficient;
     
-    public:
+public:
     double inline getTemperatureCoefficient() { return _tempCoefficient; };
     virtual void update(const Cell *cell);
 };
 
 struct Cell {
-    bool blocked;
-    bool odd;
     double airPressure;
     double temperature;
     
     // flow is in relation to upper left neighbour!
     double flow[2];
     double fogDensity;
-    
+};
+
+struct CellMetadata {
+    bool blocked;
     GameObject *obj;
 };
 
@@ -61,29 +62,33 @@ public:
     
 private:
     unsigned int _width, _height;
+    CellMetadata *_metadata;
     Cell *_cells, *_backbuffer;
     double _flowFriction, _flowDamping;
-    bool _odd;
     
 private:
+	void initMetadata(CellMetadata *buffer, unsigned int x, unsigned int y);
     void initCell(Cell *buffer, unsigned int x, unsigned int y,
-        double initialPressure, double initialTemperature, bool odd);
+        double initialPressure, double initialTemperature);
     
 protected:
     void flow(const Cell *b_cellA, Cell *f_cellA, 
         const Cell *b_cellB, Cell *f_cellB,
         unsigned int direction);
-    void getCellAndNeighbours(Cell *buffer, Cell **cell, 
-        Cell *(*neighbours)[2], unsigned int x, unsigned int y);
+    template<class CType>
+    void getCellAndNeighbours(CType *buffer, CType **cell, 
+        CType *(*neighbours)[2], unsigned int x, unsigned int y);
     void updateCell(unsigned int x, unsigned int y);
     
 public:
     Cell inline *cellAt(unsigned int x, unsigned int y) { return &_cells[x+_width*y]; };
+    CellMetadata inline *metaAt(unsigned int x, unsigned int y) { return &_metadata[x+_width*y]; };
     void printCells(const double min, const double max,
         const char **map, const int mapLen);
     void printCellsBlock(const double min, const double max);
     void printCells256(const double min, const double max);
     void printFlow();
+    void setBlocked(unsigned int x, unsigned int y, bool blocked);
     void updateCells();
 };
 
