@@ -159,6 +159,7 @@ void Automaton::resume()
 
 void Automaton::setBlocked(CoordInt x, CoordInt y, bool blocked)
 {
+    assert(!_resumed);
     _metadata[x+_width*y].blocked = true;
 }
 
@@ -170,11 +171,15 @@ void Automaton::waitFor()
         _finishedSignals[i]->wait();
     }
     _resumed = false;
+    Cell *tmp = _backbuffer;
+    _backbuffer = _cells;
+    _cells = tmp;
 }
 
 void Automaton::printCells(const double min, const double max,
     const char **map, const int mapLen)
 {
+    assert(!_resumed);
     for (CoordInt y = 0; y < _height; y++) {
         for (CoordInt x = 0; x < _width; x++) {
             Cell *cell = cellAt(x, y);
@@ -247,6 +252,7 @@ void Automaton::printFlow()
     };
     static const char *none = "⋅";
 
+    assert(!_resumed);
     for (CoordInt y = 0; y < _height; y++) {
         for (CoordInt x = 0; x < _width; x++) {
             Cell *cell = cellAt(x, y);
@@ -279,16 +285,16 @@ void Automaton::toGLTexture(const double min, const double max)
     }
 
     uint32_t *target = _rgbaBuffer;
-    Cell *source = _cells;
+    Cell *source = _backbuffer;
     CellMetadata *metaSource = _metadata;
     for (unsigned int i = 0; i < _width*_height; i++) {
         if (metaSource->blocked) {
             *target = 0x0000FF;
         } else {
             const unsigned char r = (unsigned char)(clamp((source->airPressure - min) / (max - min), 0.0, 1.0) * 255.0);
-            //const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _threadCount) / _threadCount * 255.0);
+            const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _threadCount) / _threadCount * 255.0);
             //const unsigned char b = (unsigned char)(clamp((source->flow[1] - min) / (max - min), -1.0, 1.0) * 127.0 + 127.0);
-            *target = r | (r << 8) | (r << 16);
+            *target = r | (r << 8) | (g << 16);
         }
         target++;
         source++;
