@@ -39,7 +39,7 @@ MovementStraight::MovementStraight(LevelCell *from, LevelCell *to,
     if (abs(offsetX) + abs(offsetY) == 0) {
         throw ProgrammingError("Cannot move zero fields.");
     } else if (abs(offsetX) + abs(offsetY) > 1) {
-        throw ProgrammingError("Cannot move diagonally.");
+        throw ProgrammingError("Cannot move diagonally or more than one field.");
     }
 
     // yes, this comparision is evil, as _obj->_x is a float actually.

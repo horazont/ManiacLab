@@ -74,22 +74,47 @@ private:
     PyEngine::Semaphore **_finishedSignals, **_forwardSignals;
     PyEngine::Mutex **_sharedZones;
 
-    uint32_t *_rgbaBuffer;
-    
+    uint32_t *_rgbaBuffer; //! Used by toGLTexture() and allocated on-demand.
 private:
     void initCell(Cell *buffer, CoordInt x, CoordInt y,
         double initialPressure, double initialTemperature);
 	void initMetadata(CellMetadata *buffer, CoordInt x, CoordInt y);
+
+    /**
+     * Initialize all threads for the automaton. Uses
+     * PyEngine::Thread::getHardwareThreadCount() internally to find a
+     * reasonable number of threads.
+     *
+     * This will never spawn more than 64 threads, to avoid excessive
+     * synchronization overhead and ensure working levels with down to 128
+     * cells on the y axis.
+     */
     void initThreads();
-    
 public:
-    Cell inline *cellAt(CoordInt x, CoordInt y) { return &_cells[x+_width*y]; };
+
+    Cell inline *cellAt(CoordInt x, CoordInt y)
+    {
+        return &_cells[x+_width*y];
+    };
+
     void getCellStampAt(const CoordInt left, const CoordInt top, CellStamp *stamp);
     CellMetadata inline *metaAt(CoordInt x, CoordInt y) { return &_metadata[x+_width*y]; };
+
+    /**
+     * Tell the automaton to resume it's work. The effect of this function if
+     * it's called while the automaton is still working is undefined. Make sure
+     * it's stopped by calling waitFor() first.
+     */
     void resume();
     void setBlocked(CoordInt x, CoordInt y, bool blocked);
-    void waitFor();
 
+    /**
+     * Wait until the cellular automaton has settled its calculation and return.
+     * The automaton will not continue calculating until resume() is called.
+     *
+     * If the automaton is already suspended, return immediately.
+     */
+    void waitFor();
 public:
     double inline getFlowDamping() const { return _flowDamping; };
     double inline getFlowFriction() const { return _flowFriction; };
@@ -102,6 +127,10 @@ public:
     void printFlow();
 
 public:
+    /**
+     * Map pressure values in the range from min to max to [0..1] and write them
+     * to the currently bound OpenGL texture as GL_RGBA.
+     */
     void toGLTexture(const double min, const double max);
 
 friend class AutomatonThread;
