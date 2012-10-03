@@ -1,6 +1,8 @@
 from __future__ import print_function, unicode_literals, division
 from our_future import *
 
+import argparse
+
 import _cmaniaclab as CManiacLab
 
 from OpenGL.GL import *
@@ -13,8 +15,10 @@ from Engine.GL.Texture import Texture2D
 
 class ManiacLab(Engine.Application.Application):
     def __init__(self):
+        args = self.parse_args()
+
         super(ManiacLab, self).__init__(CWindow.display, geometry=(800, 800))
-        self.level = CManiacLab.Level(100, 100, True)
+        self.level = CManiacLab.Level(100, 100, args.threaded_simulation)
 
         self.visualization = Texture2D(512, 512, GL_RGBA)
 
@@ -22,6 +26,18 @@ class ManiacLab(Engine.Application.Application):
         self._window.setTitle("ManiacLab")
 
         self.running = False
+
+    def parse_args(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--no-threaded-simulation",
+            dest="threaded_simulation",
+            default=True,
+            action="store_false",
+            help="Disable multithreading for the simulation."
+        )
+
+        return parser.parse_args()
 
     def frameSynced(self):
         if self.running:
