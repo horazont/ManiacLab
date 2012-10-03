@@ -42,22 +42,6 @@ void Level::getFallChannel(const CoordInt x, const CoordInt y,
     }
 }
 
-void Level::initCells()
-{
-    const LevelCell *end = &_cells[_width*_height];
-    for (LevelCell *cell = _cells; cell != end; cell++) {
-        cell->here = 0;
-        cell->reservedBy = 0;
-    }
-}
-
-void Level::getPhysicsCellsAt(const double x, const double y, CellStamp *stamp)
-{
-    const CoordInt px = (CoordInt)(x * subdivisionCount) - subdivisionCount / 2;
-    const CoordInt py = (CoordInt)(y * subdivisionCount) - subdivisionCount / 2;
-    _physics.getCellStampAt(px, py, stamp);
-}
-
 bool Level::handleCAInteraction(const CoordInt x, const CoordInt y,
     LevelCell *cell, GameObject *obj)
 {
@@ -108,6 +92,24 @@ bool Level::handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell,
     }
     return true;
 }
+
+void Level::initCells()
+{
+    const LevelCell *end = &_cells[_width*_height];
+    for (LevelCell *cell = _cells; cell != end; cell++) {
+        cell->here = 0;
+        cell->reservedBy = 0;
+    }
+}
+
+void Level::getPhysicsCellsAt(const double x, const double y, CellStamp *stamp,
+    CoordInt *px, CoordInt *py)
+{
+    *px = (CoordInt)(x * subdivisionCount) - subdivisionCount / 2;
+    *py = (CoordInt)(y * subdivisionCount) - subdivisionCount / 2;
+    _physics.getCellStampAt(*px, *py, stamp);
+}
+
 
 void Level::physicsToGLTexture()
 {
