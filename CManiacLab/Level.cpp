@@ -149,16 +149,5 @@ void Level::update()
         }
     }
     _time += _timeSlice;
-    for (CoordInt y = 0; y < _height*subdivisionCount; y++) {
-        // const double factor = (y >= _height * subdivisionCount / 2) ? 4 : 5;
-        const double factor = 6;
-        _physics.cellAt(0, y)->airPressure = sin(_time * factor) + 1.1;
-        _physics.cellAt(0, y)->airPressure = sin(_time * factor) + 1.1;
-        _physics.cellAt(0, y)->airPressure = sin(_time * factor) + 1.1;
-
-        if (y % 15 != 0 && (y+1) % 15 != 0 && (y-1) % 15 != 0) {
-            _physics.setBlocked(15, y, true);
-        }
-    }
     _physics.resume();
 }
