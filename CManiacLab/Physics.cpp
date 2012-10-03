@@ -412,7 +412,7 @@ void AutomatonThread::update()
     if (_topSharedZone)
         _topSharedZone->unlock();
 
-    for (CoordInt y = _sliceY0; y < _sliceY1; y++) {
+    for (CoordInt y = _sliceY0+1; y < _sliceY1; y++) {
         for (CoordInt x = 0; x < _width; x++) {
             updateCell(x, y);
         }
