@@ -12,6 +12,25 @@
 
 using namespace PyEngine;
 
+static const int stampCoordinateOffsets[cellStampLength][2] = {
+    {1, 1},
+    {1, 2},
+    {2, 1},
+    {2, 2},
+    {1, 0},
+    {2, 0},
+    {0, 1},
+    {0, 2},
+    {3, 1},
+    {3, 2},
+    {1, 3},
+    {2, 3},
+    {0, 0},
+    {0, 3},
+    {3, 0},
+    {3, 3}
+};
+
 double inline clamp(const double value, const double min, const double max)
 {
     if (value > max)
@@ -135,17 +154,112 @@ void Automaton::initThreads()
     );
 }
 
+void Automaton::applyBlockStamp(const CoordInt dx, const CoordInt dy,
+    const BoolCellStamp stamp, bool block)
+{
+    assert(!_resumed);
+    for (unsigned int i = 0; i < cellStampLength; i++) {
+        if (!stamp[i]) {
+            std::cout << "masked" << std::endl;
+            continue;
+        }
+
+        const CoordInt x = dx + stampCoordinateOffsets[i][0];
+        const CoordInt y = dy + stampCoordinateOffsets[i][1];
+
+        Cell *const currCell = safeCellAt(x, y);
+        if (!currCell) {
+            std::cout << "inv cell at " << x << ", " << y << std::endl;
+            continue;
+        }
+        CellMetadata *const currMeta = metaAt(x, y);
+        if (!currMeta->blocked && block) {
+            evacuateCellToNeighbours(x, y, currCell);
+        } else if (!block && currMeta->blocked) {
+            initCell(_cells, x, y, 0., 0.);
+            initCell(_backbuffer, x, y, 0., 0.);
+        }
+        currMeta->blocked = block;
+        std::cout << currMeta->blocked << " " << block << std::endl;
+    }
+}
+
+void Automaton::evacuateCellToNeighbours(const CoordInt x, const CoordInt y,
+    Cell *cell)
+{
+    static const int offsets[4][3] = {
+        {0, -1, 0}, {-1, 0, 1}, {1, 0, 1}, {0, 1, 0}
+    };
+    int count = 0;
+    const double toDistribute = cell->airPressure;
+    if (toDistribute == 0)
+        // nothing to do!
+        return;
+
+    Cell* goodCells[4] = {0, 0, 0, 0};
+    int directions[4][2] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}};
+
+    for (int i = 0; i < 4; i++) {
+        const int d = offsets[i][0] + offsets[i][1];
+        const CoordInt nx = x + offsets[i][0];
+        const CoordInt ny = y + offsets[i][1];
+        const CoordInt direction = offsets[i][2];
+
+        Cell *const neigh = safeCellAt(nx, ny);
+        if (!neigh)
+            continue;
+        CellMetadata *const neighMeta = metaAt(nx, ny);
+        if (neighMeta->blocked)
+            continue;
+
+        goodCells[count] = neigh;
+        directions[count][0] = d;
+        directions[count][1] = direction;
+
+        executeFlowEx(cell, neigh, d, direction, toDistribute / 4);
+
+        count++;
+    }
+
+    assert(count <= 4 && count >= 0);
+    if (count == 0) {
+        // this is not good, we could not distribute the pressure anywhere. this
+        // leads to non-conservative systems, as we have to drop it.
+    }
+    if (count < 4) {
+        // iterate over the good cells again to distribute the remaining
+        // pressure
+        const double perCell = (toDistribute - toDistribute * count / 4.) / count;
+
+        for (int i = 0; i < count; i++) {
+            Cell *const neigh = goodCells[i];
+            const int d = directions[i][0];
+            const CoordInt direction = directions[i][1];
+
+            executeFlowEx(cell, neigh, d, direction, perCell);
+        }
+    }
+}
+
+inline void Automaton::executeFlowEx(Cell *cellA, Cell *cellB, const int reverse,
+    const CoordInt direction, const double move)
+{
+    if (reverse < 0) {
+        AutomatonThread::executeFlow(cellA, cellB, direction, move, 0);
+    } else {
+        AutomatonThread::executeFlow(cellB, cellA, direction, move, 0);
+    }
+}
+
 void Automaton::getCellStampAt(const CoordInt left, const CoordInt top,
     CellStamp *stamp)
 {
     Cell **currCell = (Cell**)stamp;
-    for (CoordInt x = left; x < left + subdivisionCount; x++)
-    {
-        for (CoordInt y = top; y < top + subdivisionCount; y++)
-        {
-            *currCell = (x >= 0 && x < _width && y >= 0 && y < _height) ? cellAt(x, y) : 0;
-            currCell++;
-        }
+    for (unsigned int i = 0; i < cellStampLength; i++) {
+        const CoordInt x = left + stampCoordinateOffsets[i][0];
+        const CoordInt y = top + stampCoordinateOffsets[i][1];
+        *currCell = (x >= 0 && x < _width && y >= 0 && y < _height) ? cellAt(x, y) : 0;
+        currCell++;
     }
 }
 
@@ -337,8 +451,25 @@ void AutomatonThread::activateCell(Cell *front, Cell *back)
     front->flow[1] = back->flow[1];
 }
 
-void AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA, 
-    const Cell *b_cellB, Cell *f_cellB, 
+inline void AutomatonThread::executeFlow(Cell *cellA, Cell *cellB,
+    CoordInt direction, const double flow, const double newFlow)
+{
+    cellA->airPressure -= flow;
+    cellB->airPressure += flow;
+    cellA->flow[direction] = newFlow;
+}
+
+template<class CType>
+void AutomatonThread::getCellAndNeighbours(CType *buffer, CType **cell,
+        CType *(*neighbours)[2], CoordInt x, CoordInt y)
+{
+    *cell = &buffer[x+_width*y];
+    (*neighbours)[0] = (x > 0) ? &buffer[(x-1)+_width*y] : 0;
+    (*neighbours)[1] = (y > 0) ? &buffer[x+_width*(y-1)] : 0;
+}
+
+void AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
+    const Cell *b_cellB, Cell *f_cellB,
     CoordInt direction)
 {
     const double dPressure = b_cellA->airPressure - b_cellB->airPressure;
@@ -351,24 +482,13 @@ void AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
         -b_cellB->airPressure / 4.,
         b_cellA->airPressure / 4.
     );
-    
-    f_cellA->airPressure -= applicableFlow;
-    f_cellB->airPressure += applicableFlow;
-    f_cellA->flow[direction] = flow;
-    
+
+    executeFlow(f_cellA, f_cellB, direction, applicableFlow, flow);
+
     /*Cell *const flowChange = (flow > 0) ? f_cellB : f_cellA;
     const double factor = flow / flowChange->airPressure;
     flowChange->flow[direction] =
         applicableFlow * factor + flowChange->flow[direction] * (1.0 - factor);*/
-}
-
-template<class CType>
-void AutomatonThread::getCellAndNeighbours(CType *buffer, CType **cell, 
-        CType *(*neighbours)[2], CoordInt x, CoordInt y)
-{
-    *cell = &buffer[x+_width*y];
-    (*neighbours)[0] = (x > 0) ? &buffer[(x-1)+_width*y] : 0;
-    (*neighbours)[1] = (y > 0) ? &buffer[x+_width*(y-1)] : 0;
 }
 
 void AutomatonThread::updateCell(CoordInt x, CoordInt y, bool activate)

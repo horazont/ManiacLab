@@ -7,6 +7,7 @@
 #include "Types.hpp"
 
 const CoordInt subdivisionCount = 4;
+const CoordInt cellStampLength = subdivisionCount*subdivisionCount;
 
 class GameObject;
 
@@ -24,8 +25,8 @@ struct CellMetadata {
     GameObject *obj;
 };
 
-typedef Cell CellStamp[subdivisionCount*subdivisionCount];
-
+typedef Cell CellStamp[cellStampLength];
+typedef bool BoolCellStamp[cellStampLength];
 
 class AutomatonThread;
 
@@ -91,10 +92,21 @@ private:
      */
     void initThreads();
 public:
+    void applyBlockStamp(const CoordInt x, const CoordInt y,
+        const BoolCellStamp stamp, bool block);
+    void evacuateCellToNeighbours(const CoordInt x, const CoordInt y,
+        Cell *cell);
+    static void executeFlowEx(Cell *cellA, Cell *cellB, const int reverse,
+        const CoordInt direction, const double move);
 
     Cell inline *cellAt(CoordInt x, CoordInt y)
     {
         return &_cells[x+_width*y];
+    };
+
+    Cell inline *safeCellAt(CoordInt x, CoordInt y)
+    {
+        return (x >= 0 && x < _width && y >= 0 && y < _height) ? cellAt(x, y) : 0;
     };
 
     void getCellStampAt(const CoordInt left, const CoordInt top, CellStamp *stamp);
@@ -152,16 +164,17 @@ private:
     CellMetadata *_metadata;
 protected:
     void activateCell(Cell *front, Cell *back);
-    void flow(const Cell *b_cellA, Cell *f_cellA, const Cell *b_cellB,
-        Cell *f_cellB, CoordInt direction);
-    
     template<class CType>
     void getCellAndNeighbours(CType *buffer, CType **cell,
         CType *(*neighbours)[2], CoordInt x, CoordInt y);
-    
+    void flow(const Cell *b_cellA, Cell *f_cellA, const Cell *b_cellB,
+        Cell *f_cellB, CoordInt direction);
+
     void updateCell(CoordInt x, CoordInt y, bool activate = true);
     void update();
 public:
+    static void executeFlow(Cell *cellA, Cell *cellB, CoordInt direction,
+        const double flow, const double newFlow);
     virtual void *execute();
 };
 

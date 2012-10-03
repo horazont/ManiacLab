@@ -109,6 +109,39 @@ void Level::getPhysicsCellsAt(const double x, const double y, CellStamp *stamp,
     _physics.getCellStampAt(*px, *py, stamp);
 }
 
+void Level::setStamp(const double x, const double y, const BoolCellStamp stamp,
+    bool block)
+{
+    const CoordInt px = (CoordInt)(x * subdivisionCount) - subdivisionCount / 2;
+    const CoordInt py = (CoordInt)(y * subdivisionCount) - subdivisionCount / 2;
+    _physics.applyBlockStamp(px, py, stamp, block);
+}
+
+void Level::debug_testBlockStamp()
+{
+    static const double x = 23.0;
+    static const double y = 42.5;
+    static const BoolCellStamp stamp = {
+        true, true, true, true, true, true, true, true, true, true, true, true,
+        false, false, false, false
+    };
+
+    _physics.waitFor();
+    setStamp(x, y, stamp, true);
+}
+
+void Level::debug_testUnblockStamp()
+{
+    static const double x = 23.5;
+    static const double y = 43.0;
+    static const BoolCellStamp stamp = {
+        true, true, true, true, true, true, true, true, true, true, true, true,
+        false, false, false, false
+    };
+
+    _physics.waitFor();
+    setStamp(x, y, stamp, false);
+}
 
 void Level::physicsToGLTexture()
 {
