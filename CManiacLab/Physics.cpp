@@ -99,9 +99,17 @@ void Automaton::initThreads()
     }
     _finishedSignals[_threadCount - 1] = new Semaphore();
 
-    const CoordInt sliceSize = _height / _threadCount;
-    // XXX: This will break this game on systems with more threads than we have
-    // lines in the automaton.
+    // We limit the thread count to 64 for now. Above that, synchronization is
+    // probably more expensive than everything else. Synchronization is O(n),
+    // with n being the count of threads. Threads have to prepare the bottommost
+    // and topmost row of their slice first and raise some flags, as other
+    // threads need the information from the prepared cells in the backbuffer.
+    // Only after the neighbouring threads have prepared the neighbouring cells,
+    // the actual calculation can start.
+    // Additionally, everything will break if we have an amount of threads for
+    // which the height divided by the thread count (integer division) gives
+    // zero (which is asserted against below).
+    const CoordInt sliceSize = _height / (_threadCount <= 64 ? _threadCount : 64);
     assert(sliceSize > 0);
 
     CoordInt sliceY0 = 0;
