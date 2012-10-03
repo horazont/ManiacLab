@@ -56,7 +56,7 @@ bool Level::handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell,
         // TODO: allow objects to leave the gamescope
         return true;
     }
-    
+
     LevelCell *below = &_cells[x+(y+1)*_width];
     if (!below->here && !below->reservedBy) {
         obj->setMovement(new MovementStraight(cell, below, 0, 1));

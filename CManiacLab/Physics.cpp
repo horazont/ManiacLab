@@ -72,7 +72,7 @@ Automaton::~Automaton()
     }
 }
 
-void Automaton::initMetadata(CellMetadata *buffer, CoordInt x, 
+void Automaton::initMetadata(CellMetadata *buffer, CoordInt x,
 	CoordInt y)
 {
 	CellMetadata *cell = &buffer[x+_width*y];
@@ -103,9 +103,9 @@ void Automaton::initThreads()
     // XXX: This will break this game on systems with more threads than we have
     // lines in the automaton.
     assert(sliceSize > 0);
-    
+
     CoordInt sliceY0 = 0;
-    
+
     for (unsigned int i = 0; i < _threadCount - 1; i++) {
         _threads[i] = new AutomatonThread(this,
             sliceY0, sliceY0 + sliceSize-1,  // range on which this thread works
@@ -151,7 +151,7 @@ void Automaton::resume()
 
 void Automaton::setBlocked(CoordInt x, CoordInt y, bool blocked)
 {
-	_metadata[x+_width*y].blocked = true;
+    _metadata[x+_width*y].blocked = true;
 }
 
 void Automaton::waitFor()
@@ -181,7 +181,7 @@ void Automaton::printCells(const double min, const double max,
 					index = 0;
 				if (index >= mapLen)
 					index = mapLen-1;
-				
+
 				std::cout << map[index];
 			}
         }
@@ -238,7 +238,7 @@ void Automaton::printFlow()
         "→", "↘", "↓", "↙", "←", "↖", "↑", "↗"
     };
     static const char *none = "⋅";
-    
+
     for (CoordInt y = 0; y < _height; y++) {
         for (CoordInt x = 0; x < _width; x++) {
             Cell *cell = cellAt(x, y);
@@ -247,7 +247,7 @@ void Automaton::printFlow()
                 std::cout << "x";
                 continue;
             }
-            
+
             if (sqrt(cell->flow[0]*cell->flow[0] + cell->flow[1]*cell->flow[1]) < 0.0001) {
                 std::cout << none;
             } else {
@@ -313,7 +313,7 @@ AutomatonThread::AutomatonThread(Automaton *dataClass, CoordInt sliceY0,
     _cells(dataClass->_cells),
     _metadata(dataClass->_metadata)
 {
-    
+
 }
 
 void AutomatonThread::activateCell(Cell *front, Cell *back)

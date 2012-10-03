@@ -13,7 +13,7 @@ class GameObject;
 struct Cell {
     double airPressure;
     double temperature;
-    
+
     // flow is in relation to upper left neighbour!
     double flow[2];
     double fogDensity;
@@ -59,10 +59,10 @@ public:
     Automaton(CoordInt width, CoordInt height,
         const double flowFriction, const double flowDamping,
         bool mp = true,
-        double initialPressure = 1.0, 
+        double initialPressure = 1.0,
         double initialTemperature = 1.0);
     ~Automaton();
-    
+
 private:
     bool _resumed;
     const CoordInt _width, _height;

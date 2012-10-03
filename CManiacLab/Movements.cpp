@@ -41,7 +41,7 @@ MovementStraight::MovementStraight(LevelCell *from, LevelCell *to,
     } else if (abs(offsetX) + abs(offsetY) > 1) {
         throw ProgrammingError("Cannot move diagonally.");
     }
-    
+
     // yes, this comparision is evil, as _obj->_x is a float actually.
     // However, in this case _x should be close enough to a whole number, if
     // not, something went utterly wrong.
@@ -51,7 +51,7 @@ MovementStraight::MovementStraight(LevelCell *from, LevelCell *to,
     assert(!from->reservedBy);
     assert(!to->here);
     assert(!to->reservedBy);
-    
+
     from->reservedBy = _obj;
     from->here = 0;
     to->here = _obj;
@@ -90,7 +90,7 @@ MovementRoll::MovementRoll(LevelCell *from, LevelCell *via, LevelCell *to,
     _startX(_obj->_x),
     _startY(_obj->_y)
 {
-    
+
 }
 
 MovementRoll::~MovementRoll()
