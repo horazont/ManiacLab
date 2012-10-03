@@ -75,3 +75,7 @@ class ManiacLab(Engine.Application.Application):
     def handleKeyDown(self, symbol, modifiers):
         if symbol == key.Return:
             self.running = True
+        elif symbol == 98:      # b
+            self.level.debug_testBlockStamp()
+        elif symbol == 116:     # t
+            self.level.debug_testUnblockStamp()
