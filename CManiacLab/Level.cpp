@@ -52,7 +52,6 @@ bool Level::handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell,
     GameObject *obj)
 {
     if (y == _height) {
-        // below is invalid!
         // TODO: allow objects to leave the gamescope
         return true;
     }
