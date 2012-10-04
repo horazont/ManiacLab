@@ -109,7 +109,7 @@ void Level::getPhysicsCellsAt(const double x, const double y, CellStamp *stamp,
     _physics.getCellStampAt(*px, *py, stamp);
 }
 
-void Level::setStamp(const double x, const double y, const BoolCellStamp stamp,
+void Level::setStamp(const double x, const double y, const Stamp &stamp,
     bool block)
 {
     const CoordInt px = (CoordInt)(x * subdivisionCount) - subdivisionCount / 2;
@@ -117,35 +117,36 @@ void Level::setStamp(const double x, const double y, const BoolCellStamp stamp,
     _physics.applyBlockStamp(px, py, stamp, block);
 }
 
+void Level::debug_testStamp(const double x, const double y, bool block)
+{
+    static const BoolCellStamp stampMap = {
+        false, true, true, false,
+        true, true, true, true,
+        true, true, true, true,
+        false, true, true, false
+    };
+    static const Stamp stamp(stampMap);
+    _physics.waitFor();
+    setStamp(x, y, stamp, block);
+}
+
 void Level::debug_testBlockStamp()
 {
     static const double x = 23.0;
-    static const double y = 42.5;
-    static const BoolCellStamp stamp = {
-        true, true, true, true, true, true, true, true, true, true, true, true,
-        false, false, false, false
-    };
-
-    _physics.waitFor();
-    setStamp(x, y, stamp, true);
+    static const double y = 42.0;
+    debug_testStamp(x, y, true);
 }
 
 void Level::debug_testUnblockStamp()
 {
     static const double x = 23.5;
-    static const double y = 43.0;
-    static const BoolCellStamp stamp = {
-        true, true, true, true, true, true, true, true, true, true, true, true,
-        false, false, false, false
-    };
-
-    _physics.waitFor();
-    setStamp(x, y, stamp, false);
+    static const double y = 42.0;
+    debug_testStamp(x, y, false);
 }
 
-void Level::physicsToGLTexture()
+void Level::physicsToGLTexture(bool threadRegions)
 {
-    _physics.toGLTexture(0.9, 1.1);
+    _physics.toGLTexture(0.0, 2.0, threadRegions);
 }
 
 void Level::update()
@@ -181,6 +182,59 @@ void Level::update()
             }
         }
     }
+
+    static const double origins[4][2] = {
+        {50.0, 50.0},
+        {50.0, 50.0},
+        {50.0, 50.0},
+        {50.0, 50.0}
+    };
+    static const double phaseFreq[4][2] = {
+        {0.4, 2.0},
+        {0.45, 2.0},
+        {0.5, -1.5},
+        {0.55, -1.5},
+    };
+    for (int i = 0; i < 4; i++) {
+        const double cx = origins[i][0], cy = origins[i][1];
+        const double phase = phaseFreq[i][0], freq = phaseFreq[i][1];
+
+        const double r = sin(_time * 5.0) * 1.0 + 10.0;
+        const double y = cy + sin(_time * freq + phase) * r;
+        const double x = cx + cos(_time * freq + phase) * r;
+
+        debug_testStamp(x, y, false);
+    }
+
     _time += _timeSlice;
+
+    for (int i = 0; i < 4; i++) {
+        const double cx = origins[i][0], cy = origins[i][1];
+        const double phase = phaseFreq[i][0], freq = phaseFreq[i][1];
+
+        const double r = sin(_time * 5.0) * 1.0 + 10.0;
+        const double y = cy + sin(_time * freq + phase) * r;
+        const double x = cx + cos(_time * freq + phase) * r;
+
+        debug_testStamp(x, y, true);
+    }
+
+    /*const double y0 = 10;
+    for (int i = 0; i < 80; i++) {
+        const double x = 50 + sin(_time * 2.0) * 10.0;
+        const double y = y0 + i * 0.5;
+
+        debug_testStamp(x, y, false);
+    }
+
+    _time += _timeSlice;
+
+    for (int i = 0; i < 80; i++) {
+        const double x = 50 + sin(_time * 2.0) * 10.0;
+        const double y = y0 + i * 0.5;
+
+        debug_testStamp(x, y, true);
+    }*/
+
     _physics.resume();
 }

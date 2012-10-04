@@ -26,6 +26,7 @@ class ManiacLab(Engine.Application.Application):
         self._window.setTitle("ManiacLab")
 
         self.running = False
+        self.show_thread_regions = False
 
     def parse_args(self):
         parser = argparse.ArgumentParser()
@@ -45,7 +46,7 @@ class ManiacLab(Engine.Application.Application):
 
     def frameUnsynced(self, timeDelta):
         self.visualization.bind()
-        self.level.physicsToGLTexture()
+        self.level.physicsToGLTexture(self.show_thread_regions)
         window = self._screens[0][0]
         window.switchTo()
 
@@ -75,6 +76,8 @@ class ManiacLab(Engine.Application.Application):
     def handleKeyDown(self, symbol, modifiers):
         if symbol == key.Return:
             self.running = True
+        elif symbol == key.F1:
+            self.show_thread_regions = not self.show_thread_regions
         elif symbol == 98:      # b
             self.level.debug_testBlockStamp()
         elif symbol == 116:     # t

@@ -25,7 +25,6 @@ struct CellMetadata {
 };
 
 typedef Cell CellStamp[cellStampLength];
-typedef bool BoolCellStamp[cellStampLength];
 
 class AutomatonThread;
 
@@ -92,7 +91,7 @@ private:
     void initThreads();
 public:
     void applyBlockStamp(const CoordInt x, const CoordInt y,
-        const BoolCellStamp stamp, bool block);
+        const Stamp &stamp, bool block);
     void evacuateCellToNeighbours(const CoordInt x, const CoordInt y,
         Cell *cell);
     static void executeFlowEx(Cell *cellA, Cell *cellB, const int reverse,
@@ -142,7 +141,7 @@ public:
      * Map pressure values in the range from min to max to [0..1] and write them
      * to the currently bound OpenGL texture as GL_RGBA.
      */
-    void toGLTexture(const double min, const double max);
+    void toGLTexture(const double min, const double max, bool threadRegions);
 
 friend class AutomatonThread;
 };

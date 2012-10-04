@@ -1,8 +1,9 @@
 #include "Physics.hpp"
 
-#include <iostream>
+#include <cstdio>
 #include <cmath>
 #include <cassert>
+#include <cstring>
 
 #include <glew.h>
 
@@ -11,25 +12,6 @@
 #include "GameObject.hpp"
 
 using namespace PyEngine;
-
-static const int stampCoordinateOffsets[cellStampLength][2] = {
-    {1, 1},
-    {1, 2},
-    {2, 1},
-    {2, 2},
-    {1, 0},
-    {2, 0},
-    {0, 1},
-    {0, 2},
-    {3, 1},
-    {3, 2},
-    {1, 3},
-    {2, 3},
-    {0, 0},
-    {0, 3},
-    {3, 0},
-    {3, 3}
-};
 
 double inline clamp(const double value, const double min, const double max)
 {
@@ -155,32 +137,102 @@ void Automaton::initThreads()
 }
 
 void Automaton::applyBlockStamp(const CoordInt dx, const CoordInt dy,
-    const BoolCellStamp stamp, bool block)
+    const Stamp &stamp, bool block)
 {
     assert(!_resumed);
-    for (unsigned int i = 0; i < cellStampLength; i++) {
-        if (!stamp[i]) {
-            std::cout << "masked" << std::endl;
-            continue;
-        }
 
-        const CoordInt x = dx + stampCoordinateOffsets[i][0];
-        const CoordInt y = dy + stampCoordinateOffsets[i][1];
+    const intptr_t indexRowLength = subdivisionCount+2;
+    const intptr_t indexLength = indexRowLength * indexRowLength;
+    static intptr_t *borderIndicies = (intptr_t*)malloc(indexLength * sizeof(intptr_t));
+    static Cell **borderCells = (Cell**)malloc(indexLength * sizeof(Cell*));
+    static const intptr_t offs[4][2] = {
+        {0, -1}, {-1, 0}, {1, 0}, {0, 1}
+    };
+
+    uintptr_t stampCellsLen = 0;
+    const CoordPair *stampCells = stamp.getMapCoords(&stampCellsLen);
+
+    memset(borderIndicies, -1, indexLength * sizeof(intptr_t));
+    memset(borderCells, 0, indexLength * sizeof(Cell*));
+
+    // collect surplus matter here
+    double toDistribute = 0.;
+    uintptr_t borderCellWriteIndex = 0;
+    uintptr_t borderCellCount = 0;
+
+    for (uintptr_t i = 0; i < stampCellsLen; i++) {
+        const CoordPair p = stampCells[i];
+        const CoordInt x = p.x + dx;
+        const CoordInt y = p.y + dy;
 
         Cell *const currCell = safeCellAt(x, y);
         if (!currCell) {
-            std::cout << "inv cell at " << x << ", " << y << std::endl;
             continue;
         }
         CellMetadata *const currMeta = metaAt(x, y);
         if (!currMeta->blocked && block) {
-            evacuateCellToNeighbours(x, y, currCell);
+            toDistribute += currCell->airPressure;
+            currCell->airPressure = 0;
+
+            for (uintptr_t j = 0; j < 4; j++) {
+                const uintptr_t indexCell = (p.y + offs[j][1] + 1) * indexRowLength + p.x + 1 + offs[j][0];
+
+                if (borderIndicies[indexCell] != -1) {
+                    // inspected earlier, no need to check again
+                    continue;
+                }
+
+                const intptr_t nx = x + offs[j][0];
+                const intptr_t ny = y + offs[j][1];
+
+                Cell *const neighCell = safeCellAt(nx, ny);
+                if (!neighCell) {
+                    borderIndicies[indexCell] = -2;
+                    continue;
+                }
+                CellMetadata *const neighMeta = metaAt(nx, ny);
+                if (neighMeta->blocked) {
+                    borderIndicies[indexCell] = -2;
+                    continue;
+                }
+
+                borderIndicies[indexCell] = borderCellWriteIndex;
+                borderCells[borderCellWriteIndex] = neighCell;
+                borderCellWriteIndex++;
+                borderCellCount++;
+            }
+
+            const uintptr_t indexCell = (p.y + 1) * indexRowLength + (p.x + 1);
+            if (borderIndicies[indexCell] >= 0) {
+                borderCellCount--;
+                borderCells[borderIndicies[indexCell]] = 0;
+            }
+            borderIndicies[indexCell] = -2;
         } else if (!block && currMeta->blocked) {
-            initCell(_cells, x, y, 0., 0.);
-            initCell(_backbuffer, x, y, 0., 0.);
+            initCell(_cells, x, y, 0, 0);
+            initCell(_backbuffer, x, y, 0, 0);
         }
+
         currMeta->blocked = block;
-        std::cout << currMeta->blocked << " " << block << std::endl;
+    }
+
+    if (toDistribute == 0 || !block)
+        return;
+
+    if (borderCellCount == 0) {
+        fprintf(stderr, "[PHY!] [NC] no cells to move stuff to\n");
+        return;
+    }
+
+    const double perCell = toDistribute / borderCellCount;
+
+    unsigned int j = 0;
+    for (Cell **neighCell = &borderCells[0]; j < borderCellCount; neighCell++) {
+        if (!(*neighCell)) {
+            continue;
+        }
+        (*neighCell)->airPressure += perCell;
+        j++;
     }
 }
 
@@ -225,6 +277,8 @@ void Automaton::evacuateCellToNeighbours(const CoordInt x, const CoordInt y,
     if (count == 0) {
         // this is not good, we could not distribute the pressure anywhere. this
         // leads to non-conservative systems, as we have to drop it.
+        printf("[NC] could not move stuff out of blocked area");
+        return;
     }
     if (count < 4) {
         // iterate over the good cells again to distribute the remaining
@@ -239,6 +293,7 @@ void Automaton::evacuateCellToNeighbours(const CoordInt x, const CoordInt y,
             executeFlowEx(cell, neigh, d, direction, perCell);
         }
     }
+    assert(abs(cell->airPressure) < 1e-16);
 }
 
 inline void Automaton::executeFlowEx(Cell *cellA, Cell *cellB, const int reverse,
@@ -247,7 +302,7 @@ inline void Automaton::executeFlowEx(Cell *cellA, Cell *cellB, const int reverse
     if (reverse < 0) {
         AutomatonThread::executeFlow(cellA, cellB, direction, move, 0);
     } else {
-        AutomatonThread::executeFlow(cellB, cellA, direction, move, 0);
+        AutomatonThread::executeFlow(cellB, cellA, direction, -move, 0);
     }
 }
 
@@ -255,11 +310,13 @@ void Automaton::getCellStampAt(const CoordInt left, const CoordInt top,
     CellStamp *stamp)
 {
     Cell **currCell = (Cell**)stamp;
-    for (unsigned int i = 0; i < cellStampLength; i++) {
-        const CoordInt x = left + stampCoordinateOffsets[i][0];
-        const CoordInt y = top + stampCoordinateOffsets[i][1];
-        *currCell = (x >= 0 && x < _width && y >= 0 && y < _height) ? cellAt(x, y) : 0;
-        currCell++;
+    for (CoordInt y = 0; y < subdivisionCount; y++) {
+        Cell *srcCell = &_cells[top + y];
+        for (CoordInt x = 0; x < subdivisionCount; x++) {
+            *currCell = srcCell;
+            currCell++;
+            srcCell++;
+        }
     }
 }
 
@@ -392,7 +449,8 @@ void Automaton::printFlow()
     }
 }
 
-void Automaton::toGLTexture(const double min, const double max)
+void Automaton::toGLTexture(const double min, const double max,
+    bool threadRegions)
 {
     if (!_rgbaBuffer) {
         _rgbaBuffer = (uint32_t*)malloc(_width*_height*4);
@@ -401,14 +459,18 @@ void Automaton::toGLTexture(const double min, const double max)
     uint32_t *target = _rgbaBuffer;
     Cell *source = _backbuffer;
     CellMetadata *metaSource = _metadata;
-    for (unsigned int i = 0; i < _width*_height; i++) {
+    for (CoordInt i = 0; i < _width*_height; i++) {
         if (metaSource->blocked) {
             *target = 0x0000FF;
         } else {
             const unsigned char r = (unsigned char)(clamp((source->airPressure - min) / (max - min), 0.0, 1.0) * 255.0);
-            const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _threadCount) / _threadCount * 255.0);
-            //const unsigned char b = (unsigned char)(clamp((source->flow[1] - min) / (max - min), -1.0, 1.0) * 127.0 + 127.0);
-            *target = r | (r << 8) | (g << 16);
+            if (threadRegions) {
+                const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _threadCount) / _threadCount * 255.0);
+                //const unsigned char b = (unsigned char)(clamp((source->flow[1] - min) / (max - min), -1.0, 1.0) * 127.0 + 127.0);
+                *target = r | (r << 8) | (g << 16);
+            } else {
+                *target = r | (r << 8) | (r << 16);
+            }
         }
         target++;
         source++;
