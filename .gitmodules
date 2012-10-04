@@ -1,4 +1,4 @@
 [submodule "PyEngine"]
 	path = PyEngine
-	url = ssh://git.sotecware.net/PythonicEngine
+	url = https://github.com/zombofant/pyengine
 	branch = devel
