@@ -5,9 +5,8 @@
 #include <CEngine/IO/Thread.hpp>
 
 #include "Types.hpp"
-
-const CoordInt subdivisionCount = 4;
-const CoordInt cellStampLength = subdivisionCount*subdivisionCount;
+#include "PhysicsConfig.hpp"
+#include "Stamp.hpp"
 
 class GameObject;
 

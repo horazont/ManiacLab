@@ -3,6 +3,10 @@
 
 #include <CEngine/Misc/Int.hpp>
 
-typedef unsigned int CoordInt;
+typedef int CoordInt;
+
+struct CoordPair {
+    CoordInt x, y;
+};
 
 #endif
