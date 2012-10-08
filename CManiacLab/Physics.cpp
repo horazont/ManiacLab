@@ -585,12 +585,26 @@ AutomatonThread::AutomatonThread(Automaton *dataClass, CoordInt sliceY0,
 
 }
 
-void AutomatonThread::activateCell(Cell *front, Cell *back)
+inline void AutomatonThread::activateCell(Cell *front, Cell *back)
 {
-    front->airPressure = back->airPressure;
-    front->flow[0] = back->flow[0];
-    front->flow[1] = back->flow[1];
-    front->heatEnergy = back->heatEnergy;
+    if (back->airPressure <= 1e-100 && back->airPressure != 0) {
+        front->airPressure = 0;
+        front->flow[0] = 0;
+        front->flow[1] = 0;
+        front->heatEnergy = 0;
+    } else {
+        front->airPressure = back->airPressure;
+        for (int i = 0; i < 2; i++) {
+            const double flow = back->flow[i];
+            if (!isinf(flow) && abs(flow) < 1e10) {
+                front->flow[i] = flow;
+            } else {
+                front->flow[i] = 0;
+                back->flow[i] = 0;
+            }
+        }
+        front->heatEnergy = back->heatEnergy;
+    }
     assert(!isnan(back->airPressure));
     assert(!isnan(back->heatEnergy));
 }
