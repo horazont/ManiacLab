@@ -103,3 +103,9 @@ class ManiacLab(Engine.Application.Application):
             self.show_thread_regions = not self.show_thread_regions
         elif symbol == 111:     # o
             self.level.debug_testObject()
+
+    def handleMouseDown(self, x, y, button, modifiers):
+        x = x / 800 * 50
+        y = y / 800 * 50
+        print("{0} {1}".format(x, y))
+        self.level.debug_output(x, y)

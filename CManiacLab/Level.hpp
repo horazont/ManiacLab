@@ -65,6 +65,7 @@ public:
     void debug_testHeatStamp(const double temperature);
     void debug_testObject();
     void debug_testStamp(const double x, const double y, bool block);
+    void debug_output(const double x, const double y);
     void physicsToGLTexture(bool threadRegions);
     void update();
 };

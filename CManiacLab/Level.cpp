@@ -182,6 +182,42 @@ void Level::debug_testObject()
     }
 }
 
+void Level::debug_output(const double x, const double y)
+{
+    static const CoordInt offs[5][2] = {
+        {0, -1}, {-1, 0}, {0, 0}, {1, 0}, {0, 1}
+    };
+
+    _physics.waitFor();
+
+    const CoordPair phys = getPhysicsCoords(x, y);
+    std::cout << "DEBUG: center at x = " << phys.x << "; y = " << phys.y << std::endl;
+    for (int i = 0; i < 5; i++) {
+        std::cout << "offs: " << offs[i][0] << ", " << offs[i][1] << std::endl;
+
+        const CoordInt cx = phys.x + offs[i][0];
+        const CoordInt cy = phys.y + offs[i][1];
+
+        Cell *cell = _physics.safeCellAt(cx, cy);
+        if (!cell) {
+            std::cout << "  out of range" << std::endl;
+            continue;
+        }
+        CellMetadata *meta = _physics.metaAt(cx, cy);
+
+        const double tc = (meta->blocked ? meta->obj->tempCoefficient : airTempCoeffPerPressure * cell->airPressure);
+
+        if (meta->blocked) {
+            std::cout << "  blocked with " << meta->obj << std::endl;
+        }
+        std::cout << "  p     = " << cell->airPressure << std::endl;
+        std::cout << "  U     = " << cell->heatEnergy << std::endl;
+        std::cout << "  T     = " << cell->heatEnergy / tc << std::endl;
+        std::cout << "  f[-x] = " << cell->flow[0] << std::endl;
+        std::cout << "  f[-y] = " << cell->flow[1] << std::endl;
+    }
+}
+
 void Level::physicsToGLTexture(bool threadRegions)
 {
     _physics.toGLTexture(0.0, 2.0, threadRegions);
