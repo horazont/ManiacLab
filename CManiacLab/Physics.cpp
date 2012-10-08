@@ -529,6 +529,8 @@ void Automaton::toGLTexture(const double min, const double max,
         _rgbaBuffer = (uint32_t*)malloc(_width*_height*4);
     }
 
+    const CoordInt half = _width / 2;
+
     uint32_t *target = _rgbaBuffer;
     Cell *source = _backbuffer;
     CellMetadata *metaSource = _metadata;
@@ -536,9 +538,11 @@ void Automaton::toGLTexture(const double min, const double max,
         if (metaSource->blocked) {
             *target = 0x0000FF;
         } else {
-            //const unsigned char r = (unsigned char)(clamp((source->airPressure - min) / (max - min), 0.0, 1.0) * 255.0);
+            const bool right = (i % _height) >= half;
+            const unsigned char pressColor = (unsigned char)(clamp((source->airPressure - min) / (max - min), 0.0, 1.0) * 255.0);
             const double temperature = (metaSource->blocked ? source->heatEnergy / metaSource->obj->tempCoefficient : source->heatEnergy / (source->airPressure * airTempCoeffPerPressure));
-            const unsigned char b = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
+            const unsigned char tempColor = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
+            const unsigned char b = (right ? tempColor : pressColor);
             const unsigned char r = b;
             if (threadRegions) {
                 const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _threadCount) / _threadCount * 255.0);

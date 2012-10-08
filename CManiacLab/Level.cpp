@@ -161,7 +161,7 @@ void Level::debug_testHeatStamp(const double temperature)
         false, true, true, false
     };
     static const Stamp stamp(stampMap);
-    CoordPair coord = getPhysicsCoords(35, 35);
+    CoordPair coord = getPhysicsCoords(49.5, 35);
     _physics.waitFor();
     _physics.applyTemperatureStamp(coord.x, coord.y, stamp, temperature);
 }
