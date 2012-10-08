@@ -5,3 +5,5 @@ CMakeFiles
 CMakeCache.txt
 log.xml
 *.pyc
+.local/
+*.geany
