@@ -68,6 +68,10 @@ public:
         *borderLen = _borderLen;
         return _border;
     }
+public:
+    inline bool nonEmpty() const {
+        return _mapCoordsLen != 0;
+    }
 };
 
 #endif

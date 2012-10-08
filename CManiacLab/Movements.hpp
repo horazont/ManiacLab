@@ -55,6 +55,8 @@ private:
     CoordInt _startX, _startY;
 public:
     virtual bool update(PyEngine::TimeFloat interval);
+public:
+    static const double duration;
 };
 
 class MovementRoll: public Movement {

@@ -28,6 +28,7 @@ authors named in the AUTHORS file.
 #include <cassert>
 #include <unistd.h>
 #include <thread>
+#include <cfenv>
 
 #include <boost/python.hpp>
 

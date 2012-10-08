@@ -30,6 +30,27 @@ authors named in the AUTHORS file.
 typedef int CoordInt;
 
 struct CoordPair {
+    CoordPair(): x(-1), y(-1) {};
+    CoordPair(const CoordInt x, const CoordInt y): x(x), y(y) {};
+    CoordPair(const CoordPair &ref): x(ref.x), y(ref.y) {};
+
+    CoordPair& operator =(const CoordPair &ref)
+    {
+        x = ref.x;
+        y = ref.y;
+        return *this;
+    }
+
+    inline bool operator != (const CoordPair &oth)
+    {
+        return (x != oth.x) || (y != oth.y);
+    }
+
+    inline bool operator == (const CoordPair &oth)
+    {
+        return (x == oth.x) && (y == oth.y);
+    }
+
     CoordInt x, y;
 };
 

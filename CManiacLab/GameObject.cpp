@@ -27,10 +27,20 @@ authors named in the AUTHORS file.
 #include "Errors.hpp"
 #include "Physics.hpp"
 
-void GameObject::setMovement(Movement *movement)
+Template::Template():
+    stamp(0),
+    isGravityAffected(false),
+    isRollable(false),
+    tempCoefficient(1.0),
+    radius(0.5)
 {
-    if (_movement) {
-        throw ProgrammingError("Attempt to replace movement of a moving game-object.");
-    }
-    _movement = movement;
+
+}
+
+GameObject::GameObject():
+    Template::Template(),
+    x(0), y(0), phi(0),
+    movement(0)
+{
+
 }

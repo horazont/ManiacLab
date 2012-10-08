@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 set(CMAKE_CXX_FLAGS "-g -Wall -std=c++0x")
 add_subdirectory(PyEngine)
-set(CMAKE_CXX_FLAGS "-g -Wall -std=c++0x -pedantic")
+set(CMAKE_CXX_FLAGS "-g -Wall -std=c++0x -pedantic -O2")
 
 get_property(PYENGINE_DEPENDENCIES DIRECTORY PyEngine PROPERTY PYENGINE_DEPENDENCIES)
 get_property(PYENGINE_LINK_TARGETS DIRECTORY PyEngine PROPERTY PYENGINE_LINK_TARGETS)
@@ -14,6 +14,7 @@ set(MANIACLAB_SOURCES
     "CManiacLab/Stamp.cpp"
     "CManiacLab/Physics.cpp"
     "CManiacLab/Level.cpp"
+    "CManiacLab/TestObject.cpp"
     "CManiacLab/PythonInterface.cpp"
 )
 

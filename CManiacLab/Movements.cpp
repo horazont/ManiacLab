@@ -28,6 +28,8 @@ authors named in the AUTHORS file.
 
 #include "Errors.hpp"
 
+using namespace PyEngine;
+
 /* Movement */
 
 Movement::Movement(GameObject *obj):
@@ -44,7 +46,7 @@ Movement::~Movement()
 
 void Movement::deleteSelf()
 {
-    _obj->_movement = 0;
+    _obj->movement = 0;
     delete this;
 }
 
@@ -57,8 +59,8 @@ MovementStraight::MovementStraight(LevelCell *from, LevelCell *to,
     _to(to),
     _offX(offsetX),
     _offY(offsetY),
-    _startX(_obj->_x),
-    _startY(_obj->_y)
+    _startX(_obj->x),
+    _startY(_obj->y)
 {
     if (abs(offsetX) + abs(offsetY) == 0) {
         throw ProgrammingError("Cannot move zero fields.");
@@ -69,8 +71,8 @@ MovementStraight::MovementStraight(LevelCell *from, LevelCell *to,
     // yes, this comparision is evil, as _obj->_x is a float actually.
     // However, in this case _x should be close enough to a whole number, if
     // not, something went utterly wrong.
-    assert(_obj->_x == _startX);
-    assert(_obj->_y == _startY);
+    assert(_obj->x == _startX);
+    assert(_obj->y == _startY);
     assert(from->here);
     assert(!from->reservedBy);
     assert(!to->here);
@@ -86,19 +88,21 @@ MovementStraight::~MovementStraight()
     _from->reservedBy = 0;
 }
 
-bool MovementStraight::update(PyEngine::TimeFloat interval)
+bool MovementStraight::update(TimeFloat interval)
 {
-    _time += interval;
+    _time += interval / duration;
     if (_time >= 1.0) {
-        _obj->_x = _startX + _offX;
-        _obj->_y = _startY + _offY;
+        _time = 1.0;
+    }
+
+    _obj->x = _startX + _offX * _time;
+    _obj->y = _startY + _offY * _time;
+
+    if (_time >= 1.0) {
         deleteSelf();
         return true;
-    } else {
-        _obj->_x = _startX + _offX * _time;
-        _obj->_y = _startX + _offY * _time;
-        return false;
     }
+    return false;
 }
 
 /* MovementRoll */
@@ -111,8 +115,8 @@ MovementRoll::MovementRoll(LevelCell *from, LevelCell *via, LevelCell *to,
     _to(to),
     _offX(offsetX),
     _offY(offsetY),
-    _startX(_obj->_x),
-    _startY(_obj->_y)
+    _startX(_obj->x),
+    _startY(_obj->y)
 {
 
 }
@@ -123,9 +127,11 @@ MovementRoll::~MovementRoll()
     _to->reservedBy = 0;
 }
 
-bool MovementRoll::update(PyEngine::TimeFloat interval)
+bool MovementRoll::update(TimeFloat interval)
 {
     assert(false);
     deleteSelf();
     return true;
 }
+
+const double MovementStraight::duration = 0.5;

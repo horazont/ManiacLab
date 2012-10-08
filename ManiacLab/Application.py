@@ -101,7 +101,5 @@ class ManiacLab(Engine.Application.Application):
             self.running = True
         elif symbol == key.F1:
             self.show_thread_regions = not self.show_thread_regions
-        elif symbol == 98:      # b
-            self.level.debug_testBlockStamp()
-        elif symbol == 116:     # t
-            self.level.debug_testUnblockStamp()
+        elif symbol == 111:     # o
+            self.level.debug_testObject()

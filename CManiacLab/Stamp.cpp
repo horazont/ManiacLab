@@ -84,7 +84,6 @@ void Stamp::generateMapCoords()
             }
             mapPtr++;
         }
-        std::cout << std::endl;
     }
     _mapCoords = (CoordPair*)realloc(_mapCoords, sizeof(CoordPair) * count);
 

@@ -25,8 +25,11 @@ authors named in the AUTHORS file.
 #include "Level.hpp"
 
 #include <cmath>
+#include <cstdlib>
 
 #include "CEngine/Misc/Exception.hpp"
+
+#include "TestObject.hpp"
 
 /* Level */
 
@@ -75,17 +78,18 @@ bool Level::handleCAInteraction(const CoordInt x, const CoordInt y,
 bool Level::handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell,
     GameObject *obj)
 {
-    if (y == _height) {
+    if (y == _height - 1) {
         // TODO: allow objects to leave the gamescope
         return true;
     }
+    assert(!(obj->movement));
 
     LevelCell *below = &_cells[x+(y+1)*_width];
     if (!below->here && !below->reservedBy) {
-        obj->setMovement(new MovementStraight(cell, below, 0, 1));
+        obj->movement = new MovementStraight(cell, below, 0, 1);
     } else if (below->here
-        && below->here->getIsRollable()
-        && obj->getIsRollable())
+        && below->here->isRollable
+        && obj->isRollable)
     {
         LevelCell *left = 0, *leftBelow = 0;
         LevelCell *right = 0, *rightBelow = 0;
@@ -110,7 +114,7 @@ bool Level::handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell,
         }
 
         if (selected) {
-            obj->setMovement(new MovementRoll(cell, selected, selectedBelow, xOffset, 1));
+            obj->movement = new MovementRoll(cell, selected, selectedBelow, xOffset, 1);
         }
     }
     return true;
@@ -125,23 +129,25 @@ void Level::initCells()
     }
 }
 
-void Level::getPhysicsCellsAt(const double x, const double y, CellStamp *stamp,
-    CoordInt *px, CoordInt *py)
+CoordPair Level::getPhysicsCoords(const double x, const double y)
 {
-    *px = (CoordInt)(x * subdivisionCount) - subdivisionCount / 2;
-    *py = (CoordInt)(y * subdivisionCount) - subdivisionCount / 2;
-    _physics.getCellStampAt(*px, *py, stamp);
+    CoordPair result;
+    result.x = (CoordInt)(x * subdivisionCount);// - subdivisionCount / 2;
+    result.y = (CoordInt)(y * subdivisionCount);// - subdivisionCount / 2;
+    return result;
 }
 
-void Level::setStamp(const double x, const double y, const Stamp &stamp,
-    bool block)
+void Level::cleanupCell(LevelCell *cell)
 {
-    const CoordInt px = (CoordInt)(x * subdivisionCount) - subdivisionCount / 2;
-    const CoordInt py = (CoordInt)(y * subdivisionCount) - subdivisionCount / 2;
-    _physics.applyBlockStamp(px, py, stamp, block);
+    GameObject *const obj = cell->here;
+    if (obj)
+    {
+        _physics.clearCells(obj->phy.x, obj->phy.y, obj->stamp);
+        delete obj;
+    }
 }
 
-void Level::debug_testStamp(const double x, const double y, bool block)
+void Level::debug_testHeatStamp()
 {
     static const BoolCellStamp stampMap = {
         false, true, true, false,
@@ -150,22 +156,25 @@ void Level::debug_testStamp(const double x, const double y, bool block)
         false, true, true, false
     };
     static const Stamp stamp(stampMap);
+    CoordPair coord = getPhysicsCoords(35, 35);
     _physics.waitFor();
-    setStamp(x, y, stamp, block);
+    _physics.applyTemperatureStamp(coord.x, coord.y, stamp, 2.0);
 }
 
-void Level::debug_testBlockStamp()
+void Level::debug_testObject()
 {
-    static const double x = 23.0;
-    static const double y = 42.0;
-    debug_testStamp(x, y, true);
-}
-
-void Level::debug_testUnblockStamp()
-{
-    static const double x = 23.5;
-    static const double y = 42.0;
-    debug_testStamp(x, y, false);
+    const CoordInt x = ((double)rand() / RAND_MAX) * (_width - 1);
+    const CoordInt y = ((double)rand() / RAND_MAX) * (_height - 1);
+    LevelCell *cell = &_cells[y*_width + x];
+    if (!cell->here && !cell->reservedBy) {
+        GameObject *const obj = new TestObject();
+        cell->here = obj;
+        obj->x = x;
+        obj->y = y;
+        obj->phy = getPhysicsCoords(x, y);
+        _physics.waitFor();
+        _physics.placeObject(obj->phy.x, obj->phy.y, obj, 15);
+    }
 }
 
 void Level::physicsToGLTexture(bool threadRegions)
@@ -177,9 +186,9 @@ void Level::update()
 {
     _physics.waitFor();
     LevelCell *cell = &_cells[-1];
-    for (CoordInt x = 0; x < _width; x++)
+    for (CoordInt y = 0; y < _height; y++)
     {
-        for (CoordInt y = 0; y < _height; y++)
+        for (CoordInt x = 0; x < _width; x++)
         {
             cell++;
             GameObject *obj = cell->here;
@@ -187,27 +196,40 @@ void Level::update()
                 continue;
 
             if (!handleCAInteraction(x, y, cell, obj)) {
-                // object destroyed
+                cleanupCell(cell);
                 continue;
             }
 
-            Movement *movement = obj->getCurrentMovement();
+            Movement *movement = obj->movement;
             if (movement) {
                 if (movement->update(_timeSlice)) {
                     movement = 0;
                 }
+                CoordPair newCoords = getPhysicsCoords(obj->x, obj->y);
+                if (newCoords != obj->phy) {
+                    if (obj->stamp && obj->stamp->nonEmpty()) {
+                        /*_physics.clearCells(obj->phy.x, obj->phy.y, obj->stamp);
+                        _physics.placeObject(newCoords.x, newCoords.y, obj);*/
+                        _physics.moveStamp(
+                            obj->phy.x, obj->phy.y,
+                            newCoords.x, newCoords.y,
+                            obj->stamp
+                        );
+                    }
+                    obj->phy = newCoords;
+                }
             }
 
-            if (obj->getIsGravityAffected() && !movement) {
+            if (obj->isGravityAffected && !movement) {
                 if (!handleGravity(x, y, cell, obj)) {
-                    // object destroyed.
+                    cleanupCell(cell);
                     continue;
                 }
             }
         }
     }
 
-    static const double origins[4][2] = {
+    /*static const double origins[4][2] = {
         {50.0, 50.0},
         {50.0, 50.0},
         {50.0, 50.0},
@@ -241,7 +263,7 @@ void Level::update()
         const double x = cx + cos(_time * freq + phase) * r;
 
         debug_testStamp(x, y, true);
-    }
+    }*/
 
     /*const double y0 = 10;
     for (int i = 0; i < 80; i++) {
@@ -259,6 +281,8 @@ void Level::update()
 
         debug_testStamp(x, y, true);
     }*/
+
+    debug_testHeatStamp();
 
     _physics.resume();
 }

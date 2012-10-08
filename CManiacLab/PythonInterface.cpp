@@ -36,8 +36,7 @@ BOOST_PYTHON_MODULE(_cmaniaclab)
     class_<Level, LevelHandle>("Level", init<CoordInt, CoordInt, bool>())
         .def("update", &Level::update)
         .def("physicsToGLTexture", &Level::physicsToGLTexture)
-        .def("debug_testBlockStamp", &Level::debug_testBlockStamp)
-        .def("debug_testUnblockStamp", &Level::debug_testUnblockStamp);
+        .def("debug_testObject", &Level::debug_testObject);
 }
 
 void addManiacLabToInittab()

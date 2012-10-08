@@ -36,7 +36,7 @@ class GameObject;
 
 struct Cell {
     double airPressure;
-    double temperature;
+    double heatEnergy;
 
     // flow is in relation to upper left neighbour!
     double flow[2];
@@ -45,10 +45,16 @@ struct Cell {
 
 struct CellMetadata {
     bool blocked;
-    GameObject *obj;
+    const GameObject *obj;
 };
 
 typedef Cell CellStamp[cellStampLength];
+
+struct CellInfo {
+    CoordPair offs;
+    Cell phys;
+    CellMetadata meta;
+};
 
 class AutomatonThread;
 
@@ -76,7 +82,6 @@ per second you update the automaton.
 *initialPressure* and *initialTemperature* just do what they sound like, they're
 used as initial values for the cells in the automaton.
 \endrst */
-
 class Automaton {
 public:
     Automaton(CoordInt width, CoordInt height,
@@ -114,12 +119,8 @@ private:
      */
     void initThreads();
 public:
-    void applyBlockStamp(const CoordInt x, const CoordInt y,
-        const Stamp &stamp, bool block);
-    void evacuateCellToNeighbours(const CoordInt x, const CoordInt y,
-        Cell *cell);
-    static void executeFlowEx(Cell *cellA, Cell *cellB, const int reverse,
-        const CoordInt direction, const double move);
+    void applyTemperatureStamp(const CoordInt x, const CoordInt y,
+        const Stamp &stamp, const double temperature);
 
     Cell inline *cellAt(CoordInt x, CoordInt y)
     {
@@ -131,8 +132,22 @@ public:
         return (x >= 0 && x < _width && y >= 0 && y < _height) ? cellAt(x, y) : 0;
     };
 
+    void clearCells(const CoordInt x, const CoordInt y,
+        const Stamp *stamp);
+
     void getCellStampAt(const CoordInt left, const CoordInt top, CellStamp *stamp);
     CellMetadata inline *metaAt(CoordInt x, CoordInt y) { return &_metadata[x+_width*y]; };
+
+    void moveStamp(
+        const CoordInt oldx, const CoordInt oldy,
+        const CoordInt newx, const CoordInt newy,
+        const Stamp *stamp);
+
+    void placeObject(const CoordInt x, const CoordInt y,
+        const GameObject *obj, const double initialTemperature);
+
+    void placeStamp(const CoordInt atx, const CoordInt aty,
+        const CellInfo *cells, const uintptr_t cellsLen);
 
     /**
      * Tell the automaton to resume it's work. The effect of this function if
@@ -189,14 +204,15 @@ protected:
     template<class CType>
     void getCellAndNeighbours(CType *buffer, CType **cell,
         CType *(*neighbours)[2], CoordInt x, CoordInt y);
-    void flow(const Cell *b_cellA, Cell *f_cellA, const Cell *b_cellB,
+    double flow(const Cell *b_cellA, Cell *f_cellA, const Cell *b_cellB,
         Cell *f_cellB, CoordInt direction);
+    void temperatureFlow(const CellMetadata *m_cellA, const Cell *b_cellA, Cell *f_CellA,
+                         const CellMetadata *m_cellB, const Cell *b_cellB, Cell *f_cellB,
+                         CoordInt direction);
 
     void updateCell(CoordInt x, CoordInt y, bool activate = true);
     void update();
 public:
-    static void executeFlow(Cell *cellA, Cell *cellB, CoordInt direction,
-        const double flow, const double newFlow);
     virtual void *execute();
 };
 

@@ -59,14 +59,13 @@ private:
     bool handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell, GameObject *obj);
     void initCells();
 protected:
-    void getPhysicsCellsAt(const double x, const double y, CellStamp *stamp,
-        CoordInt *px, CoordInt *py);
+    CoordPair getPhysicsCoords(const double x, const double y);
 public:
+    void cleanupCell(LevelCell *cell);
+    void debug_testHeatStamp();
+    void debug_testObject();
     void debug_testStamp(const double x, const double y, bool block);
-    void debug_testBlockStamp();
-    void debug_testUnblockStamp();
     void physicsToGLTexture(bool threadRegions);
-    void setStamp(const double x, const double y, const Stamp &stamp, bool block);
     void update();
 };
 

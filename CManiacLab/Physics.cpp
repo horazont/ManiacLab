@@ -110,7 +110,7 @@ void Automaton::initCell(Cell *buffer, CoordInt x, CoordInt y,
 {
     Cell *cell = &buffer[x+_width*y];
     cell->airPressure = initialPressure;
-    cell->temperature = initialTemperature;
+    cell->heatEnergy = initialTemperature * (airTempCoeffPerPressure * cell->airPressure);
     cell->flow[0] = 0;
     cell->flow[1] = 0;
 }
@@ -160,29 +160,13 @@ void Automaton::initThreads()
     );
 }
 
-void Automaton::applyBlockStamp(const CoordInt dx, const CoordInt dy,
-    const Stamp &stamp, bool block)
+void Automaton::clearCells(const CoordInt dx, const CoordInt dy,
+    const Stamp *stamp)
 {
     assert(!_resumed);
 
-    const intptr_t indexRowLength = subdivisionCount+2;
-    const intptr_t indexLength = indexRowLength * indexRowLength;
-    static intptr_t *borderIndicies = (intptr_t*)malloc(indexLength * sizeof(intptr_t));
-    static Cell **borderCells = (Cell**)malloc(indexLength * sizeof(Cell*));
-    static const intptr_t offs[4][2] = {
-        {0, -1}, {-1, 0}, {1, 0}, {0, 1}
-    };
-
     uintptr_t stampCellsLen = 0;
-    const CoordPair *stampCells = stamp.getMapCoords(&stampCellsLen);
-
-    memset(borderIndicies, -1, indexLength * sizeof(intptr_t));
-    memset(borderCells, 0, indexLength * sizeof(Cell*));
-
-    // collect surplus matter here
-    double toDistribute = 0.;
-    uintptr_t borderCellWriteIndex = 0;
-    uintptr_t borderCellCount = 0;
+    const CoordPair *stampCells = stamp->getMapCoords(&stampCellsLen);
 
     for (uintptr_t i = 0; i < stampCellsLen; i++) {
         const CoordPair p = stampCells[i];
@@ -194,139 +178,36 @@ void Automaton::applyBlockStamp(const CoordInt dx, const CoordInt dy,
             continue;
         }
         CellMetadata *const currMeta = metaAt(x, y);
-        if (!currMeta->blocked && block) {
-            toDistribute += currCell->airPressure;
-            currCell->airPressure = 0;
-
-            for (uintptr_t j = 0; j < 4; j++) {
-                const uintptr_t indexCell = (p.y + offs[j][1] + 1) * indexRowLength + p.x + 1 + offs[j][0];
-
-                if (borderIndicies[indexCell] != -1) {
-                    // inspected earlier, no need to check again
-                    continue;
-                }
-
-                const intptr_t nx = x + offs[j][0];
-                const intptr_t ny = y + offs[j][1];
-
-                Cell *const neighCell = safeCellAt(nx, ny);
-                if (!neighCell) {
-                    borderIndicies[indexCell] = -2;
-                    continue;
-                }
-                CellMetadata *const neighMeta = metaAt(nx, ny);
-                if (neighMeta->blocked) {
-                    borderIndicies[indexCell] = -2;
-                    continue;
-                }
-
-                borderIndicies[indexCell] = borderCellWriteIndex;
-                borderCells[borderCellWriteIndex] = neighCell;
-                borderCellWriteIndex++;
-                borderCellCount++;
-            }
-
-            const uintptr_t indexCell = (p.y + 1) * indexRowLength + (p.x + 1);
-            if (borderIndicies[indexCell] >= 0) {
-                borderCellCount--;
-                borderCells[borderIndicies[indexCell]] = 0;
-            }
-            borderIndicies[indexCell] = -2;
-        } else if (!block && currMeta->blocked) {
-            initCell(_cells, x, y, 0, 0);
-            initCell(_backbuffer, x, y, 0, 0);
-        }
-
-        currMeta->blocked = block;
-    }
-
-    if (toDistribute == 0 || !block)
-        return;
-
-    if (borderCellCount == 0) {
-        fprintf(stderr, "[PHY!] [NC] no cells to move stuff to\n");
-        return;
-    }
-
-    const double perCell = toDistribute / borderCellCount;
-
-    unsigned int j = 0;
-    for (Cell **neighCell = &borderCells[0]; j < borderCellCount; neighCell++) {
-        if (!(*neighCell)) {
-            continue;
-        }
-        (*neighCell)->airPressure += perCell;
-        j++;
+        initCell(_cells, x, y, 0, 0);
+        initCell(_backbuffer, x, y, 0, 0);
+        currMeta->blocked = false;
     }
 }
 
-void Automaton::evacuateCellToNeighbours(const CoordInt x, const CoordInt y,
-    Cell *cell)
+void Automaton::applyTemperatureStamp(const CoordInt x, const CoordInt y,
+    const Stamp &stamp, const double temperature)
 {
-    static const int offsets[4][3] = {
-        {0, -1, 0}, {-1, 0, 1}, {1, 0, 1}, {0, 1, 0}
-    };
-    int count = 0;
-    const double toDistribute = cell->airPressure;
-    if (toDistribute == 0)
-        // nothing to do!
-        return;
+    uintptr_t stampCellsLen = 0;
+    const CoordPair *cellCoord = stamp.getMapCoords(&stampCellsLen);
+    cellCoord--;
 
-    Cell* goodCells[4] = {0, 0, 0, 0};
-    int directions[4][2] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}};
+    for (uintptr_t i = 0; i < stampCellsLen; i++) {
+        cellCoord++;
 
-    for (int i = 0; i < 4; i++) {
-        const int d = offsets[i][0] + offsets[i][1];
-        const CoordInt nx = x + offsets[i][0];
-        const CoordInt ny = y + offsets[i][1];
-        const CoordInt direction = offsets[i][2];
+        const CoordInt cx = x + cellCoord->x;
+        const CoordInt cy = y + cellCoord->y;
 
-        Cell *const neigh = safeCellAt(nx, ny);
-        if (!neigh)
+        Cell *cell = safeCellAt(cx, cy);
+        if (!cell) {
             continue;
-        CellMetadata *const neighMeta = metaAt(nx, ny);
-        if (neighMeta->blocked)
-            continue;
-
-        goodCells[count] = neigh;
-        directions[count][0] = d;
-        directions[count][1] = direction;
-
-        executeFlowEx(cell, neigh, d, direction, toDistribute / 4);
-
-        count++;
-    }
-
-    assert(count <= 4 && count >= 0);
-    if (count == 0) {
-        // this is not good, we could not distribute the pressure anywhere. this
-        // leads to non-conservative systems, as we have to drop it.
-        printf("[NC] could not move stuff out of blocked area");
-        return;
-    }
-    if (count < 4) {
-        // iterate over the good cells again to distribute the remaining
-        // pressure
-        const double perCell = (toDistribute - toDistribute * count / 4.) / count;
-
-        for (int i = 0; i < count; i++) {
-            Cell *const neigh = goodCells[i];
-            const int d = directions[i][0];
-            const CoordInt direction = directions[i][1];
-
-            executeFlowEx(cell, neigh, d, direction, perCell);
         }
-    }
-    assert(abs(cell->airPressure) < 1e-16);
-}
 
-inline void Automaton::executeFlowEx(Cell *cellA, Cell *cellB, const int reverse,
-    const CoordInt direction, const double move)
-{
-    if (reverse < 0) {
-        AutomatonThread::executeFlow(cellA, cellB, direction, move, 0);
-    } else {
-        AutomatonThread::executeFlow(cellB, cellA, direction, -move, 0);
+        CellMetadata *meta = metaAt(cx, cy);
+        if (meta->blocked) {
+            cell->heatEnergy = temperature * meta->obj->tempCoefficient;
+        } else {
+            cell->heatEnergy = temperature * (airTempCoeffPerPressure * cell->airPressure);
+        }
     }
 }
 
@@ -341,6 +222,175 @@ void Automaton::getCellStampAt(const CoordInt left, const CoordInt top,
             currCell++;
             srcCell++;
         }
+    }
+}
+
+void Automaton::moveStamp(const CoordInt oldx, const CoordInt oldy,
+    const CoordInt newx, const CoordInt newy,
+    const Stamp *stamp)
+{
+    assert(!_resumed);
+
+    static CellInfo cells[cellStampLength];
+
+    uintptr_t writeIndex = 0;
+
+    uintptr_t stampCellsLen = 0;
+    const CoordPair *stampCells = stamp->getMapCoords(&stampCellsLen);
+    stampCells--;
+
+    for (uintptr_t i = 0; i < stampCellsLen; i++) {
+        assert(writeIndex < cellStampLength);
+        stampCells++;
+
+        const CoordInt x = oldx + stampCells->x;
+        const CoordInt y = oldy + stampCells->y;
+
+        Cell *cell = safeCellAt(x, y);
+        if (!cell) {
+            continue;
+        }
+        CellMetadata *meta = metaAt(x, y);
+
+        CellInfo *dst = &cells[writeIndex];
+        memcpy(&dst->offs, stampCells, sizeof(CoordPair));
+        memcpy(&dst->phys, cell, sizeof(Cell));
+        memcpy(&dst->meta, meta, sizeof(CellMetadata));
+        writeIndex++;
+        initCell(_cells, x, y, 0, 0);
+        initCell(_backbuffer, x, y, 0, 0);
+        meta->blocked = false;
+        meta->obj = 0;
+    }
+
+    placeStamp(newx, newy, cells, writeIndex);
+}
+
+void Automaton::placeObject(const CoordInt dx, const CoordInt dy,
+    const GameObject *obj, const double initialTemperature)
+{
+    assert(!_resumed);
+
+    static CellInfo cells[cellStampLength];
+
+    uintptr_t stampCellsLen = 0;
+    const CoordPair *stampCells = obj->stamp->getMapCoords(&stampCellsLen);
+
+    double heatEnergy = initialTemperature * obj->tempCoefficient;
+
+    for (uintptr_t i = 0; i < stampCellsLen; i++) {
+        CellInfo *const dst = &cells[i];
+        dst->offs = stampCells[i];
+        memset(&(dst->phys), 0, sizeof(Cell));
+        dst->phys.heatEnergy = heatEnergy;
+        dst->meta.blocked = true;
+        dst->meta.obj = obj;
+    }
+
+    placeStamp(dx, dy, cells, stampCellsLen);
+}
+
+void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
+    const CellInfo *cells, const uintptr_t cellsLen)
+{
+    assert(!_resumed);
+
+    const intptr_t indexRowLength = subdivisionCount+2;
+    const intptr_t indexLength = indexRowLength * indexRowLength;
+    static intptr_t *borderIndicies = (intptr_t*)malloc(indexLength * sizeof(intptr_t));
+    static Cell **borderCells = (Cell**)malloc(indexLength * sizeof(Cell*));
+    static const intptr_t offs[4][2] = {
+        {0, -1}, {-1, 0}, {1, 0}, {0, 1}
+    };
+
+    memset(borderIndicies, -1, indexLength * sizeof(intptr_t));
+    memset(borderCells, 0, indexLength * sizeof(Cell*));
+
+    // collect surplus matter here
+    double airToDistribute = 0.;
+    double heatToDistribute = 0.;
+    intptr_t borderCellWriteIndex = 0;
+    intptr_t borderCellCount = 0;
+
+    for (uintptr_t i = 0; i < cellsLen; i++) {
+        const CoordPair p = cells[i].offs;
+        const CoordInt x = p.x + atx;
+        const CoordInt y = p.y + aty;
+
+        Cell *const currCell = safeCellAt(x, y);
+        if (!currCell) {
+            continue;
+        }
+        CellMetadata *const currMeta = metaAt(x, y);
+        assert(!currMeta->blocked);
+
+        if (!currMeta->blocked) {
+            airToDistribute += currCell->airPressure;
+            heatToDistribute += currCell->heatEnergy;
+        }
+        memcpy(currCell, &cells[i].phys, sizeof(Cell));
+        memcpy(currMeta, &cells[i].meta, sizeof(CellMetadata));
+
+        for (uintptr_t j = 0; j < 4; j++) {
+            const intptr_t indexCell = (p.y + offs[j][1] + 1) * indexRowLength + p.x + 1 + offs[j][0];
+
+            if (borderIndicies[indexCell] != -1) {
+                // inspected earlier, no need to check again
+                continue;
+            }
+
+            const intptr_t nx = x + offs[j][0];
+            const intptr_t ny = y + offs[j][1];
+
+            Cell *const neighCell = safeCellAt(nx, ny);
+            if (!neighCell) {
+                borderIndicies[indexCell] = -2;
+                continue;
+            }
+            CellMetadata *const neighMeta = metaAt(nx, ny);
+            if (neighMeta->blocked) {
+                borderIndicies[indexCell] = -2;
+                continue;
+            }
+
+            borderIndicies[indexCell] = borderCellWriteIndex;
+            borderCells[borderCellWriteIndex] = neighCell;
+            assert(borderCellWriteIndex < indexLength);
+            borderCellWriteIndex++;
+            borderCellCount++;
+        }
+
+        const uintptr_t indexCell = (p.y + 1) * indexRowLength + (p.x + 1);
+        if (borderIndicies[indexCell] >= 0) {
+            borderCellCount--;
+            borderCells[borderIndicies[indexCell]] = 0;
+        }
+        borderIndicies[indexCell] = -2;
+
+        assert(!isnan(currCell->heatEnergy));
+    }
+
+    if (airToDistribute == 0)
+        return;
+
+    if (borderCellCount == 0) {
+        fprintf(stderr, "[PHY!] [NC] no cells to move stuff to\n");
+        return;
+    }
+
+    const double airPerCell = airToDistribute / borderCellCount;
+    const double heatPerCell = heatToDistribute / borderCellCount;
+
+    unsigned int j = 0;
+    for (Cell **neighCell = &borderCells[0]; j < borderCellCount; neighCell++) {
+        if (!(*neighCell)) {
+            continue;
+        }
+        (*neighCell)->airPressure += airPerCell;
+        (*neighCell)->heatEnergy += heatPerCell;
+
+        assert(!isnan((*neighCell)->heatEnergy));
+        j++;
     }
 }
 
@@ -487,13 +537,16 @@ void Automaton::toGLTexture(const double min, const double max,
         if (metaSource->blocked) {
             *target = 0x0000FF;
         } else {
-            const unsigned char r = (unsigned char)(clamp((source->airPressure - min) / (max - min), 0.0, 1.0) * 255.0);
+            //const unsigned char r = (unsigned char)(clamp((source->airPressure - min) / (max - min), 0.0, 1.0) * 255.0);
+            const double temperature = (metaSource->blocked ? source->heatEnergy / metaSource->obj->tempCoefficient : source->heatEnergy / (source->airPressure * airTempCoeffPerPressure));
+            const unsigned char b = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
+            const unsigned char r = b;
             if (threadRegions) {
                 const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _threadCount) / _threadCount * 255.0);
                 //const unsigned char b = (unsigned char)(clamp((source->flow[1] - min) / (max - min), -1.0, 1.0) * 127.0 + 127.0);
-                *target = r | (r << 8) | (g << 16);
+                *target = r | (g << 8) | (r << 16);
             } else {
-                *target = r | (r << 8) | (r << 16);
+                *target = r | (r << 8) | (b << 16);
             }
         }
         target++;
@@ -535,14 +588,9 @@ void AutomatonThread::activateCell(Cell *front, Cell *back)
     front->airPressure = back->airPressure;
     front->flow[0] = back->flow[0];
     front->flow[1] = back->flow[1];
-}
-
-inline void AutomatonThread::executeFlow(Cell *cellA, Cell *cellB,
-    CoordInt direction, const double flow, const double newFlow)
-{
-    cellA->airPressure -= flow;
-    cellB->airPressure += flow;
-    cellA->flow[direction] = newFlow;
+    front->heatEnergy = back->heatEnergy;
+    assert(!isnan(back->airPressure));
+    assert(!isnan(back->heatEnergy));
 }
 
 template<class CType>
@@ -554,30 +602,79 @@ void AutomatonThread::getCellAndNeighbours(CType *buffer, CType **cell,
     (*neighbours)[1] = (y > 0) ? &buffer[x+_width*(y-1)] : 0;
 }
 
-void AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
+inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
     const Cell *b_cellB, Cell *f_cellB,
     CoordInt direction)
 {
     const double dPressure = b_cellA->airPressure - b_cellB->airPressure;
     //std::cout << b_cellA->airPressure << " " << b_cellB->airPressure << std::endl;
-    const double newFlow = dPressure * _flowFriction;
+    const double dTemp = (direction == 1 ? b_cellA->heatEnergy / b_cellA->airPressure - b_cellB->heatEnergy / b_cellB->airPressure : 0);
+    const double tempFlow = (dTemp > 0 ? dTemp * 0.5 : 0);
+    const double pressFlow = dPressure * _flowFriction;
     const double oldFlow = b_cellA->flow[direction];
-    const double flow = oldFlow * _flowDamping + newFlow * (1.0 - _flowDamping);
+    const double flow = oldFlow * _flowDamping + (tempFlow + pressFlow) * (1.0 - _flowDamping);
     const double applicableFlow = clamp(
         flow,
         -b_cellB->airPressure / 4.,
         b_cellA->airPressure / 4.
     );
 
-    executeFlow(f_cellA, f_cellB, direction, applicableFlow, flow);
+    const double tcA = b_cellA->airPressure;
+    const double tcB = b_cellB->airPressure;
 
-    /*Cell *const flowChange = (flow > 0) ? f_cellB : f_cellA;
-    const double factor = flow / flowChange->airPressure;
-    flowChange->flow[direction] =
-        applicableFlow * factor + flowChange->flow[direction] * (1.0 - factor);*/
+    f_cellA->airPressure -= applicableFlow;
+    f_cellB->airPressure += applicableFlow;
+    f_cellA->flow[direction] = flow;
+
+    if ((applicableFlow >= 0 && tcA == 0) || (applicableFlow <= 0 && tcB == 0)) {
+        return applicableFlow;
+    }
+
+    const double tcFlow = applicableFlow;
+    const double energyFlow = (applicableFlow > 0 ? b_cellA->heatEnergy / tcA * tcFlow : b_cellB->heatEnergy / tcB * tcFlow);
+    assert(!isnan(energyFlow));
+
+    f_cellA->heatEnergy -= energyFlow;
+    f_cellB->heatEnergy += energyFlow;
+    assert(abs(energyFlow) < 2);
+
+    return applicableFlow;
 }
 
-void AutomatonThread::updateCell(CoordInt x, CoordInt y, bool activate)
+inline void AutomatonThread::temperatureFlow(
+    const CellMetadata *m_cellA, const Cell *b_cellA, Cell *f_cellA,
+    const CellMetadata *m_cellB, const Cell *b_cellB, Cell *f_cellB,
+    CoordInt direction)
+{
+    const double tcA = (m_cellA->blocked ? m_cellA->obj->tempCoefficient : b_cellA->airPressure * airTempCoeffPerPressure);
+    const double tcB = (m_cellB->blocked ? m_cellB->obj->tempCoefficient : b_cellB->airPressure * airTempCoeffPerPressure);
+
+    if (tcA < 1e-17 || tcB < 1e-17) {
+        return;
+    }
+
+    const double tempA = b_cellA->heatEnergy / tcA;
+    const double tempB = b_cellB->heatEnergy / tcB;
+
+    const double tempGradient = tempB - tempA;
+
+    const double energyFlowRaw = (tempGradient > 0 ? tcB * tempGradient : tcA * tempGradient);
+    const double energyFlow = energyFlowRaw * 0.05;
+
+    f_cellA->heatEnergy += energyFlow;
+    f_cellB->heatEnergy -= energyFlow;
+    assert(abs(energyFlow) < 100);
+
+    if ((energyFlow > 0 && tempB < tempA) || (energyFlow <= 0 && tempA < tempB)) {
+        const double total = b_cellA->heatEnergy + b_cellB->heatEnergy;
+        const double avgTemp = total / (tcA + tcB);
+
+        f_cellA->heatEnergy = avgTemp * tcA;
+        f_cellB->heatEnergy = avgTemp * tcB;
+    }
+}
+
+inline void AutomatonThread::updateCell(CoordInt x, CoordInt y, bool activate)
 {
     Cell *b_self, *f_self;
     CellMetadata *m_self;
@@ -590,14 +687,16 @@ void AutomatonThread::updateCell(CoordInt x, CoordInt y, bool activate)
     if (activate) {
         activateCell(f_self, b_self);
     }
-    if (m_self->blocked) {
-		return;
-	}
     for (CoordInt i = 0; i < 2; i++) {
         if (b_neighbours[i]) {
-			if (!m_neighbours[i]->blocked) {
+			if (!m_self->blocked && !m_neighbours[i]->blocked) {
 				flow(b_self, f_self, b_neighbours[i], f_neighbours[i], i);
 			}
+            temperatureFlow(
+                m_self, b_self, f_self,
+                m_neighbours[i], b_neighbours[i], f_neighbours[i],
+                i
+            );
         }
     }
 }

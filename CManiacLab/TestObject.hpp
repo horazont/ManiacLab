@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: GameObject.hpp
+File name: TestObject.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,34 +22,14 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_GAME_OBJECT_H
-#define _ML_GAME_OBJECT_H
+#ifndef _ML_TEST_OBJECT_H
+#define _ML_TEST_OBJECT_H
 
-#include "Movements.hpp"
-#include "Stamp.hpp"
+#include "GameObject.hpp"
 
-struct Cell;
-class Level;
-class Movement;
-
-struct Template {
+class TestObject: public GameObject {
 public:
-    Template();
-public:
-    Stamp *stamp;
-    bool isGravityAffected, isRollable;
-    double tempCoefficient;
-    double radius;
-};
-
-struct GameObject: public Template {
-public:
-    GameObject();
-public:
-    double x, y, phi;
-    Movement *movement;
-
-    CoordPair phy;
+    TestObject();
 };
 
 #endif

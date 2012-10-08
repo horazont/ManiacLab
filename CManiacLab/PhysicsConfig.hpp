@@ -29,5 +29,6 @@ authors named in the AUTHORS file.
 
 const CoordInt subdivisionCount = 4;
 const CoordInt cellStampLength = subdivisionCount*subdivisionCount;
+const double airTempCoeffPerPressure = 1.0;
 
 #endif
