@@ -31,4 +31,42 @@ const CoordInt subdivisionCount = 4;
 const CoordInt cellStampLength = subdivisionCount*subdivisionCount;
 const double airTempCoeffPerPressure = 1.0;
 
+struct SimulationConfig {
+    double flowFriction;
+    double flowDamping;
+    double convectionFriction;
+    double heatFlowFriction;
+
+    SimulationConfig(
+            const double flowFriction,
+            const double flowDamping,
+            const double convectionFriction,
+            const double heatFlowFriction):
+        flowFriction(flowFriction),
+        flowDamping(flowDamping),
+        convectionFriction(convectionFriction),
+        heatFlowFriction(heatFlowFriction)
+    {
+
+    }
+
+    SimulationConfig(const SimulationConfig &ref):
+        flowFriction(ref.flowFriction),
+        flowDamping(ref.flowDamping),
+        convectionFriction(ref.convectionFriction),
+        heatFlowFriction(ref.heatFlowFriction)
+    {
+
+    }
+
+    inline SimulationConfig& operator =(const SimulationConfig &ref)
+    {
+        flowFriction = ref.flowFriction;
+        flowDamping = ref.flowDamping;
+        convectionFriction = ref.convectionFriction;
+        heatFlowFriction = ref.heatFlowFriction;
+        return *this;
+    }
+};
+
 #endif

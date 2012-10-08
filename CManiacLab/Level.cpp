@@ -37,7 +37,12 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
     _width(width),
     _height(height),
     _cells(new LevelCell[width*height]()),
-    _physics(Automaton(width*subdivisionCount, height*subdivisionCount, 0.5, 0.995, mp)),
+    _physics(Automaton(width*subdivisionCount, height*subdivisionCount, SimulationConfig(
+        0.5,        // flow friction
+        0.995,      // flow damping
+        0.25,       // convection friction
+        0.05        // heat flow friction
+    ), mp)),
     _objects(),
     _timeSlice(0.01),
     _time(0)
@@ -147,7 +152,7 @@ void Level::cleanupCell(LevelCell *cell)
     }
 }
 
-void Level::debug_testHeatStamp()
+void Level::debug_testHeatStamp(const double temperature)
 {
     static const BoolCellStamp stampMap = {
         false, true, true, false,
@@ -158,7 +163,7 @@ void Level::debug_testHeatStamp()
     static const Stamp stamp(stampMap);
     CoordPair coord = getPhysicsCoords(35, 35);
     _physics.waitFor();
-    _physics.applyTemperatureStamp(coord.x, coord.y, stamp, 2.0);
+    _physics.applyTemperatureStamp(coord.x, coord.y, stamp, temperature);
 }
 
 void Level::debug_testObject()
@@ -282,7 +287,8 @@ void Level::update()
         debug_testStamp(x, y, true);
     }*/
 
-    debug_testHeatStamp();
+    _time += _timeSlice;
+    debug_testHeatStamp((sin(_time) + 1.0));
 
     _physics.resume();
 }

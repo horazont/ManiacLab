@@ -85,7 +85,7 @@ used as initial values for the cells in the automaton.
 class Automaton {
 public:
     Automaton(CoordInt width, CoordInt height,
-        const double flowFriction, const double flowDamping,
+        const SimulationConfig &config,
         bool mp = true,
         double initialPressure = 1.0,
         double initialTemperature = 1.0);
@@ -96,7 +96,7 @@ private:
     const CoordInt _width, _height;
     CellMetadata *_metadata;
     Cell *_cells, *_backbuffer;
-    const double _flowFriction, _flowDamping;
+    const SimulationConfig _config;
     unsigned int _threadCount;
     AutomatonThread **_threads;
     PyEngine::Semaphore **_finishedSignals, **_forwardSignals;
@@ -165,10 +165,6 @@ public:
      */
     void waitFor();
 public:
-    double inline getFlowDamping() const { return _flowDamping; };
-    double inline getFlowFriction() const { return _flowFriction; };
-
-public:
     void printCells(const double min, const double max,
         const char **map, const int mapLen);
     void printCellsBlock(const double min, const double max);
@@ -196,7 +192,7 @@ private:
     PyEngine::Mutex *_topSharedZone, *_bottomSharedZone;
     Automaton *_dataClass;
     const CoordInt _width, _height, _sliceY0, _sliceY1;
-    const double _flowFriction, _flowDamping;
+    const SimulationConfig _sim;
     Cell *_backbuffer, *_cells;
     CellMetadata *_metadata;
 protected:

@@ -48,7 +48,7 @@ double inline clamp(const double value, const double min, const double max)
 }
 
 Automaton::Automaton(CoordInt width, CoordInt height,
-        const double flowFriction, const double flowDamping,
+        const SimulationConfig &config,
         bool mp,
         double initialPressure, double initialTemperature):
     _resumed(false),
@@ -57,8 +57,7 @@ Automaton::Automaton(CoordInt width, CoordInt height,
     _metadata(new CellMetadata[width*height]()),
     _cells(new Cell[width*height]()),
     _backbuffer(new Cell[width*height]()),
-    _flowFriction(flowFriction),
-    _flowDamping(flowDamping),
+    _config(config),
     _threadCount(mp?(Thread::getHardwareThreadCount()):1),
     _threads(new AutomatonThread*[_threadCount]()),
     _finishedSignals(new Semaphore*[_threadCount]()),
@@ -574,8 +573,7 @@ AutomatonThread::AutomatonThread(Automaton *dataClass, CoordInt sliceY0,
     _height(dataClass->_height),
     _sliceY0(sliceY0),
     _sliceY1(sliceY1),
-    _flowFriction(dataClass->_flowFriction),
-    _flowDamping(dataClass->_flowDamping),
+    _sim(dataClass->_config),
     _backbuffer(dataClass->_backbuffer),
     _cells(dataClass->_cells),
     _metadata(dataClass->_metadata)
@@ -609,10 +607,10 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
     const double dPressure = b_cellA->airPressure - b_cellB->airPressure;
     //std::cout << b_cellA->airPressure << " " << b_cellB->airPressure << std::endl;
     const double dTemp = (direction == 1 ? b_cellA->heatEnergy / b_cellA->airPressure - b_cellB->heatEnergy / b_cellB->airPressure : 0);
-    const double tempFlow = (dTemp > 0 ? dTemp * 0.5 : 0);
-    const double pressFlow = dPressure * _flowFriction;
+    const double tempFlow = (dTemp > 0 ? dTemp * _sim.convectionFriction : 0);
+    const double pressFlow = dPressure * _sim.flowFriction;
     const double oldFlow = b_cellA->flow[direction];
-    const double flow = oldFlow * _flowDamping + (tempFlow + pressFlow) * (1.0 - _flowDamping);
+    const double flow = oldFlow * _sim.flowDamping + (tempFlow + pressFlow) * (1.0 - _sim.flowDamping);
     const double applicableFlow = clamp(
         flow,
         -b_cellB->airPressure / 4.,
@@ -659,7 +657,7 @@ inline void AutomatonThread::temperatureFlow(
     const double tempGradient = tempB - tempA;
 
     const double energyFlowRaw = (tempGradient > 0 ? tcB * tempGradient : tcA * tempGradient);
-    const double energyFlow = energyFlowRaw * 0.05;
+    const double energyFlow = energyFlowRaw * _sim.heatFlowFriction;
 
     f_cellA->heatEnergy += energyFlow;
     f_cellB->heatEnergy -= energyFlow;

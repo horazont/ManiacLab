@@ -62,7 +62,7 @@ protected:
     CoordPair getPhysicsCoords(const double x, const double y);
 public:
     void cleanupCell(LevelCell *cell);
-    void debug_testHeatStamp();
+    void debug_testHeatStamp(const double temperature);
     void debug_testObject();
     void debug_testStamp(const double x, const double y, bool block);
     void physicsToGLTexture(bool threadRegions);
