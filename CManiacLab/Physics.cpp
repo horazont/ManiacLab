@@ -652,7 +652,7 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
 
     f_cellA->heatEnergy -= energyFlow;
     f_cellB->heatEnergy += energyFlow;
-    assert(abs(energyFlow) < 2);
+    //~ assert(abs(energyFlow) < 2);
 
     return applicableFlow;
 }
