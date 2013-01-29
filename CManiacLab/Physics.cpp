@@ -621,24 +621,28 @@ AutomatonThread::AutomatonThread(Automaton *dataClass, CoordInt sliceY0,
 
 inline void AutomatonThread::activateCell(Cell *front, Cell *back)
 {
-    if (back->airPressure <= 1e-100 && back->airPressure != 0) {
-        front->airPressure = 0;
-        front->flow[0] = 0;
-        front->flow[1] = 0;
-        front->heatEnergy = 0;
-    } else {
-        front->airPressure = back->airPressure;
-        for (int i = 0; i < 2; i++) {
-            const double flow = back->flow[i];
-            if (!isinf(flow) && abs(flow) < 1e10) {
-                front->flow[i] = flow;
-            } else {
-                front->flow[i] = 0;
-                back->flow[i] = 0;
-            }
+    //~ if (back->airPressure <= 1e-100 && back->airPressure != 0) {
+        //~ front->airPressure = 0;
+        //~ front->flow[0] = 0;
+        //~ front->flow[1] = 0;
+        //~ (back+_width)->flow[1] = 0;
+        //~ (back+1)->flow[0] = 0;
+        //~ (front+_width)->flow[1] = 0;
+        //~ (front+1)->flow[0] = 0;
+        //~ front->heatEnergy = 0;
+    //~ } else {
+    front->airPressure = back->airPressure;
+    for (int i = 0; i < 2; i++) {
+        const double flow = back->flow[i];
+        if (!isinf(flow) && abs(flow) < 1e10) {
+            front->flow[i] = flow;
+        } else {
+            front->flow[i] = 0;
+            back->flow[i] = 0;
         }
-        front->heatEnergy = back->heatEnergy;
     }
+    front->heatEnergy = back->heatEnergy;
+    //~ }
     assert(!isnan(back->airPressure));
     assert(!isnan(back->heatEnergy));
 }
@@ -657,13 +661,12 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
     CoordInt direction)
 {
     const double dPressure = b_cellA->airPressure - b_cellB->airPressure;
-    //std::cout << b_cellA->airPressure << " " << b_cellB->airPressure << std::endl;
-    const double dTemp = (direction == 1 ? b_cellA->heatEnergy / b_cellA->airPressure - b_cellB->heatEnergy / b_cellB->airPressure : 0);
+    const double dTemp = (direction == 1 ? b_cellA->heatEnergy - b_cellB->heatEnergy : 0);
     const double tempFlow = (dTemp > 0 ? dTemp * _sim.convectionFriction : 0);
     const double pressFlow = dPressure * _sim.flowFriction;
     const double oldFlow = b_cellA->flow[direction];
     const double flow = oldFlow * _sim.flowDamping + (tempFlow + pressFlow) * (1.0 - _sim.flowDamping);
-    const double applicableFlow = clamp(
+    double applicableFlow = clamp(
         flow,
         -b_cellB->airPressure / 4.,
         b_cellA->airPressure / 4.
@@ -672,9 +675,10 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
     const double tcA = b_cellA->airPressure;
     const double tcB = b_cellB->airPressure;
 
+    f_cellA->flow[direction] = flow;
+
     f_cellA->airPressure -= applicableFlow;
     f_cellB->airPressure += applicableFlow;
-    f_cellA->flow[direction] = flow;
 
     if ((applicableFlow >= 0 && tcA == 0) || (applicableFlow <= 0 && tcB == 0)) {
         return applicableFlow;
@@ -682,6 +686,7 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
 
     const double tcFlow = applicableFlow;
     const double energyFlow = (applicableFlow > 0 ? b_cellA->heatEnergy / tcA * tcFlow : b_cellB->heatEnergy / tcB * tcFlow);
+
     assert(!isnan(energyFlow));
 
     f_cellA->heatEnergy -= energyFlow;
@@ -709,7 +714,11 @@ inline void AutomatonThread::temperatureFlow(
     const double tempGradient = tempB - tempA;
 
     const double energyFlowRaw = (tempGradient > 0 ? tcB * tempGradient : tcA * tempGradient);
-    const double energyFlow = energyFlowRaw * _sim.heatFlowFriction;
+    const double energyFlow = clamp(
+        energyFlowRaw * _sim.heatFlowFriction,
+        -b_cellA->heatEnergy / 4.,
+        b_cellB->heatEnergy / 4.
+    );
 
     f_cellA->heatEnergy += energyFlow;
     f_cellB->heatEnergy -= energyFlow;
