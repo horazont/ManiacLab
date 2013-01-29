@@ -33,7 +33,7 @@ authors named in the AUTHORS file.
 
 /* Level */
 
-#define WALL_CENTER_X 45
+#define WALL_CENTER_X 15
 
 Level::Level(CoordInt width, CoordInt height, bool mp):
     _width(width),
