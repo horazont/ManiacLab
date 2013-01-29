@@ -30,6 +30,8 @@ authors named in the AUTHORS file.
 class TestObject: public GameObject {
 public:
     TestObject();
+public:
+    void setIsAffectedByGravity(bool flag);
 };
 
 #endif

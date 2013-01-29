@@ -33,6 +33,8 @@ authors named in the AUTHORS file.
 
 /* Level */
 
+#define WALL_CENTER_X 45
+
 Level::Level(CoordInt width, CoordInt height, bool mp):
     _width(width),
     _height(height),
@@ -48,6 +50,13 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
     _time(0)
 {
     initCells();
+    for (CoordInt y = 0; y < _height; y++) {
+        if (y < 20 || y > 23) {
+            TestObject *obj = debug_placeObject(WALL_CENTER_X-1, y);
+            obj->setIsAffectedByGravity(false);
+        }
+        debug_placeObject(WALL_CENTER_X+1, y);
+    }
 }
 
 Level::~Level()
@@ -166,20 +175,43 @@ void Level::debug_testHeatStamp(const double temperature)
     _physics.applyTemperatureStamp(coord.x, coord.y, stamp, temperature);
 }
 
-void Level::debug_testObject()
+void Level::debug_testHeatSource()
 {
-    const CoordInt x = ((double)rand() / RAND_MAX) * (_width - 1);
-    const CoordInt y = ((double)rand() / RAND_MAX) * (_height - 1);
+    static const BoolCellStamp stampMap = {
+        false, true, true, false,
+        true, true, true, true,
+        true, true, true, true,
+        false, true, true, false
+    };
+    static const Stamp stamp(stampMap);
+    _physics.waitFor();
+    for (int i = 0; i < _width; i+=2) {
+        CoordPair coord = getPhysicsCoords(i, 40);
+        _physics.applyTemperatureStamp(coord.x, coord.y, stamp, 2.0);
+    }
+}
+
+TestObject *Level::debug_placeObject(const CoordInt x, const CoordInt y)
+{
     LevelCell *cell = &_cells[y*_width + x];
     if (!cell->here && !cell->reservedBy) {
-        GameObject *const obj = new TestObject();
+        TestObject *const obj = new TestObject();
         cell->here = obj;
         obj->x = x;
         obj->y = y;
         obj->phy = getPhysicsCoords(x, y);
         _physics.waitFor();
-        _physics.placeObject(obj->phy.x, obj->phy.y, obj, 15);
+        _physics.placeObject(obj->phy.x, obj->phy.y, obj, 5);
+        return obj;
     }
+    return 0;
+}
+
+void Level::debug_testObject()
+{
+    const CoordInt x = ((double)rand() / RAND_MAX) * (_width - 1);
+    const CoordInt y = ((double)rand() / RAND_MAX) * (_height - 1);
+    debug_placeObject(WALL_CENTER_X, 0);
 }
 
 void Level::debug_output(const double x, const double y)
@@ -324,7 +356,8 @@ void Level::update()
     }*/
 
     _time += _timeSlice;
-    debug_testHeatStamp((sin(_time) + 1.0));
+    // debug_testHeatStamp((sin(_time) + 1.0));
+    debug_testHeatSource();
 
     _physics.resume();
 }

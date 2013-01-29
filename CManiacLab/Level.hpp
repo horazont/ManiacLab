@@ -37,6 +37,8 @@ authors named in the AUTHORS file.
 
 struct Cell;
 
+class TestObject;
+
 struct LevelCell {
     GameObject *here, *reservedBy;
 };
@@ -63,7 +65,9 @@ protected:
 public:
     void cleanupCell(LevelCell *cell);
     void debug_testHeatStamp(const double temperature);
+    void debug_testHeatSource();
     void debug_testObject();
+    TestObject *debug_placeObject(const CoordInt x, const CoordInt y);
     void debug_testStamp(const double x, const double y, bool block);
     void debug_output(const double x, const double y);
     void physicsToGLTexture(bool threadRegions);
