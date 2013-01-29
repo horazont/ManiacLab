@@ -361,10 +361,12 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
                 continue;
             }
 
-            const CoordPair curr_offs = CoordPair(p.x - halfOffset, p.y - halfOffset);
+            //~ const CoordPair curr_offs = CoordPair(p.x - halfOffset, p.y - halfOffset);
+//~
+            //~ double cellWeight = (vel_norm > 0 ? curr_offs.normed_float_dotp(vel_x, vel_y) : 1);
+            //~ cellWeight = (cellWeight > 0 ? cellWeight : 0);
 
-            double cellWeight = (vel_norm > 0 ? curr_offs.normed_float_dotp(vel_x, vel_y) : 1);
-            cellWeight = (cellWeight > 0 ? cellWeight : 0);
+            const double cellWeight = max((vel_norm > 0 ? offs[j][0] * vel_x + offs[j][1] * vel_y : 1), 0);
 
             borderIndicies[indexCell] = borderCellWriteIndex;
             borderCells[borderCellWriteIndex] = neighCell;
