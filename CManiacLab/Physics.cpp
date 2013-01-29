@@ -67,7 +67,7 @@ Automaton::Automaton(CoordInt width, CoordInt height,
 {
     for (CoordInt y = 0; y < _height; y++) {
         for (CoordInt x = 0; x < _width; x++) {
-			initMetadata(_metadata, x, y);
+            initMetadata(_metadata, x, y);
             initCell(_cells, x, y, initialPressure, initialTemperature);
             initCell(_backbuffer, x, y, initialPressure, initialTemperature);
         }
@@ -97,11 +97,11 @@ Automaton::~Automaton()
 }
 
 void Automaton::initMetadata(CellMetadata *buffer, CoordInt x,
-	CoordInt y)
+    CoordInt y)
 {
-	CellMetadata *cell = &buffer[x+_width*y];
-	cell->blocked = false;
-	cell->obj = 0;
+    CellMetadata *cell = &buffer[x+_width*y];
+    cell->blocked = false;
+    cell->obj = 0;
 }
 
 void Automaton::initCell(Cell *buffer, CoordInt x, CoordInt y,
@@ -429,21 +429,21 @@ void Automaton::printCells(const double min, const double max,
             Cell *cell = cellAt(x, y);
             CellMetadata *meta = metaAt(x, y);
             if (meta->blocked) {
-				std::cout << map[mapLen];
-			} else {
-				const double val = cell->airPressure;
-				const double scaled = (val - min) / (max - min);
-				int index = (int)(scaled * mapLen);
-				if (index < 0)
-					index = 0;
-				if (index >= mapLen)
-					index = mapLen-1;
+                std::cout << map[mapLen];
+            } else {
+                const double val = cell->airPressure;
+                const double scaled = (val - min) / (max - min);
+                int index = (int)(scaled * mapLen);
+                if (index < 0)
+                    index = 0;
+                if (index >= mapLen)
+                    index = mapLen-1;
 
-				std::cout << map[index];
-			}
+                std::cout << map[index];
+            }
         }
         std::cout << "\n";
-		std::cout.flush();
+        std::cout.flush();
     }
 }
 
@@ -705,9 +705,9 @@ inline void AutomatonThread::updateCell(CoordInt x, CoordInt y, bool activate)
     }
     for (CoordInt i = 0; i < 2; i++) {
         if (b_neighbours[i]) {
-			if (!m_self->blocked && !m_neighbours[i]->blocked) {
-				flow(b_self, f_self, b_neighbours[i], f_neighbours[i], i);
-			}
+            if (!m_self->blocked && !m_neighbours[i]->blocked) {
+                flow(b_self, f_self, b_neighbours[i], f_neighbours[i], i);
+            }
             temperatureFlow(
                 m_self, b_self, f_self,
                 m_neighbours[i], b_neighbours[i], f_neighbours[i],
