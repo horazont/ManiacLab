@@ -106,7 +106,7 @@ private:
 private:
     void initCell(Cell *buffer, CoordInt x, CoordInt y,
         double initialPressure, double initialTemperature);
-	void initMetadata(CellMetadata *buffer, CoordInt x, CoordInt y);
+    void initMetadata(CellMetadata *buffer, CoordInt x, CoordInt y);
 
     /**
      * Initialize all threads for the automaton. Uses
