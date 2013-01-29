@@ -317,8 +317,6 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
     double borderCellWeight = 0;
 
     const double vel_norm = (vel != nullptr ? (vel->norm() != 0 ? vel->norm() : 0) : 0);
-    if (vel != nullptr)
-        printf("%d %d %lf\n", vel->x, vel->y, vel_norm);
     const double vel_x = (vel_norm > 0 ? vel->x / vel_norm : 0);
     const double vel_y = (vel_norm > 0 ? vel->y / vel_norm : 0);
 
@@ -366,7 +364,6 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
             const CoordPair curr_offs = CoordPair(p.x - halfOffset, p.y - halfOffset);
 
             double cellWeight = (vel_norm > 0 ? curr_offs.normed_float_dotp(vel_x, vel_y) : 1);
-            printf("%d %d %lf %lf %lf\n", curr_offs.x, curr_offs.y, vel_x, vel_y, cellWeight);
             cellWeight = (cellWeight > 0 ? cellWeight : 0);
 
             borderIndicies[indexCell] = borderCellWriteIndex;
@@ -403,8 +400,6 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
     const double airPerCell = airToDistribute / weightToUse;
     const double heatPerCell = heatToDistribute / weightToUse;
 
-    printf("%lf\n", borderCellWeight);
-
     unsigned int j = 0;
     double *neighCellWeight = &borderCellWeights[0];
     for (Cell **neighCell = &borderCells[0]; j < borderCellCount; neighCell++) {
@@ -424,7 +419,6 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
         j++;
         neighCellWeight++;
     }
-    printf("\n");
 }
 
 void Automaton::resume()
