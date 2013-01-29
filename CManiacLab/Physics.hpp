@@ -141,13 +141,14 @@ public:
     void moveStamp(
         const CoordInt oldx, const CoordInt oldy,
         const CoordInt newx, const CoordInt newy,
-        const Stamp *stamp);
+        const Stamp *stamp, const CoordPair *const vel = nullptr);
 
     void placeObject(const CoordInt x, const CoordInt y,
         const GameObject *obj, const double initialTemperature);
 
     void placeStamp(const CoordInt atx, const CoordInt aty,
-        const CellInfo *cells, const uintptr_t cellsLen);
+        const CellInfo *cells, const uintptr_t cellsLen,
+        const CoordPair *const vel = nullptr);
 
     /**
      * Tell the automaton to resume it's work. The effect of this function if

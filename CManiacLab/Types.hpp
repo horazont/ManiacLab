@@ -27,6 +27,8 @@ authors named in the AUTHORS file.
 
 #include <CEngine/Misc/Int.hpp>
 
+#include <cmath>
+
 typedef int CoordInt;
 
 struct CoordPair {
@@ -41,14 +43,32 @@ struct CoordPair {
         return *this;
     }
 
-    inline bool operator != (const CoordPair &oth)
+    inline bool operator != (const CoordPair &oth) const
     {
         return (x != oth.x) || (y != oth.y);
     }
 
-    inline bool operator == (const CoordPair &oth)
+    inline bool operator == (const CoordPair &oth) const
     {
         return (x == oth.x) && (y == oth.y);
+    }
+
+    inline CoordInt operator * (const CoordPair &oth) const
+    {
+        return (x * oth.x) + (y * oth.y);
+    }
+
+    inline double norm() const
+    {
+        return sqrt(x*x + y*y);
+    }
+
+    inline double normed_float_dotp(const double oth_x, const double oth_y) const
+    {
+        const double my_norm = norm();
+        if (my_norm == 0)
+            return 0;
+        return ((x * oth_x) + (y * oth_y)) / my_norm;
     }
 
     CoordInt x, y;

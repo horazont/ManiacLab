@@ -226,7 +226,7 @@ void Automaton::getCellStampAt(const CoordInt left, const CoordInt top,
 
 void Automaton::moveStamp(const CoordInt oldx, const CoordInt oldy,
     const CoordInt newx, const CoordInt newy,
-    const Stamp *stamp)
+    const Stamp *stamp, const CoordPair *const vel)
 {
     assert(!_resumed);
 
@@ -262,7 +262,7 @@ void Automaton::moveStamp(const CoordInt oldx, const CoordInt oldy,
         meta->obj = 0;
     }
 
-    placeStamp(newx, newy, cells, writeIndex);
+    placeStamp(newx, newy, cells, writeIndex, vel);
 }
 
 void Automaton::placeObject(const CoordInt dx, const CoordInt dy,
@@ -290,7 +290,8 @@ void Automaton::placeObject(const CoordInt dx, const CoordInt dy,
 }
 
 void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
-    const CellInfo *cells, const uintptr_t cellsLen)
+    const CellInfo *cells, const uintptr_t cellsLen,
+    const CoordPair *const vel)
 {
     assert(!_resumed);
 
@@ -298,6 +299,9 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
     const intptr_t indexLength = indexRowLength * indexRowLength;
     static intptr_t *borderIndicies = (intptr_t*)malloc(indexLength * sizeof(intptr_t));
     static Cell **borderCells = (Cell**)malloc(indexLength * sizeof(Cell*));
+    static double *borderCellWeights = (double*)malloc(indexLength * sizeof(double));
+
+    // to iterate over neighbouring cells
     static const intptr_t offs[4][2] = {
         {0, -1}, {-1, 0}, {1, 0}, {0, 1}
     };
@@ -310,6 +314,13 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
     double heatToDistribute = 0.;
     intptr_t borderCellWriteIndex = 0;
     intptr_t borderCellCount = 0;
+    double borderCellWeight = 0;
+
+    const double vel_norm = (vel != nullptr ? (vel->norm() != 0 ? vel->norm() : 0) : 0);
+    if (vel != nullptr)
+        printf("%d %d %lf\n", vel->x, vel->y, vel_norm);
+    const double vel_x = (vel_norm > 0 ? vel->x / vel_norm : 0);
+    const double vel_y = (vel_norm > 0 ? vel->y / vel_norm : 0);
 
     for (uintptr_t i = 0; i < cellsLen; i++) {
         const CoordPair p = cells[i].offs;
@@ -352,17 +363,27 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
                 continue;
             }
 
+            const CoordPair curr_offs = CoordPair(p.x - halfOffset, p.y - halfOffset);
+
+            double cellWeight = (vel_norm > 0 ? curr_offs.normed_float_dotp(vel_x, vel_y) : 1);
+            printf("%d %d %lf %lf %lf\n", curr_offs.x, curr_offs.y, vel_x, vel_y, cellWeight);
+            cellWeight = (cellWeight > 0 ? cellWeight : 0);
+
             borderIndicies[indexCell] = borderCellWriteIndex;
             borderCells[borderCellWriteIndex] = neighCell;
+            borderCellWeights[borderCellWriteIndex] = cellWeight;
             assert(borderCellWriteIndex < indexLength);
             borderCellWriteIndex++;
             borderCellCount++;
+            borderCellWeight += cellWeight;
         }
 
         const uintptr_t indexCell = (p.y + 1) * indexRowLength + (p.x + 1);
         if (borderIndicies[indexCell] >= 0) {
             borderCellCount--;
             borderCells[borderIndicies[indexCell]] = 0;
+            borderCellWeight -= borderCellWeights[borderIndicies[indexCell]];
+
         }
         borderIndicies[indexCell] = -2;
 
@@ -377,20 +398,33 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
         return;
     }
 
-    const double airPerCell = airToDistribute / borderCellCount;
-    const double heatPerCell = heatToDistribute / borderCellCount;
+    const double weightToUse = (borderCellWeight > 0 ? borderCellWeight : borderCellCount);
+
+    const double airPerCell = airToDistribute / weightToUse;
+    const double heatPerCell = heatToDistribute / weightToUse;
+
+    printf("%lf\n", borderCellWeight);
 
     unsigned int j = 0;
+    double *neighCellWeight = &borderCellWeights[0];
     for (Cell **neighCell = &borderCells[0]; j < borderCellCount; neighCell++) {
         if (!(*neighCell)) {
+            neighCellWeight++;
             continue;
         }
-        (*neighCell)->airPressure += airPerCell;
-        (*neighCell)->heatEnergy += heatPerCell;
+        const double cellWeight = (borderCellWeight > 0 ? *neighCellWeight : 1);
+        (*neighCell)->airPressure += airPerCell * cellWeight;
+        (*neighCell)->heatEnergy += heatPerCell * cellWeight;
+        //~ if (vel != nullptr) {
+            //~ (*neighCell)->flow[0] += vel->x;
+            //~ (*neighCell)->flow[1] += vel->y;
+        //~ }
 
         assert(!isnan((*neighCell)->heatEnergy));
         j++;
+        neighCellWeight++;
     }
+    printf("\n");
 }
 
 void Automaton::resume()

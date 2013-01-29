@@ -283,10 +283,12 @@ void Level::update()
                     if (obj->stamp && obj->stamp->nonEmpty()) {
                         /*_physics.clearCells(obj->phy.x, obj->phy.y, obj->stamp);
                         _physics.placeObject(newCoords.x, newCoords.y, obj);*/
+                        const CoordPair vel = CoordPair(0, 1);
                         _physics.moveStamp(
                             obj->phy.x, obj->phy.y,
                             newCoords.x, newCoords.y,
-                            obj->stamp
+                            obj->stamp,
+                            &vel
                         );
                     }
                     obj->phy = newCoords;

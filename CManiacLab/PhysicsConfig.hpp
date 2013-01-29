@@ -28,6 +28,7 @@ authors named in the AUTHORS file.
 #include "Types.hpp"
 
 const CoordInt subdivisionCount = 5;
+const CoordInt halfOffset = 2;
 const CoordInt cellStampLength = subdivisionCount*subdivisionCount;
 const double airTempCoeffPerPressure = 1.0;
 
