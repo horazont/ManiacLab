@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 set(CMAKE_CXX_FLAGS "-g -Wall -std=c++0x")
 add_subdirectory(PyEngine)
-set(CMAKE_CXX_FLAGS "-g -Wall -std=c++0x -pedantic -O2")
+set(CMAKE_CXX_FLAGS "-g -Wall -std=c++0x -pedantic -O2 -msse -msse2 -msse3 -mmmx")
 
 get_property(PYENGINE_DEPENDENCIES DIRECTORY PyEngine PROPERTY PYENGINE_DEPENDENCIES)
 get_property(PYENGINE_LINK_TARGETS DIRECTORY PyEngine PROPERTY PYENGINE_LINK_TARGETS)
