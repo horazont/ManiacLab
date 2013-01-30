@@ -33,7 +33,7 @@ authors named in the AUTHORS file.
 
 /* Level */
 
-#define WALL_CENTER_X 15
+#define WALL_CENTER_X 45
 
 Level::Level(CoordInt width, CoordInt height, bool mp):
     _width(width),
@@ -218,6 +218,29 @@ void Level::debug_testObject()
     debug_placeObject(WALL_CENTER_X, 0);
 }
 
+void Level::debug_testStamp(const double x, const double y)
+{
+    static CellInfo info_arr[cellStampLength];
+    CellInfo *info = &info_arr[0];
+    for (CoordInt x = 0; x < subdivisionCount; x++) {
+        for (CoordInt y = 0; y < subdivisionCount; y++) {
+            info->offs = CoordPair(x, y);
+            info->meta.blocked = false;
+            info->meta.obj = nullptr;
+            info->phys.airPressure = 1.0;
+            info->phys.fog = 10.;
+            info->phys.heatEnergy = 1.0;
+            info->phys.flow[0] = 0;
+            info->phys.flow[1] = 0;
+            info++;
+        }
+    }
+
+    CoordPair coord = getPhysicsCoords(x, y);
+    _physics.waitFor();
+    _physics.placeStamp(coord.x, coord.y, &info_arr[0], cellStampLength);
+}
+
 void Level::debug_output(const double x, const double y)
 {
     static const CoordInt offs[5][2] = {
@@ -364,7 +387,7 @@ void Level::update()
 
     _time += _timeSlice;
     // debug_testHeatStamp((sin(_time) + 1.0));
-    debug_testHeatSource();
+    // debug_testHeatSource();
 
     _physics.resume();
 }

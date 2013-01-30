@@ -37,6 +37,7 @@ BOOST_PYTHON_MODULE(_cmaniaclab)
         .def("update", &Level::update)
         .def("physicsToGLTexture", &Level::physicsToGLTexture)
         .def("debug_testObject", &Level::debug_testObject)
+        .def("debug_testStamp", &Level::debug_testStamp)
         .def("debug_output", &Level::debug_output);
 }
 
