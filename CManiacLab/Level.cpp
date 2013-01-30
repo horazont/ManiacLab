@@ -51,11 +51,14 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
 {
     initCells();
     for (CoordInt y = 0; y < _height; y++) {
-        if (y < 20 || y > 23) {
+        if (y < 4 || y > 46 || y % 4 != 0) {
             TestObject *obj = debug_placeObject(WALL_CENTER_X-1, y);
             obj->setIsAffectedByGravity(false);
         }
-        debug_placeObject(WALL_CENTER_X+1, y);
+        if (y < 4 || y > 46 || y % 4 != 2) {
+            TestObject *obj = debug_placeObject(WALL_CENTER_X+1, y);
+            obj->setIsAffectedByGravity(false);
+        }
     }
 }
 
