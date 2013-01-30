@@ -59,28 +59,30 @@ struct CellInfo {
 class AutomatonThread;
 
 /** \rst
-Create a cellular automaton which simulates air flow between a given grid of
-cells more or less correctly. There are some free parameters you may change
-to adapt the simulation to your needs.
+Create a cellular automaton which simulates air flow between a given
+grid of cells more or less correctly. There are some free parameters you
+may change to adapt the simulation to your needs.
 
-*flowFriction* is used to damp the initial creation of flow between two cells.
-The “wanted” flow for a pressure gradient is given by:
+*flowFriction* is used to damp the initial creation of flow between
+two cells. The “wanted” flow for a pressure gradient is given by:
 
     newFlow = (cellA->pressure - cellB->pressure) * flowFriction
 
-Then the old flow value (i.e. momentum of the air) is taken into account using:
+Then the old flow value (i.e. momentum of the air) is taken into
+account using:
 
     flow = oldFlow * flowDamping + newFlow * (1.0 - flowDamping)
 
 making the flow work like a moving average.
 
-In the nature of moving averages lies the fact that the factor used for scaling
-the movement speed is highly dependend on the update rate of your simulation.
-This implies that you will need very different factors depending on how often
-per second you update the automaton.
+In the nature of moving averages lies the fact that the factor used
+for scaling the movement speed is highly dependend on the update
+rate of your simulation. This implies that you will need very
+different factors depending on how often per second you update the
+automaton.
 
-*initialPressure* and *initialTemperature* just do what they sound like, they're
-used as initial values for the cells in the automaton.
+*initialPressure* and *initialTemperature* just do what they sound
+like, they're used as initial values for the cells in the automaton.
 \endrst */
 class Automaton {
 public:
@@ -114,8 +116,8 @@ private:
      * reasonable number of threads.
      *
      * This will never spawn more than 64 threads, to avoid excessive
-     * synchronization overhead and ensure working levels with down to 128
-     * cells on the y axis.
+     * synchronization overhead and ensure working levels with down to
+     * 128 cells on the y axis.
      */
     void initThreads();
 public:
@@ -151,16 +153,17 @@ public:
         const CoordPair *const vel = nullptr);
 
     /**
-     * Tell the automaton to resume it's work. The effect of this function if
-     * it's called while the automaton is still working is undefined. Make sure
-     * it's stopped by calling waitFor() first.
+     * Tell the automaton to resume it's work. The effect of this
+     * function if it's called while the automaton is still working is
+     * undefined. Make sure it's stopped by calling waitFor() first.
      */
     void resume();
     void setBlocked(CoordInt x, CoordInt y, bool blocked);
 
     /**
-     * Wait until the cellular automaton has settled its calculation and return.
-     * The automaton will not continue calculating until resume() is called.
+     * Wait until the cellular automaton has settled its calculation
+     * and return. The automaton will not continue calculating until
+     * resume() is called.
      *
      * If the automaton is already suspended, return immediately.
      */
@@ -174,8 +177,13 @@ public:
 
 public:
     /**
-     * Map pressure values in the range from min to max to [0..1] and write them
-     * to the currently bound OpenGL texture as GL_RGBA.
+     * Convert the data in the physics cells to a human-interpretable
+     * image representation and store it in the currently bound
+     * opengl texture.
+     *
+     * @param min pressure which will be mapped to 0
+     * @param max pressure which will be mapped to 1
+     * @param threadRegions if true, thread regions are also visualized
      */
     void toGLTexture(const double min, const double max, bool threadRegions);
 
