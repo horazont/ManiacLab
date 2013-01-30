@@ -112,6 +112,7 @@ void Automaton::initCell(Cell *buffer, CoordInt x, CoordInt y,
     cell->heatEnergy = initialTemperature * (airTempCoeffPerPressure * cell->airPressure);
     cell->flow[0] = 0;
     cell->flow[1] = 0;
+    cell->fog = 0;
 }
 
 void Automaton::initThreads()
@@ -312,6 +313,7 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
     // collect surplus matter here
     double airToDistribute = 0.;
     double heatToDistribute = 0.;
+    double fogToDistribute = 0.;
     intptr_t borderCellWriteIndex = 0;
     intptr_t borderCellCount = 0;
     double borderCellWeight = 0;
@@ -335,6 +337,7 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
         if (!currMeta->blocked) {
             airToDistribute += currCell->airPressure;
             heatToDistribute += currCell->heatEnergy;
+            fogToDistribute += currCell->fog;
         }
         memcpy(currCell, &cells[i].phys, sizeof(Cell));
         memcpy(currMeta, &cells[i].meta, sizeof(CellMetadata));
@@ -401,6 +404,7 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
 
     const double airPerCell = airToDistribute / weightToUse;
     const double heatPerCell = heatToDistribute / weightToUse;
+    const double fogPerCell = fogToDistribute / weightToUse;
 
     unsigned int j = 0;
     double *neighCellWeight = &borderCellWeights[0];
@@ -412,6 +416,7 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
         const double cellWeight = (borderCellWeight > 0 ? *neighCellWeight : 1);
         (*neighCell)->airPressure += airPerCell * cellWeight;
         (*neighCell)->heatEnergy += heatPerCell * cellWeight;
+        (*neighCell)->fog += fogPerCell * cellWeight;
         //~ if (vel != nullptr) {
             //~ (*neighCell)->flow[0] += vel->x;
             //~ (*neighCell)->flow[1] += vel->y;
@@ -570,9 +575,11 @@ void Automaton::toGLTexture(const double min, const double max,
         } else {
             const bool right = (i % _height) >= half;
             const unsigned char pressColor = (unsigned char)(clamp((source->airPressure - min) / (max - min), 0.0, 1.0) * 255.0);
-            const double temperature = (metaSource->blocked ? source->heatEnergy / metaSource->obj->tempCoefficient : source->heatEnergy / (source->airPressure * airTempCoeffPerPressure));
-            const unsigned char tempColor = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
-            const unsigned char b = (right ? tempColor : pressColor);
+            //~ const double temperature = (metaSource->blocked ? source->heatEnergy / metaSource->obj->tempCoefficient : source->heatEnergy / (source->airPressure * airTempCoeffPerPressure));
+            const double fog = (metaSource->blocked ? 0 : source->fog);
+            //~ const unsigned char tempColor = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
+            const unsigned char fogColor = (unsigned char)(clamp((fog - min) / (max - min), 0.0, 1.0) *255.0);
+            const unsigned char b = (right ? fogColor : pressColor);
             const unsigned char r = b;
             if (threadRegions) {
                 const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _threadCount) / _threadCount * 255.0);
@@ -638,8 +645,10 @@ inline void AutomatonThread::activateCell(Cell *front, Cell *back)
         }
     }
     front->heatEnergy = back->heatEnergy;
+    front->fog = back->fog;
     //~ }
     assert(!isnan(back->airPressure));
+    assert(!isnan(back->fog));
     assert(!isnan(back->heatEnergy));
 }
 
@@ -687,7 +696,12 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
 
     f_cellA->heatEnergy -= energyFlow;
     f_cellB->heatEnergy += energyFlow;
-    //~ assert(abs(energyFlow) < 2);
+
+    const double fogFlow = (applicableFlow > 0 ? b_cellA->fog / tcA * tcFlow : b_cellB->fog / tcB * tcFlow);
+    assert(!isnan(fogFlow));
+
+    f_cellA->fog -= fogFlow;
+    f_cellB->fog += fogFlow;
 
     return applicableFlow;
 }
@@ -729,6 +743,22 @@ inline void AutomatonThread::temperatureFlow(
     }
 }
 
+inline void AutomatonThread::fogFlow(
+    const Cell *b_cellA, Cell *f_cellA,
+    const Cell *b_cellB, Cell *f_cellB)
+{
+    const double dFog = b_cellA->fog - b_cellB->fog;
+    const double flow = dFog * _sim.fogFlowFriction;
+    double applicableFlow = clamp(
+        flow,
+        -b_cellB->fog / 4.,
+        b_cellA->fog / 4.
+    );
+
+    f_cellA->fog -= applicableFlow;
+    f_cellB->fog += applicableFlow;
+}
+
 inline void AutomatonThread::updateCell(CoordInt x, CoordInt y, bool activate)
 {
     Cell *b_self, *f_self;
@@ -744,8 +774,10 @@ inline void AutomatonThread::updateCell(CoordInt x, CoordInt y, bool activate)
     }
     for (CoordInt i = 0; i < 2; i++) {
         if (b_neighbours[i]) {
-            if (!m_self->blocked && !m_neighbours[i]->blocked) {
+            if (!m_self->blocked && !m_neighbours[i]->blocked)
+            {
                 flow(b_self, f_self, b_neighbours[i], f_neighbours[i], i);
+                fogFlow(b_self, f_self, b_neighbours[i], f_neighbours[i]);
             }
             temperatureFlow(
                 m_self, b_self, f_self,

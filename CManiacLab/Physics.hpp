@@ -40,7 +40,7 @@ struct Cell {
 
     // flow is in relation to upper left neighbour!
     double flow[2];
-    double fogDensity;
+    double fog;
 };
 
 struct CellMetadata {
@@ -214,6 +214,8 @@ protected:
     void temperatureFlow(const CellMetadata *m_cellA, const Cell *b_cellA, Cell *f_CellA,
                          const CellMetadata *m_cellB, const Cell *b_cellB, Cell *f_cellB,
                          CoordInt direction);
+    void fogFlow(const Cell *b_cellA, Cell *f_cellA,
+                 const Cell *b_cellB, Cell *f_cellB);
 
     void updateCell(CoordInt x, CoordInt y, bool activate = true);
     void update();

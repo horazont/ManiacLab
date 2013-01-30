@@ -43,7 +43,8 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
         0.5,        // flow friction
         0.995,      // flow damping
         0.3,       // convection friction
-        0.05        // heat flow friction
+        0.05,       // heat flow friction
+        0.1         // fog flow friction
     ), mp)),
     _objects(),
     _timeSlice(0.01),
@@ -248,6 +249,7 @@ void Level::debug_output(const double x, const double y)
         std::cout << "  p     = " << cell->airPressure << std::endl;
         std::cout << "  U     = " << cell->heatEnergy << std::endl;
         std::cout << "  T     = " << cell->heatEnergy / tc << std::endl;
+        std::cout << "  f     = " << cell->fog << std::endl;
         std::cout << "  f[-x] = " << cell->flow[0] << std::endl;
         std::cout << "  f[-y] = " << cell->flow[1] << std::endl;
     }

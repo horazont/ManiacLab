@@ -37,16 +37,19 @@ struct SimulationConfig {
     double flowDamping;
     double convectionFriction;
     double heatFlowFriction;
+    double fogFlowFriction;
 
     SimulationConfig(
             const double flowFriction,
             const double flowDamping,
             const double convectionFriction,
-            const double heatFlowFriction):
+            const double heatFlowFriction,
+            const double fogFlowFriction):
         flowFriction(flowFriction),
         flowDamping(flowDamping),
         convectionFriction(convectionFriction),
-        heatFlowFriction(heatFlowFriction)
+        heatFlowFriction(heatFlowFriction),
+        fogFlowFriction(fogFlowFriction)
     {
 
     }
@@ -55,7 +58,8 @@ struct SimulationConfig {
         flowFriction(ref.flowFriction),
         flowDamping(ref.flowDamping),
         convectionFriction(ref.convectionFriction),
-        heatFlowFriction(ref.heatFlowFriction)
+        heatFlowFriction(ref.heatFlowFriction),
+        fogFlowFriction(ref.fogFlowFriction)
     {
 
     }
@@ -66,6 +70,7 @@ struct SimulationConfig {
         flowDamping = ref.flowDamping;
         convectionFriction = ref.convectionFriction;
         heatFlowFriction = ref.heatFlowFriction;
+        fogFlowFriction = ref.fogFlowFriction;
         return *this;
     }
 };
