@@ -91,14 +91,14 @@ MovementStraight::~MovementStraight()
 bool MovementStraight::update(TimeFloat interval)
 {
     _time += interval / duration;
-    if (_time >= 1.0) {
-        _time = 1.0;
+    if (_time >= 2.0) {
+        _time = 2.0;
     }
 
-    _obj->x = _startX + _offX * _time;
-    _obj->y = _startY + _offY * _time;
+    _obj->x = _startX + _offX * _time / 2;
+    _obj->y = _startY + _offY * _time / 2;
 
-    if (_time >= 1.0) {
+    if (_time >= 2.0) {
         deleteSelf();
         return true;
     }
