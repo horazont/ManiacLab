@@ -462,33 +462,6 @@ void Automaton::waitFor()
     _cells = tmp;
 }
 
-void Automaton::printCells(const double min, const double max,
-    const char **map, const int mapLen)
-{
-    assert(!_resumed);
-    for (CoordInt y = 0; y < _height; y++) {
-        for (CoordInt x = 0; x < _width; x++) {
-            Cell *cell = cellAt(x, y);
-            CellMetadata *meta = metaAt(x, y);
-            if (meta->blocked) {
-                std::cout << map[mapLen];
-            } else {
-                const double val = cell->airPressure;
-                const double scaled = (val - min) / (max - min);
-                int index = (int)(scaled * mapLen);
-                if (index < 0)
-                    index = 0;
-                if (index >= mapLen)
-                    index = mapLen-1;
-
-                std::cout << map[index];
-            }
-        }
-        std::cout << "\n";
-        std::cout.flush();
-    }
-}
-
 void Automaton::printCellsBlock(const double min, const double max)
 {
     static const char *map[6] = {
