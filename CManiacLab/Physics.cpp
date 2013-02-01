@@ -572,8 +572,12 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
     const double tempFlow = (dTemp > 0 ? dTemp * _sim.convectionFriction : 0);
     const double pressFlow = dPressure * _sim.flowFriction;
     const double oldFlow = b_cellA->flow[direction];
+
+    // This is to take into account inertia of mass the air has. We
+    // apply a moving average on the flow vector, which is then used
+    // to calculate the flow we're applying this frame.
     const double flow = oldFlow * _sim.flowDamping + (tempFlow + pressFlow) * (1.0 - _sim.flowDamping);
-    double applicableFlow = clamp(
+    const double applicableFlow = clamp(
         flow,
         -b_cellB->airPressure / 4.,
         b_cellA->airPressure / 4.
@@ -587,13 +591,13 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
     f_cellA->airPressure -= applicableFlow;
     f_cellB->airPressure += applicableFlow;
 
-    if ((applicableFlow >= 0 && tcA == 0) || (applicableFlow <= 0 && tcB == 0)) {
-        return applicableFlow;
-    }
+    // this was once an if which lead to a return -- we're now
+    // asserting that this doesn't happen as I'm pretty sure it won't.
+    // (and branching is evil)
+    assert(! ((applicableFlow >= 0 && tcA == 0) || (applicableFlow <= 0 && tcB == 0) ));
 
     const double tcFlow = applicableFlow;
     const double energyFlow = (applicableFlow > 0 ? b_cellA->heatEnergy / tcA * tcFlow : b_cellB->heatEnergy / tcB * tcFlow);
-
     assert(!isnan(energyFlow));
 
     f_cellA->heatEnergy -= energyFlow;
