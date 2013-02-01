@@ -37,7 +37,7 @@ authors named in the AUTHORS file.
 
 using namespace PyEngine;
 
-double inline clamp(const double value, const double min, const double max)
+inline double clamp(const double value, const double min, const double max)
 {
     if (value > max)
         return max;
@@ -45,6 +45,13 @@ double inline clamp(const double value, const double min, const double max)
         return min;
     else
         return value;
+}
+
+inline double max(const double a, const double b)
+{
+    if (a > b)
+	return a;
+    return b;
 }
 
 Automaton::Automaton(CoordInt width, CoordInt height,
