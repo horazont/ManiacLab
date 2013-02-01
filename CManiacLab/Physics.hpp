@@ -169,9 +169,7 @@ public:
      */
     void waitFor();
 public:
-    void printCells256(const double min, const double max);
     void printFlow();
-
 public:
     /**
      * Convert the data in the physics cells to a human-interpretable

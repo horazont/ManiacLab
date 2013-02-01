@@ -462,39 +462,6 @@ void Automaton::waitFor()
     _cells = tmp;
 }
 
-void Automaton::printCells256(const double min, const double max)
-{
-    static const char *map[25] = {
-        "\x1b[38;5;232m█",
-        "\x1b[38;5;233m█",
-        "\x1b[38;5;234m█",
-        "\x1b[38;5;235m█",
-        "\x1b[38;5;236m█",
-        "\x1b[38;5;237m█",
-        "\x1b[38;5;238m█",
-        "\x1b[38;5;239m█",
-        "\x1b[38;5;240m█",
-        "\x1b[38;5;241m█",
-        "\x1b[38;5;242m█",
-        "\x1b[38;5;243m█",
-        "\x1b[38;5;244m█",
-        "\x1b[38;5;245m█",
-        "\x1b[38;5;246m█",
-        "\x1b[38;5;247m█",
-        "\x1b[38;5;248m█",
-        "\x1b[38;5;249m█",
-        "\x1b[38;5;250m█",
-        "\x1b[38;5;251m█",
-        "\x1b[38;5;252m█",
-        "\x1b[38;5;253m█",
-        "\x1b[38;5;254m█",
-        "\x1b[38;5;255m█",
-        "\x1b[38;5;255mx"
-    };
-    static const int maxMap = 24;
-    printCells(min, max, map, maxMap);
-}
-
 void Automaton::printFlow()
 {
     static const char *map[8] = {
