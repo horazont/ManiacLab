@@ -247,7 +247,7 @@ void Automaton::moveStamp(const CoordInt oldx, const CoordInt oldy,
     stampCells--;
 
     for (uintptr_t i = 0; i < stampCellsLen; i++) {
-        assert(writeIndex < cellStampLength);
+        assert(writeIndex < (uintptr_t)cellStampLength);
         stampCells++;
 
         const CoordInt x = oldx + stampCells->x;
