@@ -462,39 +462,6 @@ void Automaton::waitFor()
     _cells = tmp;
 }
 
-void Automaton::printFlow()
-{
-    static const char *map[8] = {
-        "→", "↘", "↓", "↙", "←", "↖", "↑", "↗"
-    };
-    static const char *none = "⋅";
-
-    assert(!_resumed);
-    for (CoordInt y = 0; y < _height; y++) {
-        for (CoordInt x = 0; x < _width; x++) {
-            Cell *cell = cellAt(x, y);
-            CellMetadata *meta = metaAt(x, y);
-            if (meta->blocked) {
-                std::cout << "x";
-                continue;
-            }
-
-            if (sqrt(cell->flow[0]*cell->flow[0] + cell->flow[1]*cell->flow[1]) < 0.0001) {
-                std::cout << none;
-            } else {
-                double angle = atan2(cell->flow[0], cell->flow[1]) + M_PI - M_PI / 4.;
-                if (angle >= 2*M_PI) {
-                    angle -= 2*M_PI;
-                }
-                const int index = (int)(4.*angle / M_PI);
-                assert(index >= 0 && index < 8);
-                std::cout << map[index];
-            }
-        }
-        std::cout << std::endl;
-    }
-}
-
 void Automaton::toGLTexture(const double min, const double max,
     bool threadRegions)
 {

@@ -169,7 +169,6 @@ public:
      */
     void waitFor();
 public:
-    void printFlow();
 public:
     /**
      * Convert the data in the physics cells to a human-interpretable
