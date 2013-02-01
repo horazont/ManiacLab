@@ -169,7 +169,6 @@ public:
      */
     void waitFor();
 public:
-public:
     /**
      * Convert the data in the physics cells to a human-interpretable
      * image representation and store it in the currently bound

@@ -303,16 +303,22 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
 {
     assert(!_resumed);
 
+    // to iterate over neighbouring cells
+    static const intptr_t offs[4][2] = {
+        {0, -1}, {-1, 0}, {1, 0}, {0, 1}
+    };
+
+    // buffers to keep temporary data. we keep them in a static variable.
+    // XXX: This will break for more than one Automaton instance!
     const intptr_t indexRowLength = subdivisionCount+2;
     const intptr_t indexLength = indexRowLength * indexRowLength;
     static intptr_t borderIndicies[indexLength];
     static Cell *borderCells[indexLength];
     static double borderCellWeights[indexLength];
 
-    // to iterate over neighbouring cells
-    static const intptr_t offs[4][2] = {
-        {0, -1}, {-1, 0}, {1, 0}, {0, 1}
-    };
+    intptr_t borderCellWriteIndex = 0;
+    intptr_t borderCellCount = 0;
+    double borderCellWeight = 0;
 
     memset(borderIndicies, -1, indexLength * sizeof(intptr_t));
     memset(borderCells, 0, indexLength * sizeof(Cell*));
@@ -321,10 +327,10 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
     double airToDistribute = 0.;
     double heatToDistribute = 0.;
     double fogToDistribute = 0.;
-    intptr_t borderCellWriteIndex = 0;
-    intptr_t borderCellCount = 0;
-    double borderCellWeight = 0;
 
+    // velocity information for quick and easy access. The kind we
+    // initialize these variables in special cases allows us to avoid
+    // several checks later.
     const double vel_norm = (vel != nullptr ? (vel->norm() != 0 ? vel->norm() : 0) : 0);
     const double vel_x = (vel_norm > 0 ? vel->x / vel_norm : 0);
     const double vel_y = (vel_norm > 0 ? vel->y / vel_norm : 0);
@@ -370,11 +376,6 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
                 borderIndicies[indexCell] = -2;
                 continue;
             }
-
-            //~ const CoordPair curr_offs = CoordPair(p.x - halfOffset, p.y - halfOffset);
-//~
-            //~ double cellWeight = (vel_norm > 0 ? curr_offs.normed_float_dotp(vel_x, vel_y) : 1);
-            //~ cellWeight = (cellWeight > 0 ? cellWeight : 0);
 
             const double cellWeight = max((vel_norm > 0 ? offs[j][0] * vel_x + offs[j][1] * vel_y : 1), 0);
 
@@ -424,10 +425,6 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
         (*neighCell)->airPressure += airPerCell * cellWeight;
         (*neighCell)->heatEnergy += heatPerCell * cellWeight;
         (*neighCell)->fog += fogPerCell * cellWeight;
-        //~ if (vel != nullptr) {
-            //~ (*neighCell)->flow[0] += vel->x;
-            //~ (*neighCell)->flow[1] += vel->y;
-        //~ }
 
         assert(!isnan((*neighCell)->heatEnergy));
         j++;
