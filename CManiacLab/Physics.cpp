@@ -462,15 +462,6 @@ void Automaton::waitFor()
     _cells = tmp;
 }
 
-void Automaton::printCellsBlock(const double min, const double max)
-{
-    static const char *map[6] = {
-        " ", "░", "▒", "▓", "█", "x"
-    };
-    static const int maxMap = 5;
-    printCells(min, max, map, maxMap);
-}
-
 void Automaton::printCells256(const double min, const double max)
 {
     static const char *map[25] = {

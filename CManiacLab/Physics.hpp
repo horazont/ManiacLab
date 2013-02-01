@@ -169,7 +169,6 @@ public:
      */
     void waitFor();
 public:
-    void printCellsBlock(const double min, const double max);
     void printCells256(const double min, const double max);
     void printFlow();
 
