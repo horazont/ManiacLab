@@ -400,7 +400,7 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
         assert(!isnan(currCell->heatEnergy));
     }
 
-    if (airToDistribute == 0)
+    if (airToDistribute == 0 && fogToDistribute == 0)
         return;
 
     if (borderCellCount == 0) {
