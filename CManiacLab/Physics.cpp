@@ -305,9 +305,9 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
 
     const intptr_t indexRowLength = subdivisionCount+2;
     const intptr_t indexLength = indexRowLength * indexRowLength;
-    static intptr_t *borderIndicies = (intptr_t*)malloc(indexLength * sizeof(intptr_t));
-    static Cell **borderCells = (Cell**)malloc(indexLength * sizeof(Cell*));
-    static double *borderCellWeights = (double*)malloc(indexLength * sizeof(double));
+    static intptr_t borderIndicies[indexLength];
+    static Cell *borderCells[indexLength];
+    static double borderCellWeights[indexLength];
 
     // to iterate over neighbouring cells
     static const intptr_t offs[4][2] = {
