@@ -605,7 +605,11 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
     // this was once an if which lead to a return -- we're now
     // asserting that this doesn't happen as I'm pretty sure it won't.
     // (and branching is evil)
-    assert(! ((applicableFlow >= 0 && tcA == 0) || (applicableFlow <= 0 && tcB == 0) ));
+    assert(! ((applicableFlow > 0 && tcA == 0) || (applicableFlow < 0 && tcB == 0) ));
+
+    if (applicableFlow == 0) {
+        return applicableFlow;
+    }
 
     const double tcFlow = applicableFlow;
     const double energyFlow = (applicableFlow > 0 ? b_cellA->heatEnergy / tcA * tcFlow : b_cellB->heatEnergy / tcB * tcFlow);
