@@ -584,18 +584,18 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
     const double pressFlow = dPressure * _sim.flowFriction;
     const double oldFlow = b_cellA->flow[direction];
 
+    const double tcA = b_cellA->airPressure;
+    const double tcB = b_cellB->airPressure;
+
     // This is to take into account inertia of mass the air has. We
     // apply a moving average on the flow vector, which is then used
     // to calculate the flow we're applying this frame.
     const double flow = oldFlow * _sim.flowDamping + (tempFlow + pressFlow) * (1.0 - _sim.flowDamping);
     const double applicableFlow = clamp(
         flow,
-        -b_cellB->airPressure / 4.,
-        b_cellA->airPressure / 4.
+        -tcB / 4.,
+        tcA / 4.
     );
-
-    const double tcA = b_cellA->airPressure;
-    const double tcB = b_cellB->airPressure;
 
     f_cellA->flow[direction] = flow;
 
