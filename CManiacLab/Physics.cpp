@@ -454,7 +454,7 @@ void Automaton::resume()
 void Automaton::setBlocked(CoordInt x, CoordInt y, bool blocked)
 {
     assert(!_resumed);
-    _metadata[x+_width*y].blocked = true;
+    _metadata[x+_width*y].blocked = blocked;
 }
 
 void Automaton::waitFor()
