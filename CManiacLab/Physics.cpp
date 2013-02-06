@@ -597,7 +597,7 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
         tcA / 4.
     );
 
-    f_cellA->flow[direction] = flow;
+    f_cellA->flow[direction] = applicableFlow;
 
     f_cellA->airPressure -= applicableFlow;
     f_cellB->airPressure += applicableFlow;
