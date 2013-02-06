@@ -40,9 +40,9 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
     _height(height),
     _cells(new LevelCell[width*height]()),
     _physics(Automaton(width*subdivisionCount, height*subdivisionCount, SimulationConfig(
-        0.5,        // flow friction
-        0.995,      // flow damping
-        0.3,       // convection friction
+        0.3,        // flow friction
+        0.991,      // flow damping
+        0.3,        // convection friction
         0.05,       // heat flow friction
         0.1         // fog flow friction
     ), mp)),
