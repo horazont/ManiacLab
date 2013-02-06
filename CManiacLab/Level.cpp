@@ -213,8 +213,8 @@ TestObject *Level::debug_placeObject(const CoordInt x, const CoordInt y)
 
 void Level::debug_testObject()
 {
-    const CoordInt x = ((double)rand() / RAND_MAX) * (_width - 1);
-    const CoordInt y = ((double)rand() / RAND_MAX) * (_height - 1);
+    // const CoordInt x = ((double)rand() / RAND_MAX) * (_width - 1);
+    // const CoordInt y = ((double)rand() / RAND_MAX) * (_height - 1);
     debug_placeObject(WALL_CENTER_X, 0);
 }
 
