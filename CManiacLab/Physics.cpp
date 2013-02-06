@@ -305,7 +305,7 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
 
     // to iterate over neighbouring cells
     static const intptr_t offs[4][2] = {
-        {0, -1}, {-1, 0}, {1, 0}, {0, 1}
+        {-1, 0}, {1, 0}, {0, -1}, {0, 1}
     };
 
     // buffers to keep temporary data. we keep them in a static variable.
@@ -360,6 +360,18 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
 
             if (borderIndicies[indexCell] != -1) {
                 // inspected earlier, no need to check again
+                const intptr_t cellIndex = borderIndicies[indexCell];
+                if (cellIndex >= 0 && vel_norm > 0) {
+                    // in this case, we make sure we get the maximum
+                    // weight for this cell
+                    const double cellWeight = max((vel_norm > 0 ? offs[j][0] * vel_x + offs[j][1] * vel_y : 1), 0);
+                    const double oldWeight = borderCellWeights[cellIndex];
+                    if (oldWeight < cellWeight) {
+                        borderCellWeight -= oldWeight;
+                        borderCellWeight += cellWeight;
+                        borderCellWeights[cellIndex] = cellWeight;
+                    }
+                }
                 continue;
             }
 
@@ -393,7 +405,6 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
             borderCellCount--;
             borderCells[borderIndicies[indexCell]] = 0;
             borderCellWeight -= borderCellWeights[borderIndicies[indexCell]];
-
         }
         borderIndicies[indexCell] = -2;
 
