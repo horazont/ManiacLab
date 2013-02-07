@@ -57,7 +57,7 @@ inline double max(const double a, const double b)
 Automaton::Automaton(CoordInt width, CoordInt height,
         const SimulationConfig &config,
         bool mp,
-        double initialPressure, double initialTemperature):
+        double initial_pressure, double initial_temperature):
     _resumed(false),
     _width(width),
     _height(height),
@@ -65,45 +65,45 @@ Automaton::Automaton(CoordInt width, CoordInt height,
     _cells(new Cell[width*height]()),
     _backbuffer(new Cell[width*height]()),
     _config(config),
-    _threadCount(mp?(Thread::getHardwareThreadCount()):1),
-    _threads(new AutomatonThread*[_threadCount]()),
-    _finishedSignals(new Semaphore*[_threadCount]()),
-    _forwardSignals(new Semaphore*[_threadCount-1]()),
-    _sharedZones(new Mutex*[_threadCount-1]()),
-    _rgbaBuffer(0)
+    _thread_count(mp?(Thread::getHardwareThreadCount()):1),
+    _threads(new AutomatonThread*[_thread_count]()),
+    _finished_signals(new Semaphore*[_thread_count]()),
+    _forward_signals(new Semaphore*[_thread_count-1]()),
+    _shared_zones(new Mutex*[_thread_count-1]()),
+    _rgba_buffer(0)
 {
     for (CoordInt y = 0; y < _height; y++) {
         for (CoordInt x = 0; x < _width; x++) {
-            initMetadata(_metadata, x, y);
-            initCell(_cells, x, y, initialPressure, initialTemperature);
-            initCell(_backbuffer, x, y, initialPressure, initialTemperature);
+            init_metadata(_metadata, x, y);
+            init_cell(_cells, x, y, initial_pressure, initial_temperature);
+            init_cell(_backbuffer, x, y, initial_pressure, initial_temperature);
         }
     }
-    initThreads();
+    init_threads();
 }
 
 Automaton::~Automaton()
 {
-    waitFor();
-    for (unsigned int i = 0; i < _threadCount - 1; i++) {
-        delete _forwardSignals[i];
-        delete _finishedSignals[i];
-        delete _sharedZones[i];
+    wait_for();
+    for (unsigned int i = 0; i < _thread_count - 1; i++) {
+        delete _forward_signals[i];
+        delete _finished_signals[i];
+        delete _shared_zones[i];
     }
-    delete _finishedSignals[_threadCount-1];
-    delete[] _sharedZones;
-    delete[] _forwardSignals;
-    delete[] _finishedSignals;
+    delete _finished_signals[_thread_count-1];
+    delete[] _shared_zones;
+    delete[] _forward_signals;
+    delete[] _finished_signals;
     delete[] _threads;
     delete[] _cells;
     delete[] _backbuffer;
     delete[] _metadata;
-    if (_rgbaBuffer) {
-        free(_rgbaBuffer);
+    if (_rgba_buffer) {
+        free(_rgba_buffer);
     }
 }
 
-void Automaton::initMetadata(CellMetadata *buffer, CoordInt x,
+void Automaton::init_metadata(CellMetadata *buffer, CoordInt x,
     CoordInt y)
 {
     CellMetadata *cell = &buffer[x+_width*y];
@@ -111,25 +111,25 @@ void Automaton::initMetadata(CellMetadata *buffer, CoordInt x,
     cell->obj = 0;
 }
 
-void Automaton::initCell(Cell *buffer, CoordInt x, CoordInt y,
-    double initialPressure, double initialTemperature)
+void Automaton::init_cell(Cell *buffer, CoordInt x, CoordInt y,
+    double initial_pressure, double initial_temperature)
 {
     Cell *cell = &buffer[x+_width*y];
-    cell->airPressure = initialPressure;
-    cell->heatEnergy = initialTemperature * (airTempCoeffPerPressure * cell->airPressure);
+    cell->air_pressure = initial_pressure;
+    cell->heat_energy = initial_temperature * (airtempcoeff_per_pressure * cell->air_pressure);
     cell->flow[0] = 0;
     cell->flow[1] = 0;
     cell->fog = 0;
 }
 
-void Automaton::initThreads()
+void Automaton::init_threads()
 {
-    for (unsigned int i = 0; i < _threadCount - 1; i++) {
-        _finishedSignals[i] = new Semaphore();
-        _sharedZones[i] = new Mutex();
-        _forwardSignals[i] = new Semaphore();
+    for (unsigned int i = 0; i < _thread_count - 1; i++) {
+        _finished_signals[i] = new Semaphore();
+        _shared_zones[i] = new Mutex();
+        _forward_signals[i] = new Semaphore();
     }
-    _finishedSignals[_threadCount - 1] = new Semaphore();
+    _finished_signals[_thread_count - 1] = new Semaphore();
 
     // We limit the thread count to 64 for now. Above that, synchronization is
     // probably more expensive than everything else. Synchronization is O(n),
@@ -141,164 +141,164 @@ void Automaton::initThreads()
     // Additionally, everything will break if we have an amount of threads for
     // which the height divided by the thread count (integer division) gives
     // zero (which is asserted against below).
-    const CoordInt sliceSize = _height / (_threadCount <= 64 ? _threadCount : 64);
-    assert(sliceSize > 0);
+    const CoordInt slice_size = _height / (_thread_count <= 64 ? _thread_count : 64);
+    assert(slice_size > 0);
 
-    CoordInt sliceY0 = 0;
+    CoordInt slice_y0 = 0;
 
-    for (unsigned int i = 0; i < _threadCount - 1; i++) {
+    for (unsigned int i = 0; i < _thread_count - 1; i++) {
         _threads[i] = new AutomatonThread(this,
-            sliceY0, sliceY0 + sliceSize-1,  // range on which this thread works
-            _finishedSignals[i],
-            (i>0) ? _forwardSignals[i-1] : 0,
-            _forwardSignals[i],
-            (i>0) ? _sharedZones[i-1] : 0,
-            _sharedZones[i]
+            slice_y0, slice_y0 + slice_size-1,  // range on which this thread works
+            _finished_signals[i],
+            (i>0) ? _forward_signals[i-1] : 0,
+            _forward_signals[i],
+            (i>0) ? _shared_zones[i-1] : 0,
+            _shared_zones[i]
         );
-        sliceY0 += sliceSize;
+        slice_y0 += slice_size;
     }
-    _threads[_threadCount-1] = new AutomatonThread(this,
-        sliceY0, _height-1,
-        _finishedSignals[_threadCount-1],
-        (_threadCount > 1) ? _forwardSignals[_threadCount-2] : 0,
+    _threads[_thread_count-1] = new AutomatonThread(this,
+        slice_y0, _height-1,
+        _finished_signals[_thread_count-1],
+        (_thread_count > 1) ? _forward_signals[_thread_count-2] : 0,
         0,
-        (_threadCount > 1) ? _sharedZones[_threadCount-2] : 0,
+        (_thread_count > 1) ? _shared_zones[_thread_count-2] : 0,
         0
     );
 }
 
-void Automaton::clearCells(const CoordInt dx, const CoordInt dy,
+void Automaton::clear_cells(const CoordInt dx, const CoordInt dy,
     const Stamp *stamp)
 {
     assert(!_resumed);
 
-    uintptr_t stampCellsLen = 0;
-    const CoordPair *stampCells = stamp->getMapCoords(&stampCellsLen);
+    uintptr_t stamp_cells_len = 0;
+    const CoordPair *stamp_cells = stamp->get_map_coords(&stamp_cells_len);
 
-    for (uintptr_t i = 0; i < stampCellsLen; i++) {
-        const CoordPair p = stampCells[i];
+    for (uintptr_t i = 0; i < stamp_cells_len; i++) {
+        const CoordPair p = stamp_cells[i];
         const CoordInt x = p.x + dx;
         const CoordInt y = p.y + dy;
 
-        Cell *const currCell = safeCellAt(x, y);
-        if (!currCell) {
+        Cell *const curr_cell = safe_cell_at(x, y);
+        if (!curr_cell) {
             continue;
         }
-        CellMetadata *const currMeta = metaAt(x, y);
-        initCell(_cells, x, y, 0, 0);
-        initCell(_backbuffer, x, y, 0, 0);
-        currMeta->blocked = false;
+        CellMetadata *const curr_meta = meta_at(x, y);
+        init_cell(_cells, x, y, 0, 0);
+        init_cell(_backbuffer, x, y, 0, 0);
+        curr_meta->blocked = false;
     }
 }
 
-void Automaton::applyTemperatureStamp(const CoordInt x, const CoordInt y,
+void Automaton::apply_temperature_stamp(const CoordInt x, const CoordInt y,
     const Stamp &stamp, const double temperature)
 {
-    uintptr_t stampCellsLen = 0;
-    const CoordPair *cellCoord = stamp.getMapCoords(&stampCellsLen);
-    cellCoord--;
+    uintptr_t stamp_cells_len = 0;
+    const CoordPair *cell_coord = stamp.get_map_coords(&stamp_cells_len);
+    cell_coord--;
 
-    for (uintptr_t i = 0; i < stampCellsLen; i++) {
-        cellCoord++;
+    for (uintptr_t i = 0; i < stamp_cells_len; i++) {
+        cell_coord++;
 
-        const CoordInt cx = x + cellCoord->x;
-        const CoordInt cy = y + cellCoord->y;
+        const CoordInt cx = x + cell_coord->x;
+        const CoordInt cy = y + cell_coord->y;
 
-        Cell *cell = safeCellAt(cx, cy);
+        Cell *cell = safe_cell_at(cx, cy);
         if (!cell) {
             continue;
         }
 
-        CellMetadata *meta = metaAt(cx, cy);
+        CellMetadata *meta = meta_at(cx, cy);
         if (meta->blocked) {
-            cell->heatEnergy = temperature * meta->obj->tempCoefficient;
+            cell->heat_energy = temperature * meta->obj->temp_coefficient;
         } else {
-            cell->heatEnergy = temperature * (airTempCoeffPerPressure * cell->airPressure);
+            cell->heat_energy = temperature * (airtempcoeff_per_pressure * cell->air_pressure);
         }
     }
 }
 
-void Automaton::getCellStampAt(const CoordInt left, const CoordInt top,
+void Automaton::get_cell_stamp_at(const CoordInt left, const CoordInt top,
     CellStamp *stamp)
 {
-    Cell **currCell = (Cell**)stamp;
-    for (CoordInt y = 0; y < subdivisionCount; y++) {
-        Cell *srcCell = &_cells[top + y];
-        for (CoordInt x = 0; x < subdivisionCount; x++) {
-            *currCell = srcCell;
-            currCell++;
-            srcCell++;
+    Cell **curr_cell = (Cell**)stamp;
+    for (CoordInt y = 0; y < subdivision_count; y++) {
+        Cell *src_cell = &_cells[top + y];
+        for (CoordInt x = 0; x < subdivision_count; x++) {
+            *curr_cell = src_cell;
+            curr_cell++;
+            src_cell++;
         }
     }
 }
 
-void Automaton::moveStamp(const CoordInt oldx, const CoordInt oldy,
+void Automaton::move_stamp(const CoordInt oldx, const CoordInt oldy,
     const CoordInt newx, const CoordInt newy,
     const Stamp *stamp, const CoordPair *const vel)
 {
     assert(!_resumed);
 
-    static CellInfo cells[cellStampLength];
+    static CellInfo cells[cell_stamp_length];
 
-    uintptr_t writeIndex = 0;
+    uintptr_t write_index = 0;
 
-    uintptr_t stampCellsLen = 0;
-    const CoordPair *stampCells = stamp->getMapCoords(&stampCellsLen);
-    stampCells--;
+    uintptr_t stamp_cells_len = 0;
+    const CoordPair *stamp_cells = stamp->get_map_coords(&stamp_cells_len);
+    stamp_cells--;
 
-    for (uintptr_t i = 0; i < stampCellsLen; i++) {
-        assert(writeIndex < (uintptr_t)cellStampLength);
-        stampCells++;
+    for (uintptr_t i = 0; i < stamp_cells_len; i++) {
+        assert(write_index < (uintptr_t)cell_stamp_length);
+        stamp_cells++;
 
-        const CoordInt x = oldx + stampCells->x;
-        const CoordInt y = oldy + stampCells->y;
+        const CoordInt x = oldx + stamp_cells->x;
+        const CoordInt y = oldy + stamp_cells->y;
 
-        Cell *cell = safeCellAt(x, y);
+        Cell *cell = safe_cell_at(x, y);
         if (!cell) {
             continue;
         }
-        CellMetadata *meta = metaAt(x, y);
+        CellMetadata *meta = meta_at(x, y);
 
-        CellInfo *dst = &cells[writeIndex];
-        memcpy(&dst->offs, stampCells, sizeof(CoordPair));
+        CellInfo *dst = &cells[write_index];
+        memcpy(&dst->offs, stamp_cells, sizeof(CoordPair));
         memcpy(&dst->phys, cell, sizeof(Cell));
         memcpy(&dst->meta, meta, sizeof(CellMetadata));
-        writeIndex++;
-        initCell(_cells, x, y, 0, 0);
-        initCell(_backbuffer, x, y, 0, 0);
+        write_index++;
+        init_cell(_cells, x, y, 0, 0);
+        init_cell(_backbuffer, x, y, 0, 0);
         meta->blocked = false;
         meta->obj = 0;
     }
 
-    placeStamp(newx, newy, cells, writeIndex, vel);
+    place_stamp(newx, newy, cells, write_index, vel);
 }
 
-void Automaton::placeObject(const CoordInt dx, const CoordInt dy,
-    const GameObject *obj, const double initialTemperature)
+void Automaton::place_object(const CoordInt dx, const CoordInt dy,
+    const GameObject *obj, const double initial_temperature)
 {
     assert(!_resumed);
 
-    static CellInfo cells[cellStampLength];
+    static CellInfo cells[cell_stamp_length];
 
-    uintptr_t stampCellsLen = 0;
-    const CoordPair *stampCells = obj->stamp->getMapCoords(&stampCellsLen);
+    uintptr_t stamp_cells_len = 0;
+    const CoordPair *stamp_cells = obj->stamp->get_map_coords(&stamp_cells_len);
 
-    double heatEnergy = initialTemperature * obj->tempCoefficient;
+    double heat_energy = initial_temperature * obj->temp_coefficient;
 
-    for (uintptr_t i = 0; i < stampCellsLen; i++) {
+    for (uintptr_t i = 0; i < stamp_cells_len; i++) {
         CellInfo *const dst = &cells[i];
-        dst->offs = stampCells[i];
+        dst->offs = stamp_cells[i];
         memset(&(dst->phys), 0, sizeof(Cell));
-        dst->phys.heatEnergy = heatEnergy;
+        dst->phys.heat_energy = heat_energy;
         dst->meta.blocked = true;
         dst->meta.obj = obj;
     }
 
-    placeStamp(dx, dy, cells, stampCellsLen);
+    place_stamp(dx, dy, cells, stamp_cells_len);
 }
 
-void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
-    const CellInfo *cells, const uintptr_t cellsLen,
+void Automaton::place_stamp(const CoordInt atx, const CoordInt aty,
+    const CellInfo *cells, const uintptr_t cells_len,
     const CoordPair *const vel)
 {
     assert(!_resumed);
@@ -310,23 +310,23 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
 
     // buffers to keep temporary data. we keep them in a static variable.
     // XXX: This will break for more than one Automaton instance!
-    const intptr_t indexRowLength = subdivisionCount+2;
-    const intptr_t indexLength = indexRowLength * indexRowLength;
-    static intptr_t borderIndicies[indexLength];
-    static Cell *borderCells[indexLength];
-    static double borderCellWeights[indexLength];
+    const intptr_t index_row_length = subdivision_count+2;
+    const intptr_t index_length = index_row_length * index_row_length;
+    static intptr_t border_indicies[index_length];
+    static Cell *border_cells[index_length];
+    static double border_cell_weights[index_length];
 
-    intptr_t borderCellWriteIndex = 0;
-    intptr_t borderCellCount = 0;
-    double borderCellWeight = 0;
+    intptr_t border_cell_write_index = 0;
+    intptr_t border_cell_count = 0;
+    double border_cell_weight = 0;
 
-    memset(borderIndicies, -1, indexLength * sizeof(intptr_t));
-    memset(borderCells, 0, indexLength * sizeof(Cell*));
+    memset(border_indicies, -1, index_length * sizeof(intptr_t));
+    memset(border_cells, 0, index_length * sizeof(Cell*));
 
     // collect surplus matter here
-    double airToDistribute = 0.;
-    double heatToDistribute = 0.;
-    double fogToDistribute = 0.;
+    double air_to_distribute = 0.;
+    double heat_to_distribute = 0.;
+    double fog_to_distribute = 0.;
 
     // velocity information for quick and easy access. The kind we
     // initialize these variables in special cases allows us to avoid
@@ -335,41 +335,41 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
     const double vel_x = (vel_norm > 0 ? vel->x / vel_norm : 0);
     const double vel_y = (vel_norm > 0 ? vel->y / vel_norm : 0);
 
-    for (uintptr_t i = 0; i < cellsLen; i++) {
+    for (uintptr_t i = 0; i < cells_len; i++) {
         const CoordPair p = cells[i].offs;
         const CoordInt x = p.x + atx;
         const CoordInt y = p.y + aty;
 
-        Cell *const currCell = safeCellAt(x, y);
-        if (!currCell) {
+        Cell *const curr_cell = safe_cell_at(x, y);
+        if (!curr_cell) {
             continue;
         }
-        CellMetadata *const currMeta = metaAt(x, y);
-        assert(!currMeta->blocked);
+        CellMetadata *const curr_meta = meta_at(x, y);
+        assert(!curr_meta->blocked);
 
-        if (!currMeta->blocked) {
-            airToDistribute += currCell->airPressure;
-            heatToDistribute += currCell->heatEnergy;
-            fogToDistribute += currCell->fog;
+        if (!curr_meta->blocked) {
+            air_to_distribute += curr_cell->air_pressure;
+            heat_to_distribute += curr_cell->heat_energy;
+            fog_to_distribute += curr_cell->fog;
         }
-        memcpy(currCell, &cells[i].phys, sizeof(Cell));
-        memcpy(currMeta, &cells[i].meta, sizeof(CellMetadata));
+        memcpy(curr_cell, &cells[i].phys, sizeof(Cell));
+        memcpy(curr_meta, &cells[i].meta, sizeof(CellMetadata));
 
         for (uintptr_t j = 0; j < 4; j++) {
-            const intptr_t indexCell = (p.y + offs[j][1] + 1) * indexRowLength + p.x + 1 + offs[j][0];
+            const intptr_t index_cell = (p.y + offs[j][1] + 1) * index_row_length + p.x + 1 + offs[j][0];
 
-            if (borderIndicies[indexCell] != -1) {
+            if (border_indicies[index_cell] != -1) {
                 // inspected earlier, no need to check again
-                const intptr_t cellIndex = borderIndicies[indexCell];
-                if (cellIndex >= 0 && vel_norm > 0) {
+                const intptr_t cell_index = border_indicies[index_cell];
+                if (cell_index >= 0 && vel_norm > 0) {
                     // in this case, we make sure we get the maximum
                     // weight for this cell
-                    const double cellWeight = max((vel_norm > 0 ? offs[j][0] * vel_x + offs[j][1] * vel_y : 1), 0);
-                    const double oldWeight = borderCellWeights[cellIndex];
-                    if (oldWeight < cellWeight) {
-                        borderCellWeight -= oldWeight;
-                        borderCellWeight += cellWeight;
-                        borderCellWeights[cellIndex] = cellWeight;
+                    const double cell_weight = max((vel_norm > 0 ? offs[j][0] * vel_x + offs[j][1] * vel_y : 1), 0);
+                    const double old_weight = border_cell_weights[cell_index];
+                    if (old_weight < cell_weight) {
+                        border_cell_weight -= old_weight;
+                        border_cell_weight += cell_weight;
+                        border_cell_weights[cell_index] = cell_weight;
                     }
                 }
                 continue;
@@ -378,91 +378,91 @@ void Automaton::placeStamp(const CoordInt atx, const CoordInt aty,
             const intptr_t nx = x + offs[j][0];
             const intptr_t ny = y + offs[j][1];
 
-            Cell *const neighCell = safeCellAt(nx, ny);
-            if (!neighCell) {
-                borderIndicies[indexCell] = -2;
+            Cell *const neigh_cell = safe_cell_at(nx, ny);
+            if (!neigh_cell) {
+                border_indicies[index_cell] = -2;
                 continue;
             }
-            CellMetadata *const neighMeta = metaAt(nx, ny);
-            if (neighMeta->blocked) {
-                borderIndicies[indexCell] = -2;
+            CellMetadata *const neigh_meta = meta_at(nx, ny);
+            if (neigh_meta->blocked) {
+                border_indicies[index_cell] = -2;
                 continue;
             }
 
-            const double cellWeight = max((vel_norm > 0 ? offs[j][0] * vel_x + offs[j][1] * vel_y : 1), 0);
+            const double cell_weight = max((vel_norm > 0 ? offs[j][0] * vel_x + offs[j][1] * vel_y : 1), 0);
 
-            borderIndicies[indexCell] = borderCellWriteIndex;
-            borderCells[borderCellWriteIndex] = neighCell;
-            borderCellWeights[borderCellWriteIndex] = cellWeight;
-            assert(borderCellWriteIndex < indexLength);
-            borderCellWriteIndex++;
-            borderCellCount++;
-            borderCellWeight += cellWeight;
+            border_indicies[index_cell] = border_cell_write_index;
+            border_cells[border_cell_write_index] = neigh_cell;
+            border_cell_weights[border_cell_write_index] = cell_weight;
+            assert(border_cell_write_index < index_length);
+            border_cell_write_index++;
+            border_cell_count++;
+            border_cell_weight += cell_weight;
         }
 
-        const uintptr_t indexCell = (p.y + 1) * indexRowLength + (p.x + 1);
-        if (borderIndicies[indexCell] >= 0) {
-            borderCellCount--;
-            borderCells[borderIndicies[indexCell]] = 0;
-            borderCellWeight -= borderCellWeights[borderIndicies[indexCell]];
+        const uintptr_t index_cell = (p.y + 1) * index_row_length + (p.x + 1);
+        if (border_indicies[index_cell] >= 0) {
+            border_cell_count--;
+            border_cells[border_indicies[index_cell]] = 0;
+            border_cell_weight -= border_cell_weights[border_indicies[index_cell]];
         }
-        borderIndicies[indexCell] = -2;
+        border_indicies[index_cell] = -2;
 
-        assert(!isnan(currCell->heatEnergy));
+        assert(!isnan(curr_cell->heat_energy));
     }
 
-    if (airToDistribute == 0 && fogToDistribute == 0)
+    if (air_to_distribute == 0 && fog_to_distribute == 0)
         return;
 
-    if (borderCellCount == 0) {
+    if (border_cell_count == 0) {
         fprintf(stderr, "[PHY!] [NC] no cells to move stuff to\n");
         return;
     }
 
-    const double weightToUse = (borderCellWeight > 0 ? borderCellWeight : borderCellCount);
+    const double weight_to_use = (border_cell_weight > 0 ? border_cell_weight : border_cell_count);
 
-    const double airPerCell = airToDistribute / weightToUse;
-    const double heatPerCell = heatToDistribute / weightToUse;
-    const double fogPerCell = fogToDistribute / weightToUse;
+    const double air_per_cell = air_to_distribute / weight_to_use;
+    const double heat_per_cell = heat_to_distribute / weight_to_use;
+    const double fog_per_cell = fog_to_distribute / weight_to_use;
 
     unsigned int j = 0;
-    double *neighCellWeight = &borderCellWeights[0];
-    for (Cell **neighCell = &borderCells[0]; j < borderCellCount; neighCell++) {
-        if (!(*neighCell)) {
-            neighCellWeight++;
+    double *neigh_cell_weight = &border_cell_weights[0];
+    for (Cell **neigh_cell = &border_cells[0]; j < border_cell_count; neigh_cell++) {
+        if (!(*neigh_cell)) {
+            neigh_cell_weight++;
             continue;
         }
-        const double cellWeight = (borderCellWeight > 0 ? *neighCellWeight : 1);
-        (*neighCell)->airPressure += airPerCell * cellWeight;
-        (*neighCell)->heatEnergy += heatPerCell * cellWeight;
-        (*neighCell)->fog += fogPerCell * cellWeight;
+        const double cell_weight = (border_cell_weight > 0 ? *neigh_cell_weight : 1);
+        (*neigh_cell)->air_pressure += air_per_cell * cell_weight;
+        (*neigh_cell)->heat_energy += heat_per_cell * cell_weight;
+        (*neigh_cell)->fog += fog_per_cell * cell_weight;
 
-        assert(!isnan((*neighCell)->heatEnergy));
+        assert(!isnan((*neigh_cell)->heat_energy));
         j++;
-        neighCellWeight++;
+        neigh_cell_weight++;
     }
 }
 
 void Automaton::resume()
 {
-    for (unsigned int i = 0; i < _threadCount; i++) {
+    for (unsigned int i = 0; i < _thread_count; i++) {
         _threads[i]->resume();
     }
     _resumed = true;
 }
 
-void Automaton::setBlocked(CoordInt x, CoordInt y, bool blocked)
+void Automaton::set_blocked(CoordInt x, CoordInt y, bool blocked)
 {
     assert(!_resumed);
     _metadata[x+_width*y].blocked = blocked;
 }
 
-void Automaton::waitFor()
+void Automaton::wait_for()
 {
     if (!_resumed)
         return;
-    for (unsigned int i = 0; i < _threadCount; i++) {
-        _finishedSignals[i]->wait();
+    for (unsigned int i = 0; i < _thread_count; i++) {
+        _finished_signals[i]->wait();
     }
     _resumed = false;
     Cell *tmp = _backbuffer;
@@ -470,32 +470,32 @@ void Automaton::waitFor()
     _cells = tmp;
 }
 
-void Automaton::toGLTexture(const double min, const double max,
-    bool threadRegions)
+void Automaton::to_gl_texture(const double min, const double max,
+    bool thread_regions)
 {
-    if (!_rgbaBuffer) {
-        _rgbaBuffer = (uint32_t*)malloc(_width*_height*4);
+    if (!_rgba_buffer) {
+        _rgba_buffer = (uint32_t*)malloc(_width*_height*4);
     }
 
     const CoordInt half = _width / 2;
 
-    uint32_t *target = _rgbaBuffer;
+    uint32_t *target = _rgba_buffer;
     Cell *source = _backbuffer;
-    CellMetadata *metaSource = _metadata;
+    CellMetadata *meta_source = _metadata;
     for (CoordInt i = 0; i < _width*_height; i++) {
-        if (metaSource->blocked) {
+        if (meta_source->blocked) {
             *target = 0x0000FF;
         } else {
             const bool right = (i % _height) >= half;
-            const unsigned char pressColor = (unsigned char)(clamp((source->airPressure - min) / (max - min), 0.0, 1.0) * 255.0);
-            //~ const double temperature = (metaSource->blocked ? source->heatEnergy / metaSource->obj->tempCoefficient : source->heatEnergy / (source->airPressure * airTempCoeffPerPressure));
-            const double fog = (metaSource->blocked ? 0 : source->fog);
-            //~ const unsigned char tempColor = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
-            const unsigned char fogColor = (unsigned char)(clamp((fog - min) / (max - min), 0.0, 1.0) *255.0);
-            const unsigned char b = (right ? fogColor : pressColor);
+            const unsigned char press_color = (unsigned char)(clamp((source->air_pressure - min) / (max - min), 0.0, 1.0) * 255.0);
+            //~ const double temperature = (meta_source->blocked ? source->heat_energy / meta_source->obj->temp_coefficient : source->heat_energy / (source->air_pressure * airtempcoeff_per_pressure));
+            const double fog = (meta_source->blocked ? 0 : source->fog);
+            //~ const unsigned char temp_color = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
+            const unsigned char fog_color = (unsigned char)(clamp((fog - min) / (max - min), 0.0, 1.0) *255.0);
+            const unsigned char b = (right ? fog_color : press_color);
             const unsigned char r = b;
-            if (threadRegions) {
-                const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _threadCount) / _threadCount * 255.0);
+            if (thread_regions) {
+                const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _thread_count) / _thread_count * 255.0);
                 //const unsigned char b = (unsigned char)(clamp((source->flow[1] - min) / (max - min), -1.0, 1.0) * 127.0 + 127.0);
                 *target = r | (g << 8) | (r << 16);
             } else {
@@ -504,50 +504,50 @@ void Automaton::toGLTexture(const double min, const double max,
         }
         target++;
         source++;
-        metaSource++;
+        meta_source++;
     }
 
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _width, _height, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)_rgbaBuffer);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _width, _height, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)_rgba_buffer);
 }
 
 /* AutomatonThread::AutomatonThread */
 
-AutomatonThread::AutomatonThread(Automaton *dataClass, CoordInt sliceY0,
-        CoordInt sliceY1, Semaphore *finishedSignal,
-        Semaphore *topSharedReady, Semaphore *bottomSharedForward,
-        Mutex *topSharedZone, Mutex *bottomSharedZone):
+AutomatonThread::AutomatonThread(Automaton *dataclass, CoordInt slice_y0,
+        CoordInt slice_y1, Semaphore *finished_signal,
+        Semaphore *top_shared_ready, Semaphore *bottom_shared_forward,
+        Mutex *top_shared_zone, Mutex *bottom_shared_zone):
     Thread::Thread(),
-    _finishedSignal(finishedSignal),
-    _topSharedReady(topSharedReady),
-    _bottomSharedForward(bottomSharedForward),
-    _topSharedZone(topSharedZone),
-    _bottomSharedZone(bottomSharedZone),
-    _dataClass(dataClass),
-    _width(dataClass->_width),
-    _height(dataClass->_height),
-    _sliceY0(sliceY0),
-    _sliceY1(sliceY1),
-    _sim(dataClass->_config),
-    _backbuffer(dataClass->_backbuffer),
-    _cells(dataClass->_cells),
-    _metadata(dataClass->_metadata)
+    _finished_signal(finished_signal),
+    _top_shared_ready(top_shared_ready),
+    _bottom_shared_forward(bottom_shared_forward),
+    _top_shared_zone(top_shared_zone),
+    _bottom_shared_zone(bottom_shared_zone),
+    _dataclass(dataclass),
+    _width(dataclass->_width),
+    _height(dataclass->_height),
+    _slice_y0(slice_y0),
+    _slice_y1(slice_y1),
+    _sim(dataclass->_config),
+    _backbuffer(dataclass->_backbuffer),
+    _cells(dataclass->_cells),
+    _metadata(dataclass->_metadata)
 {
 
 }
 
-inline void AutomatonThread::activateCell(Cell *front, Cell *back)
+inline void AutomatonThread::activate_cell(Cell *front, Cell *back)
 {
-    //~ if (back->airPressure <= 1e-100 && back->airPressure != 0) {
-        //~ front->airPressure = 0;
+    //~ if (back->air_pressure <= 1e-100 && back->air_pressure != 0) {
+        //~ front->air_pressure = 0;
         //~ front->flow[0] = 0;
         //~ front->flow[1] = 0;
         //~ (back+_width)->flow[1] = 0;
         //~ (back+1)->flow[0] = 0;
         //~ (front+_width)->flow[1] = 0;
         //~ (front+1)->flow[0] = 0;
-        //~ front->heatEnergy = 0;
+        //~ front->heat_energy = 0;
     //~ } else {
-    front->airPressure = back->airPressure;
+    front->air_pressure = back->air_pressure;
     for (int i = 0; i < 2; i++) {
         const double flow = back->flow[i];
         if (!isinf(flow) && abs(flow) < 1e10) {
@@ -557,16 +557,16 @@ inline void AutomatonThread::activateCell(Cell *front, Cell *back)
             back->flow[i] = 0;
         }
     }
-    front->heatEnergy = back->heatEnergy;
+    front->heat_energy = back->heat_energy;
     front->fog = back->fog;
     //~ }
-    assert(!isnan(back->airPressure));
+    assert(!isnan(back->air_pressure));
     assert(!isnan(back->fog));
-    assert(!isnan(back->heatEnergy));
+    assert(!isnan(back->heat_energy));
 }
 
 template<class CType>
-void AutomatonThread::getCellAndNeighbours(CType *buffer, CType **cell,
+void AutomatonThread::get_cell_and_neighbours(CType *buffer, CType **cell,
         CType *(*neighbours)[2], CoordInt x, CoordInt y)
 {
     *cell = &buffer[x+_width*y];
@@ -578,129 +578,129 @@ inline double AutomatonThread::flow(const Cell *b_cellA, Cell *f_cellA,
     const Cell *b_cellB, Cell *f_cellB,
     CoordInt direction)
 {
-    const double dPressure = b_cellA->airPressure - b_cellB->airPressure;
-    const double dTemp = (direction == 1 ? b_cellA->heatEnergy - b_cellB->heatEnergy : 0);
-    const double tempFlow = (dTemp > 0 ? dTemp * _sim.convectionFriction : 0);
-    const double pressFlow = dPressure * _sim.flowFriction;
-    const double oldFlow = b_cellA->flow[direction];
+    const double dpressure = b_cellA->air_pressure - b_cellB->air_pressure;
+    const double dtemp = (direction == 1 ? b_cellA->heat_energy - b_cellB->heat_energy : 0);
+    const double temp_flow = (dtemp > 0 ? dtemp * _sim.convection_friction : 0);
+    const double press_flow = dpressure * _sim.flow_friction;
+    const double old_flow = b_cellA->flow[direction];
 
-    const double tcA = b_cellA->airPressure;
-    const double tcB = b_cellB->airPressure;
+    const double tcA = b_cellA->air_pressure;
+    const double tcB = b_cellB->air_pressure;
 
     // This is to take into account inertia of mass the air has. We
     // apply a moving average on the flow vector, which is then used
     // to calculate the flow we're applying this frame.
-    const double flow = oldFlow * _sim.flowDamping + (tempFlow + pressFlow) * (1.0 - _sim.flowDamping);
-    const double applicableFlow = clamp(
+    const double flow = old_flow * _sim.flow_damping + (temp_flow + press_flow) * (1.0 - _sim.flow_damping);
+    const double applicable_flow = clamp(
         flow,
         -tcB / 4.,
         tcA / 4.
     );
 
-    f_cellA->flow[direction] = applicableFlow;
+    f_cellA->flow[direction] = applicable_flow;
 
-    f_cellA->airPressure -= applicableFlow;
-    f_cellB->airPressure += applicableFlow;
+    f_cellA->air_pressure -= applicable_flow;
+    f_cellB->air_pressure += applicable_flow;
 
     // this was once an if which lead to a return -- we're now
     // asserting that this doesn't happen as I'm pretty sure it won't.
     // (and branching is evil)
-    assert(! ((applicableFlow > 0 && tcA == 0) || (applicableFlow < 0 && tcB == 0) ));
+    assert(! ((applicable_flow > 0 && tcA == 0) || (applicable_flow < 0 && tcB == 0) ));
 
-    if (applicableFlow == 0) {
-        return applicableFlow;
+    if (applicable_flow == 0) {
+        return applicable_flow;
     }
 
-    const double tcFlow = applicableFlow;
-    const double energyFlow = (applicableFlow > 0 ? b_cellA->heatEnergy / tcA * tcFlow : b_cellB->heatEnergy / tcB * tcFlow);
-    assert(!isnan(energyFlow));
+    const double tc_flow = applicable_flow;
+    const double energy_flow = (applicable_flow > 0 ? b_cellA->heat_energy / tcA * tc_flow : b_cellB->heat_energy / tcB * tc_flow);
+    assert(!isnan(energy_flow));
 
-    f_cellA->heatEnergy -= energyFlow;
-    f_cellB->heatEnergy += energyFlow;
+    f_cellA->heat_energy -= energy_flow;
+    f_cellB->heat_energy += energy_flow;
 
-    const double fogFlow = (applicableFlow > 0 ? b_cellA->fog / tcA * tcFlow : b_cellB->fog / tcB * tcFlow);
-    assert(!isnan(fogFlow));
+    const double fog_flow = (applicable_flow > 0 ? b_cellA->fog / tcA * tc_flow : b_cellB->fog / tcB * tc_flow);
+    assert(!isnan(fog_flow));
 
-    f_cellA->fog -= fogFlow;
-    f_cellB->fog += fogFlow;
+    f_cellA->fog -= fog_flow;
+    f_cellB->fog += fog_flow;
 
-    return applicableFlow;
+    return applicable_flow;
 }
 
-inline void AutomatonThread::temperatureFlow(
+inline void AutomatonThread::temperature_flow(
     const CellMetadata *m_cellA, const Cell *b_cellA, Cell *f_cellA,
     const CellMetadata *m_cellB, const Cell *b_cellB, Cell *f_cellB,
     CoordInt direction)
 {
-    const double tcA = (m_cellA->blocked ? m_cellA->obj->tempCoefficient : b_cellA->airPressure * airTempCoeffPerPressure);
-    const double tcB = (m_cellB->blocked ? m_cellB->obj->tempCoefficient : b_cellB->airPressure * airTempCoeffPerPressure);
+    const double tcA = (m_cellA->blocked ? m_cellA->obj->temp_coefficient : b_cellA->air_pressure * airtempcoeff_per_pressure);
+    const double tcB = (m_cellB->blocked ? m_cellB->obj->temp_coefficient : b_cellB->air_pressure * airtempcoeff_per_pressure);
 
     if (tcA < 1e-17 || tcB < 1e-17) {
         return;
     }
 
-    const double tempA = b_cellA->heatEnergy / tcA;
-    const double tempB = b_cellB->heatEnergy / tcB;
+    const double tempA = b_cellA->heat_energy / tcA;
+    const double tempB = b_cellB->heat_energy / tcB;
 
-    const double tempGradient = tempB - tempA;
+    const double temp_gradient = tempB - tempA;
 
-    const double energyFlowRaw = (tempGradient > 0 ? tcB * tempGradient : tcA * tempGradient);
-    const double energyFlow = clamp(
-        energyFlowRaw * _sim.heatFlowFriction,
-        -b_cellA->heatEnergy / 4.,
-        b_cellB->heatEnergy / 4.
+    const double energy_flow_raw = (temp_gradient > 0 ? tcB * temp_gradient : tcA * temp_gradient);
+    const double energy_flow = clamp(
+        energy_flow_raw * _sim.heat_flow_friction,
+        -b_cellA->heat_energy / 4.,
+        b_cellB->heat_energy / 4.
     );
 
-    f_cellA->heatEnergy += energyFlow;
-    f_cellB->heatEnergy -= energyFlow;
-    assert(abs(energyFlow) < 100);
+    f_cellA->heat_energy += energy_flow;
+    f_cellB->heat_energy -= energy_flow;
+    assert(abs(energy_flow) < 100);
 
-    if ((energyFlow > 0 && tempB < tempA) || (energyFlow <= 0 && tempA < tempB)) {
-        const double total = b_cellA->heatEnergy + b_cellB->heatEnergy;
-        const double avgTemp = total / (tcA + tcB);
+    if ((energy_flow > 0 && tempB < tempA) || (energy_flow <= 0 && tempA < tempB)) {
+        const double total = b_cellA->heat_energy + b_cellB->heat_energy;
+        const double avg_temp = total / (tcA + tcB);
 
-        f_cellA->heatEnergy = avgTemp * tcA;
-        f_cellB->heatEnergy = avgTemp * tcB;
+        f_cellA->heat_energy = avg_temp * tcA;
+        f_cellB->heat_energy = avg_temp * tcB;
     }
 }
 
-inline void AutomatonThread::fogFlow(
+inline void AutomatonThread::fog_flow(
     const Cell *b_cellA, Cell *f_cellA,
     const Cell *b_cellB, Cell *f_cellB)
 {
-    const double dFog = b_cellA->fog - b_cellB->fog;
-    const double flow = dFog * _sim.fogFlowFriction;
-    double applicableFlow = clamp(
+    const double dfog = b_cellA->fog - b_cellB->fog;
+    const double flow = dfog * _sim.fog_flow_friction;
+    double applicable_flow = clamp(
         flow,
         -b_cellB->fog / 4.,
         b_cellA->fog / 4.
     );
 
-    f_cellA->fog -= applicableFlow;
-    f_cellB->fog += applicableFlow;
+    f_cellA->fog -= applicable_flow;
+    f_cellB->fog += applicable_flow;
 }
 
-inline void AutomatonThread::updateCell(CoordInt x, CoordInt y, bool activate)
+inline void AutomatonThread::update_cell(CoordInt x, CoordInt y, bool activate)
 {
     Cell *b_self, *f_self;
     CellMetadata *m_self;
     Cell *b_neighbours[2], *f_neighbours[2];
     CellMetadata *m_neighbours[2];
-    getCellAndNeighbours(_metadata, &m_self, &m_neighbours, x, y);
-    getCellAndNeighbours(_backbuffer, &b_self, &b_neighbours, x, y);
-    getCellAndNeighbours(_cells, &f_self, &f_neighbours, x, y);
+    get_cell_and_neighbours(_metadata, &m_self, &m_neighbours, x, y);
+    get_cell_and_neighbours(_backbuffer, &b_self, &b_neighbours, x, y);
+    get_cell_and_neighbours(_cells, &f_self, &f_neighbours, x, y);
 
     if (activate) {
-        activateCell(f_self, b_self);
+        activate_cell(f_self, b_self);
     }
     for (CoordInt i = 0; i < 2; i++) {
         if (b_neighbours[i]) {
             if (!m_self->blocked && !m_neighbours[i]->blocked)
             {
                 flow(b_self, f_self, b_neighbours[i], f_neighbours[i], i);
-                fogFlow(b_self, f_self, b_neighbours[i], f_neighbours[i]);
+                fog_flow(b_self, f_self, b_neighbours[i], f_neighbours[i]);
             }
-            temperatureFlow(
+            temperature_flow(
                 m_self, b_self, f_self,
                 m_neighbours[i], b_neighbours[i], f_neighbours[i],
                 i
@@ -716,44 +716,44 @@ void AutomatonThread::update()
     _cells = _tmp;
 
     {
-        Cell *const f_start = &_cells[_sliceY1*_width];
-        Cell *const b_start = &_backbuffer[_sliceY1*_width];
-        Cell *const f_end = &_cells[(_sliceY1+1)*_width];
+        Cell *const f_start = &_cells[_slice_y1*_width];
+        Cell *const b_start = &_backbuffer[_slice_y1*_width];
+        Cell *const f_end = &_cells[(_slice_y1+1)*_width];
         Cell *back = b_start;
         for (Cell *front = f_start; front != f_end; front++) {
-            activateCell(front, back);
+            activate_cell(front, back);
             back++;
         }
-        if (_bottomSharedForward)
-            _bottomSharedForward->post();
+        if (_bottom_shared_forward)
+            _bottom_shared_forward->post();
     }
 
-    if (_topSharedReady)
-        _topSharedReady->wait();
+    if (_top_shared_ready)
+        _top_shared_ready->wait();
 
-    if (_topSharedZone)
-        _topSharedZone->lock();
+    if (_top_shared_zone)
+        _top_shared_zone->lock();
     for (CoordInt x = 0; x < _width; x++) {
-        updateCell(x, _sliceY0);
+        update_cell(x, _slice_y0);
     }
-    if (_topSharedZone)
-        _topSharedZone->unlock();
+    if (_top_shared_zone)
+        _top_shared_zone->unlock();
 
-    for (CoordInt y = _sliceY0+1; y < _sliceY1; y++) {
+    for (CoordInt y = _slice_y0+1; y < _slice_y1; y++) {
         for (CoordInt x = 0; x < _width; x++) {
-            updateCell(x, y);
+            update_cell(x, y);
         }
     }
 
-    if (_bottomSharedZone)
-        _bottomSharedZone->lock();
+    if (_bottom_shared_zone)
+        _bottom_shared_zone->lock();
     for (CoordInt x = 0; x < _width; x++) {
-        updateCell(x, _sliceY1, false);
+        update_cell(x, _slice_y1, false);
     }
-    if (_bottomSharedZone)
-        _bottomSharedZone->unlock();
+    if (_bottom_shared_zone)
+        _bottom_shared_zone->unlock();
 
-    _finishedSignal->post();
+    _finished_signal->post();
 }
 
 void *AutomatonThread::execute()

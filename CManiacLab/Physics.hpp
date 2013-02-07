@@ -35,8 +35,8 @@ authors named in the AUTHORS file.
 class GameObject;
 
 struct Cell {
-    double airPressure;
-    double heatEnergy;
+    double air_pressure;
+    double heat_energy;
 
     // flow is in relation to upper left neighbour!
     double flow[2];
@@ -48,7 +48,7 @@ struct CellMetadata {
     const GameObject *obj;
 };
 
-typedef Cell CellStamp[cellStampLength];
+typedef Cell CellStamp[cell_stamp_length];
 
 struct CellInfo {
     CoordPair offs;
@@ -63,15 +63,15 @@ Create a cellular automaton which simulates air flow between a given
 grid of cells more or less correctly. There are some free parameters you
 may change to adapt the simulation to your needs.
 
-*flowFriction* is used to damp the initial creation of flow between
+*flow_friction* is used to damp the initial creation of flow between
 two cells. The “wanted” flow for a pressure gradient is given by:
 
-    newFlow = (cellA->pressure - cellB->pressure) * flowFriction
+    new_flow = (cellA->pressure - cellB->pressure) * flow_friction
 
 Then the old flow value (i.e. momentum of the air) is taken into
 account using:
 
-    flow = oldFlow * flowDamping + newFlow * (1.0 - flowDamping)
+    flow = old_flow * flow_damping + new_flow * (1.0 - flow_damping)
 
 making the flow work like a moving average.
 
@@ -81,7 +81,7 @@ rate of your simulation. This implies that you will need very
 different factors depending on how often per second you update the
 automaton.
 
-*initialPressure* and *initialTemperature* just do what they sound
+*initial_pressure* and *initial_temperature* just do what they sound
 like, they're used as initial values for the cells in the automaton.
 \endrst */
 class Automaton {
@@ -89,8 +89,8 @@ public:
     Automaton(CoordInt width, CoordInt height,
         const SimulationConfig &config,
         bool mp = true,
-        double initialPressure = 1.0,
-        double initialTemperature = 1.0);
+        double initial_pressure = 1.0,
+        double initial_temperature = 1.0);
     ~Automaton();
 
 private:
@@ -99,66 +99,66 @@ private:
     CellMetadata *_metadata;
     Cell *_cells, *_backbuffer;
     const SimulationConfig _config;
-    unsigned int _threadCount;
+    unsigned int _thread_count;
     AutomatonThread **_threads;
-    PyEngine::Semaphore **_finishedSignals, **_forwardSignals;
-    PyEngine::Mutex **_sharedZones;
+    PyEngine::Semaphore **_finished_signals, **_forward_signals;
+    PyEngine::Mutex **_shared_zones;
 
-    uint32_t *_rgbaBuffer; //! Used by toGLTexture() and allocated on-demand.
+    uint32_t *_rgba_buffer; //! Used by to_gl_texture() and allocated on-demand.
 private:
-    void initCell(Cell *buffer, CoordInt x, CoordInt y,
-        double initialPressure, double initialTemperature);
-    void initMetadata(CellMetadata *buffer, CoordInt x, CoordInt y);
+    void init_cell(Cell *buffer, CoordInt x, CoordInt y,
+        double initial_pressure, double initial_temperature);
+    void init_metadata(CellMetadata *buffer, CoordInt x, CoordInt y);
 
     /**
      * Initialize all threads for the automaton. Uses
-     * PyEngine::Thread::getHardwareThreadCount() internally to find a
+     * PyEngine::Thread::get_hardware_thread_count() internally to find a
      * reasonable number of threads.
      *
      * This will never spawn more than 64 threads, to avoid excessive
      * synchronization overhead and ensure working levels with down to
      * 128 cells on the y axis.
      */
-    void initThreads();
+    void init_threads();
 public:
-    void applyTemperatureStamp(const CoordInt x, const CoordInt y,
+    void apply_temperature_stamp(const CoordInt x, const CoordInt y,
         const Stamp &stamp, const double temperature);
 
-    Cell inline *cellAt(CoordInt x, CoordInt y)
+    Cell inline *cell_at(CoordInt x, CoordInt y)
     {
         return &_cells[x+_width*y];
     };
 
-    Cell inline *safeCellAt(CoordInt x, CoordInt y)
+    Cell inline *safe_cell_at(CoordInt x, CoordInt y)
     {
-        return (x >= 0 && x < _width && y >= 0 && y < _height) ? cellAt(x, y) : 0;
+        return (x >= 0 && x < _width && y >= 0 && y < _height) ? cell_at(x, y) : 0;
     };
 
-    void clearCells(const CoordInt x, const CoordInt y,
+    void clear_cells(const CoordInt x, const CoordInt y,
         const Stamp *stamp);
 
-    void getCellStampAt(const CoordInt left, const CoordInt top, CellStamp *stamp);
-    CellMetadata inline *metaAt(CoordInt x, CoordInt y) { return &_metadata[x+_width*y]; };
+    void get_cell_stamp_at(const CoordInt left, const CoordInt top, CellStamp *stamp);
+    CellMetadata inline *meta_at(CoordInt x, CoordInt y) { return &_metadata[x+_width*y]; };
 
-    void moveStamp(
+    void move_stamp(
         const CoordInt oldx, const CoordInt oldy,
         const CoordInt newx, const CoordInt newy,
         const Stamp *stamp, const CoordPair *const vel = nullptr);
 
-    void placeObject(const CoordInt x, const CoordInt y,
-        const GameObject *obj, const double initialTemperature);
+    void place_object(const CoordInt x, const CoordInt y,
+        const GameObject *obj, const double initial_temperature);
 
-    void placeStamp(const CoordInt atx, const CoordInt aty,
-        const CellInfo *cells, const uintptr_t cellsLen,
+    void place_stamp(const CoordInt atx, const CoordInt aty,
+        const CellInfo *cells, const uintptr_t cells_len,
         const CoordPair *const vel = nullptr);
 
     /**
      * Tell the automaton to resume it's work. The effect of this
      * function if it's called while the automaton is still working is
-     * undefined. Make sure it's stopped by calling waitFor() first.
+     * undefined. Make sure it's stopped by calling wait_for() first.
      */
     void resume();
-    void setBlocked(CoordInt x, CoordInt y, bool blocked);
+    void set_blocked(CoordInt x, CoordInt y, bool blocked);
 
     /**
      * Wait until the cellular automaton has settled its calculation
@@ -167,7 +167,7 @@ public:
      *
      * If the automaton is already suspended, return immediately.
      */
-    void waitFor();
+    void wait_for();
 public:
     /**
      * Convert the data in the physics cells to a human-interpretable
@@ -176,41 +176,41 @@ public:
      *
      * @param min pressure which will be mapped to 0
      * @param max pressure which will be mapped to 1
-     * @param threadRegions if true, thread regions are also visualized
+     * @param thread_regions if true, thread regions are also visualized
      */
-    void toGLTexture(const double min, const double max, bool threadRegions);
+    void to_gl_texture(const double min, const double max, bool thread_regions);
 
 friend class AutomatonThread;
 };
 
 class AutomatonThread: public PyEngine::Thread {
 public:
-    AutomatonThread(Automaton *dataClass, CoordInt sliceY0,
-        CoordInt sliceY1, PyEngine::Semaphore *finishedSignal,
-        PyEngine::Semaphore *topSharedReady, PyEngine::Semaphore *bottomSharedForward,
-        PyEngine::Mutex *topSharedZone, PyEngine::Mutex *bottomSharedZone);
+    AutomatonThread(Automaton *data_class, CoordInt slice_y0,
+        CoordInt slice_y1, PyEngine::Semaphore *finished_signal,
+        PyEngine::Semaphore *top_shared_ready, PyEngine::Semaphore *bottom_shared_forward,
+        PyEngine::Mutex *top_shared_zone, PyEngine::Mutex *bottom_shared_zone);
 private:
-    PyEngine::Semaphore *_finishedSignal, *_topSharedReady, *_bottomSharedForward;
-    PyEngine::Mutex *_topSharedZone, *_bottomSharedZone;
-    Automaton *_dataClass;
-    const CoordInt _width, _height, _sliceY0, _sliceY1;
+    PyEngine::Semaphore *_finished_signal, *_top_shared_ready, *_bottom_shared_forward;
+    PyEngine::Mutex *_top_shared_zone, *_bottom_shared_zone;
+    Automaton *_dataclass;
+    const CoordInt _width, _height, _slice_y0, _slice_y1;
     const SimulationConfig _sim;
     Cell *_backbuffer, *_cells;
     CellMetadata *_metadata;
 protected:
-    void activateCell(Cell *front, Cell *back);
+    void activate_cell(Cell *front, Cell *back);
     template<class CType>
-    void getCellAndNeighbours(CType *buffer, CType **cell,
+    void get_cell_and_neighbours(CType *buffer, CType **cell,
         CType *(*neighbours)[2], CoordInt x, CoordInt y);
     double flow(const Cell *b_cellA, Cell *f_cellA, const Cell *b_cellB,
         Cell *f_cellB, CoordInt direction);
-    void temperatureFlow(const CellMetadata *m_cellA, const Cell *b_cellA, Cell *f_CellA,
+    void temperature_flow(const CellMetadata *m_cellA, const Cell *b_cellA, Cell *f_CellA,
                          const CellMetadata *m_cellB, const Cell *b_cellB, Cell *f_cellB,
                          CoordInt direction);
-    void fogFlow(const Cell *b_cellA, Cell *f_cellA,
+    void fog_flow(const Cell *b_cellA, Cell *f_cellA,
                  const Cell *b_cellB, Cell *f_cellB);
 
-    void updateCell(CoordInt x, CoordInt y, bool activate = true);
+    void update_cell(CoordInt x, CoordInt y, bool activate = true);
     void update();
 public:
     virtual void *execute();

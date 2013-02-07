@@ -44,7 +44,7 @@ Movement::~Movement()
 
 }
 
-void Movement::deleteSelf()
+void Movement::delete_self()
 {
     _obj->movement = 0;
     delete this;
@@ -74,18 +74,18 @@ MovementStraight::MovementStraight(LevelCell *from, LevelCell *to,
     assert(_obj->x == _startX);
     assert(_obj->y == _startY);
     assert(from->here);
-    assert(!from->reservedBy);
+    assert(!from->reserved_by);
     assert(!to->here);
-    assert(!to->reservedBy);
+    assert(!to->reserved_by);
 
-    from->reservedBy = _obj;
+    from->reserved_by = _obj;
     from->here = 0;
     to->here = _obj;
 }
 
 MovementStraight::~MovementStraight()
 {
-    _from->reservedBy = 0;
+    _from->reserved_by = 0;
 }
 
 bool MovementStraight::update(TimeFloat interval)
@@ -99,7 +99,7 @@ bool MovementStraight::update(TimeFloat interval)
     _obj->y = _startY + _offY * _time / 2;
 
     if (_time >= 2.0) {
-        deleteSelf();
+        delete_self();
         return true;
     }
     return false;
@@ -123,14 +123,14 @@ MovementRoll::MovementRoll(LevelCell *from, LevelCell *via, LevelCell *to,
 
 MovementRoll::~MovementRoll()
 {
-    _via->reservedBy = 0;
-    _to->reservedBy = 0;
+    _via->reserved_by = 0;
+    _to->reserved_by = 0;
 }
 
 bool MovementRoll::update(TimeFloat interval)
 {
     assert(false);
-    deleteSelf();
+    delete_self();
     return true;
 }
 

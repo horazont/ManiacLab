@@ -32,29 +32,29 @@ authors named in the AUTHORS file.
 /* Stamp */
 
 Stamp::Stamp(const BoolCellStamp stamp):
-    _mapCoords(0),
+    _map_coords(0),
     _border(0),
-    _mapCoordsLen(0),
-    _borderLen(0)
+    _map_coords_len(0),
+    _border_len(0)
 {
     memcpy(_map, stamp, sizeof(BoolCellStamp));
-    generateMapCoords();
-    findBorder();
+    generate_map_coords();
+    find_border();
 }
 
 Stamp::Stamp(const Stamp &ref)
 {
     memcpy(_map, ref._map, sizeof(BoolCellStamp));
 
-    _mapCoordsLen = ref._mapCoordsLen;
-    const uintptr_t mapCoordsSize = _mapCoordsLen * sizeof(CoordPair);
-    _mapCoords = (CoordPair*)malloc(mapCoordsSize);
-    memcpy(_mapCoords, ref._mapCoords, mapCoordsSize);
+    _map_coords_len = ref._map_coords_len;
+    const uintptr_t map_coords_size = _map_coords_len * sizeof(CoordPair);
+    _map_coords = (CoordPair*)malloc(map_coords_size);
+    memcpy(_map_coords, ref._map_coords, map_coords_size);
 
-    _borderLen = ref._borderLen;
-    const uintptr_t borderSize = _borderLen * sizeof(CoordPair);
-    _border = (CoordPair*)malloc(borderSize);
-    memcpy(_border, ref._border, borderSize);
+    _border_len = ref._border_len;
+    const uintptr_t border_size = _border_len * sizeof(CoordPair);
+    _border = (CoordPair*)malloc(border_size);
+    memcpy(_border, ref._border, border_size);
 }
 
 Stamp::~Stamp()
@@ -62,67 +62,67 @@ Stamp::~Stamp()
     if (_border) {
         free(_border);
     }
-    if (_mapCoords) {
-        free(_mapCoords);
+    if (_map_coords) {
+        free(_map_coords);
     }
 }
 
-void Stamp::generateMapCoords()
+void Stamp::generate_map_coords()
 {
-    const unsigned int maxCells = cellStampLength;
+    const unsigned int max_cells = cell_stamp_length;
 
     unsigned int count = 0;
 
-    _mapCoords = (CoordPair*)malloc(sizeof(CoordPair) * maxCells);
-    bool *mapPtr = &_map[0];
-    for (int y = 0; y < subdivisionCount; y++) {
-        for (int x = 0; x < subdivisionCount; x++) {
-            if (*mapPtr) {
-                _mapCoords[count].x = x;
-                _mapCoords[count].y = y;
+    _map_coords = (CoordPair*)malloc(sizeof(CoordPair) * max_cells);
+    bool *map_ptr = &_map[0];
+    for (int y = 0; y < subdivision_count; y++) {
+        for (int x = 0; x < subdivision_count; x++) {
+            if (*map_ptr) {
+                _map_coords[count].x = x;
+                _map_coords[count].y = y;
                 count++;
             }
-            mapPtr++;
+            map_ptr++;
         }
     }
-    _mapCoords = (CoordPair*)realloc(_mapCoords, sizeof(CoordPair) * count);
+    _map_coords = (CoordPair*)realloc(_map_coords, sizeof(CoordPair) * count);
 
-    _mapCoordsLen = count;
+    _map_coords_len = count;
 }
 
-void Stamp::findBorder()
+void Stamp::find_border()
 {
-    const unsigned int borderEdgeLength = (subdivisionCount+2);
-    const unsigned int maxBorderCells = borderEdgeLength * borderEdgeLength;
+    const unsigned int border_edge_length = (subdivision_count+2);
+    const unsigned int max_border_cells = border_edge_length * border_edge_length;
 
     unsigned int count = 0;
 
-    _border = (CoordPair*)malloc(sizeof(CoordPair) * maxBorderCells);
-    for (int y = -1; y <= subdivisionCount; y++) {
-        for (int x = -1; x <= subdivisionCount; x++) {
-            const bool validX = (x >= 0) && (x < subdivisionCount);
-            const bool validY = (y >= 0) && (y < subdivisionCount);
+    _border = (CoordPair*)malloc(sizeof(CoordPair) * max_border_cells);
+    for (int y = -1; y <= subdivision_count; y++) {
+        for (int x = -1; x <= subdivision_count; x++) {
+            const bool validX = (x >= 0) && (x < subdivision_count);
+            const bool validY = (y >= 0) && (y < subdivision_count);
             const bool *const above = ((y > 0 && validX)
-                                        ? &_map[(y-1)*subdivisionCount+x]
+                                        ? &_map[(y-1)*subdivision_count+x]
                                         : 0);
-            const bool *const below = ((y < subdivisionCount -1 && validX)
-                                        ? &_map[(y+1)*subdivisionCount+x]
+            const bool *const below = ((y < subdivision_count -1 && validX)
+                                        ? &_map[(y+1)*subdivision_count+x]
                                         : 0);
             const bool *const left  = ((x > 0 && validY)
-                                        ? &_map[y*subdivisionCount+(x-1)]
+                                        ? &_map[y*subdivision_count+(x-1)]
                                         : 0);
-            const bool *const right = ((x < subdivisionCount - 1 && validY)
-                                        ? &_map[y*subdivisionCount+(x+1)]
+            const bool *const right = ((x < subdivision_count - 1 && validY)
+                                        ? &_map[y*subdivision_count+(x+1)]
                                         : 0);
             const bool *const at    = ((validX && validY)
-                                        ? &_map[y*subdivisionCount+x]
+                                        ? &_map[y*subdivision_count+x]
                                         : 0);
-            const bool isBorder = ((above && *above)
+            const bool is_border = ((above && *above)
                                     || (below && *below)
                                     || (left && *left)
                                     || (right && *right))
                                   && (!(at && *at));
-            if (isBorder) {
+            if (is_border) {
                 _border[count].x = x;
                 _border[count].y = y;
                 count++;
@@ -131,5 +131,5 @@ void Stamp::findBorder()
     }
 
     _border = (CoordPair*)realloc(_border, sizeof(CoordPair) * count);
-    _borderLen = count;
+    _border_len = count;
 }

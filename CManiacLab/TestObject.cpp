@@ -9,7 +9,7 @@
 TestObject::TestObject():
     GameObject()
 {
-    static const BoolCellStamp boolStamp[1] = {
+    static const BoolCellStamp bool_stamp[1] = {
         /*{
             false, true, true, false,
             true, true, true, true,
@@ -63,12 +63,12 @@ TestObject::TestObject():
             false, false, true, false, false,
         }
     };
-    stamp = new Stamp(boolStamp[0]);
-    isGravityAffected = true;
+    stamp = new Stamp(bool_stamp[0]);
+    is_gravity_affected = true;
     radius = 0.5;
 }
 
 
-void TestObject::setIsAffectedByGravity(bool flag) {
-    isGravityAffected = flag;
+void TestObject::set_is_affected_by_gravity(bool flag) {
+    is_gravity_affected = flag;
 }

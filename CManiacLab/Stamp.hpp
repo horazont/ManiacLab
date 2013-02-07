@@ -28,7 +28,7 @@ authors named in the AUTHORS file.
 #include "Types.hpp"
 #include "PhysicsConfig.hpp"
 
-typedef bool BoolCellStamp[cellStampLength];
+typedef bool BoolCellStamp[cell_stamp_length];
 
 struct Stamp {
 public:
@@ -37,40 +37,40 @@ public:
     Stamp& operator =(const Stamp& other);
     ~Stamp();
 private:
-    CoordPair *_mapCoords, *_border;
-    uintptr_t _mapCoordsLen, _borderLen;
+    CoordPair *_map_coords, *_border;
+    uintptr_t _map_coords_len, _border_len;
     BoolCellStamp _map;
 private:
     /**
      * Extract the coordinates of all map cells with the value true. This is
      * useful for quick looping over these.
      */
-    void generateMapCoords();
+    void generate_map_coords();
 
     /**
      * Use the map to detect the border of the map and store the coordinate
      * offsets of the border (relative to the top left field of the map)
      * fields in border.
      *
-     * Allocates border and sets borderLen. Does not deallocate border
+     * Allocates border and sets border_len. Does not deallocate border
      * beforehands. Supposed to be called in the constructor only.
      */
-    void findBorder();
+    void find_border();
 public:
-    inline const BoolCellStamp& getMap() const {
+    inline const BoolCellStamp& get_map() const {
         return _map;
     }
-    inline const CoordPair* getMapCoords(uintptr_t *mapCoordsLen) const {
-        *mapCoordsLen = _mapCoordsLen;
-        return _mapCoords;
+    inline const CoordPair* get_map_coords(uintptr_t *map_coords_len) const {
+        *map_coords_len = _map_coords_len;
+        return _map_coords;
     }
-    inline const CoordPair* getBorder(uintptr_t *borderLen) const {
-        *borderLen = _borderLen;
+    inline const CoordPair* get_border(uintptr_t *border_len) const {
+        *border_len = _border_len;
         return _border;
     }
 public:
-    inline bool nonEmpty() const {
-        return _mapCoordsLen != 0;
+    inline bool non_empty() const {
+        return _map_coords_len != 0;
     }
 };
 

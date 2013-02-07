@@ -27,50 +27,50 @@ authors named in the AUTHORS file.
 
 #include "Types.hpp"
 
-const CoordInt subdivisionCount = 5;
-const CoordInt halfOffset = 2;
-const CoordInt cellStampLength = subdivisionCount*subdivisionCount;
-const double airTempCoeffPerPressure = 1.0;
+const CoordInt subdivision_count = 5;
+const CoordInt half_offset = 2;
+const CoordInt cell_stamp_length = subdivision_count*subdivision_count;
+const double airtempcoeff_per_pressure = 1.0;
 
 struct SimulationConfig {
-    double flowFriction;
-    double flowDamping;
-    double convectionFriction;
-    double heatFlowFriction;
-    double fogFlowFriction;
+    double flow_friction;
+    double flow_damping;
+    double convection_friction;
+    double heat_flow_friction;
+    double fog_flow_friction;
 
     SimulationConfig(
-            const double flowFriction,
-            const double flowDamping,
-            const double convectionFriction,
-            const double heatFlowFriction,
-            const double fogFlowFriction):
-        flowFriction(flowFriction),
-        flowDamping(flowDamping),
-        convectionFriction(convectionFriction),
-        heatFlowFriction(heatFlowFriction),
-        fogFlowFriction(fogFlowFriction)
+            const double flow_friction,
+            const double flow_damping,
+            const double convection_friction,
+            const double heat_flow_friction,
+            const double fog_flow_friction):
+        flow_friction(flow_friction),
+        flow_damping(flow_damping),
+        convection_friction(convection_friction),
+        heat_flow_friction(heat_flow_friction),
+        fog_flow_friction(fog_flow_friction)
     {
 
     }
 
     SimulationConfig(const SimulationConfig &ref):
-        flowFriction(ref.flowFriction),
-        flowDamping(ref.flowDamping),
-        convectionFriction(ref.convectionFriction),
-        heatFlowFriction(ref.heatFlowFriction),
-        fogFlowFriction(ref.fogFlowFriction)
+        flow_friction(ref.flow_friction),
+        flow_damping(ref.flow_damping),
+        convection_friction(ref.convection_friction),
+        heat_flow_friction(ref.heat_flow_friction),
+        fog_flow_friction(ref.fog_flow_friction)
     {
 
     }
 
     inline SimulationConfig& operator =(const SimulationConfig &ref)
     {
-        flowFriction = ref.flowFriction;
-        flowDamping = ref.flowDamping;
-        convectionFriction = ref.convectionFriction;
-        heatFlowFriction = ref.heatFlowFriction;
-        fogFlowFriction = ref.fogFlowFriction;
+        flow_friction = ref.flow_friction;
+        flow_damping = ref.flow_damping;
+        convection_friction = ref.convection_friction;
+        heat_flow_friction = ref.heat_flow_friction;
+        fog_flow_friction = ref.fog_flow_friction;
         return *this;
     }
 };

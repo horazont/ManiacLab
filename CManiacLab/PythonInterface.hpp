@@ -27,6 +27,6 @@ authors named in the AUTHORS file.
 
 #include <Python.h>
 
-void addManiacLabToInittab();
+void add_maniac_lab_to_inittab();
 
 #endif

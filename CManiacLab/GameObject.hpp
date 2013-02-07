@@ -51,8 +51,8 @@ public:
     virtual ~Template();
 public:
     Stamp *stamp;
-    bool isGravityAffected, isRollable;
-    double tempCoefficient;
+    bool is_gravity_affected, is_rollable;
+    double temp_coefficient;
     double radius;
 private:
     void load_version_1(PyEngine::StreamHandle &instream);

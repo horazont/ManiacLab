@@ -51,17 +51,17 @@ using namespace PyEngine;
 PyEngine::Display *disp = 0;
 
 int main(int argc, char** argv) {
-    int exitCode = 0;
+    int exitcode = 0;
 
     // to avoid name conflict with log from cmath
     LogServer *const log = PyEngine::log;
 
-    StreamHandle xmlFile(new FileStream("log.xml", OM_WRITE, WM_OVERWRITE));
+    StreamHandle xmlfile(new FileStream("log.xml", OM_WRITE, WM_OVERWRITE));
     log->addSink(LogStdOutSink(All & (~Debug)));
     log->logf(Debug, "Set up stdout sink");
 
     log->addSink(LogSinkHandle(
-        new LogXMLSink(All & (~Debug), xmlFile, "log.xsl", "ManiacLab")
+        new LogXMLSink(All & (~Debug), xmlfile, "log.xsl", "ManiacLab")
     ));
     log->logf(Debug, "Set up xml sink");
     log->logf(Information, "Log system started up successfully.");
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     {
         log->logf(Information, "Setting up boost/python environment");
         addCUniToInittab();
-        addManiacLabToInittab();
+        add_maniac_lab_to_inittab();
         log->logf(Information, "Initializing python");
         Py_Initialize();
         PySys_SetArgv(argc, argv);
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
             std::ifstream main("maniaclab.py");
             if (!main.good()) {
                 log->logf(Panic, "Could not find python main file. Terminating.");
-                exitCode = 2;
+                exitcode = 2;
                 goto error;
             }
             s << main.rdbuf();
@@ -115,22 +115,22 @@ int main(int argc, char** argv) {
     catch (boost::python::error_already_set const&)
     {
         PyErr_Print();
-        exitCode = 1;
+        exitcode = 1;
         goto error;
     }
     catch (Exception const& err)
     {
         log->logException(err, Panic);
-        exitCode = 1;
-        goto noPythonError;
+        exitcode = 1;
+        goto no_python_error;
     }
 
     error:
     // XXX: This is neccessary as python won't free it soon enough for the
     // finalizing writes to happen.
     delete log;
-    noPythonError:
-    return exitCode;
+    no_python_error:
+    return exitcode;
 }
 
 // Local Variables:

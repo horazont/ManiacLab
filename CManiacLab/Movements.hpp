@@ -40,7 +40,7 @@ protected:
     double _time;
     GameObject *_obj;
 protected:
-    void deleteSelf();
+    void delete_self();
 public:
     virtual bool update(PyEngine::TimeFloat interval) = 0;
 };

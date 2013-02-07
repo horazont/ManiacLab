@@ -40,7 +40,7 @@ class ManiacLab(Engine.Application.Application):
     def __init__(self):
         args = self.parse_args()
 
-        super(ManiacLab, self).__init__(CWindow.display, geometry=(800, 800))
+        super(ManiacLab, self).__init__(CWindow.display, geometry=(500, 500))
         self.level = CManiacLab.Level(50, 50, args.threaded_simulation)
 
         self.visualization = Texture2D(512, 512, GL_RGBA)
@@ -88,24 +88,24 @@ class ManiacLab(Engine.Application.Application):
         glTexCoord2f(0., 0.)
         glVertex2f(0, 0)
         glTexCoord2f(0., 250/512)
-        glVertex2f(0, 800)
+        glVertex2f(0, 500)
         glTexCoord2f(250/512, 250/512)
-        glVertex2f(800, 800)
+        glVertex2f(500, 500)
         glTexCoord2f(250/512, 0.)
-        glVertex2f(800, 0)
+        glVertex2f(500, 0)
         glEnd()
 
         window.flip()
 
     def handleKeyDown(self, symbol, modifiers):
         if symbol == key.Return:
-            self.running = True
+            self.running = not self.running
         elif symbol == key.F1:
             self.show_thread_regions = not self.show_thread_regions
         elif symbol == 111:     # o
             self.level.debug_testObject()
         elif symbol == 115:     # s
-            self.level.debug_testStamp(44, 24);
+            self.level.debug_testStamp(44, 24)
 
     def handleMouseDown(self, x, y, button, modifiers):
         x = x / 800 * 50

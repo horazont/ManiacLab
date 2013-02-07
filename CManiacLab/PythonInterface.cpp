@@ -35,13 +35,13 @@ BOOST_PYTHON_MODULE(_cmaniaclab)
 {
     class_<Level, LevelHandle>("Level", init<CoordInt, CoordInt, bool>())
         .def("update", &Level::update)
-        .def("physicsToGLTexture", &Level::physicsToGLTexture)
-        .def("debug_testObject", &Level::debug_testObject)
-        .def("debug_testStamp", &Level::debug_testStamp)
+        .def("physics_to_gl_texture", &Level::physics_to_gl_texture)
+        .def("debug_test_object", &Level::debug_test_object)
+        .def("debug_test_stamp", &Level::debug_test_stamp)
         .def("debug_output", &Level::debug_output);
 }
 
-void addManiacLabToInittab()
+void add_maniac_lab_to_inittab()
 {
     PyImport_AppendInittab("_cmaniaclab", &init_cmaniaclab);
 }

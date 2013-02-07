@@ -30,9 +30,9 @@ authors named in the AUTHORS file.
 
 Template::Template():
     stamp(0),
-    isGravityAffected(false),
-    isRollable(false),
-    tempCoefficient(1.0),
+    is_gravity_affected(false),
+    is_rollable(false),
+    temp_coefficient(1.0),
     radius(0.5)
 {
 
@@ -40,9 +40,9 @@ Template::Template():
 
 Template::Template(Template const &ref):
     stamp(ref.stamp),
-    isGravityAffected(ref.isGravityAffected),
-    isRollable(ref.isRollable),
-    tempCoefficient(ref.tempCoefficient),
+    is_gravity_affected(ref.is_gravity_affected),
+    is_rollable(ref.is_rollable),
+    temp_coefficient(ref.temp_coefficient),
     radius(ref.radius)
 {
 
@@ -54,9 +54,9 @@ Template& Template::operator=(Template const &ref)
 	delete stamp;
     }
     stamp = ref.stamp;
-    isGravityAffected = ref.isGravityAffected;
-    isRollable = ref.isRollable;
-    tempCoefficient = ref.tempCoefficient;
+    is_gravity_affected = ref.is_gravity_affected;
+    is_rollable = ref.is_rollable;
+    temp_coefficient = ref.temp_coefficient;
     return *this;
 }
 
@@ -79,28 +79,28 @@ void Template::load_version_1(PyEngine::StreamHandle &instream)
     load_cell_stamp(instream, boolstamp);
     stamp = new Stamp(boolstamp);
 
-    isGravityAffected = (binflags & TBF_GRAVITY_AFFECTED) != 0;
-    isRollable = (binflags & TBF_ROLLABLE) != 0;
+    is_gravity_affected = (binflags & TBF_GRAVITY_AFFECTED) != 0;
+    is_rollable = (binflags & TBF_ROLLABLE) != 0;
 
-    tempCoefficient = instream->readT<double>();
+    temp_coefficient = instream->readT<double>();
     radius = instream->readT<double>();
 }
 
 void Template::save_version_1(PyEngine::StreamHandle &outstream)
 {
     uint16_t binflags = 0;
-    if (isGravityAffected) {
+    if (is_gravity_affected) {
 	binflags |= TBF_GRAVITY_AFFECTED;
     }
-    if (isRollable) {
+    if (is_rollable) {
 	binflags |= TBF_ROLLABLE;
     }
     if (stamp) {
 	binflags |= TBF_HAS_STAMP;
-	save_cell_stamp(outstream, stamp->getMap());
+	save_cell_stamp(outstream, stamp->get_map());
     }
 
-    outstream->writeT<double>(tempCoefficient);
+    outstream->writeT<double>(temp_coefficient);
     outstream->writeT<double>(radius);
 }
 

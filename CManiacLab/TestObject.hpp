@@ -31,7 +31,7 @@ class TestObject: public GameObject {
 public:
     TestObject();
 public:
-    void setIsAffectedByGravity(bool flag);
+    void set_is_affected_by_gravity(bool flag);
 };
 
 #endif

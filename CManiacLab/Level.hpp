@@ -40,7 +40,7 @@ struct Cell;
 class TestObject;
 
 struct LevelCell {
-    GameObject *here, *reservedBy;
+    GameObject *here, *reserved_by;
 };
 
 class Level {
@@ -53,24 +53,24 @@ private:
     Automaton _physics;
     std::vector<GameObject*> _objects;
 
-    double _timeSlice;
+    double _time_slice;
     double _time;
 private:
-    void getFallChannel(const CoordInt x, const CoordInt y, LevelCell **aside, LevelCell **asideBelow);
-    bool handleCAInteraction(const CoordInt x, const CoordInt y, LevelCell *cell, GameObject *obj);
-    bool handleGravity(const CoordInt x, const CoordInt y, LevelCell *cell, GameObject *obj);
-    void initCells();
+    void get_fall_channel(const CoordInt x, const CoordInt y, LevelCell **aside, LevelCell **asidebelow);
+    bool handle_ca_interaction(const CoordInt x, const CoordInt y, LevelCell *cell, GameObject *obj);
+    bool handle_gravity(const CoordInt x, const CoordInt y, LevelCell *cell, GameObject *obj);
+    void init_cells();
 protected:
-    CoordPair getPhysicsCoords(const double x, const double y);
+    CoordPair get_physics_coords(const double x, const double y);
 public:
-    void cleanupCell(LevelCell *cell);
-    void debug_testHeatStamp(const double temperature);
-    void debug_testHeatSource();
-    void debug_testObject();
-    TestObject *debug_placeObject(const CoordInt x, const CoordInt y);
-    void debug_testStamp(const double x, const double y);
+    void cleanup_cell(LevelCell *cell);
+    void debug_test_heat_stamp(const double temperature);
+    void debug_test_heat_source();
+    void debug_test_object();
+    TestObject *debug_place_object(const CoordInt x, const CoordInt y);
+    void debug_test_stamp(const double x, const double y);
     void debug_output(const double x, const double y);
-    void physicsToGLTexture(bool threadRegions);
+    void physics_to_gl_texture(bool thread_regions);
     void update();
 };
 
