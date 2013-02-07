@@ -25,6 +25,9 @@ authors named in the AUTHORS file.
 #ifndef _ML_GAME_OBJECT_H
 #define _ML_GAME_OBJECT_H
 
+#include <CEngine/IO/Stream.hpp>
+#include <CEngine/Misc/Exception.hpp>
+
 #include "Movements.hpp"
 #include "Stamp.hpp"
 
@@ -32,19 +35,39 @@ struct Cell;
 class Level;
 class Movement;
 
+// If this ever exceeds two bytes, an increase in the version number is
+// mandatory!
+enum TemplateBinaryFlags {
+    TBF_HAS_STAMP             = 0x0001,
+    TBF_GRAVITY_AFFECTED      = 0x0002,
+    TBF_ROLLABLE              = 0x0004,
+};
+
 struct Template {
 public:
     Template();
+    Template(Template const &ref);
+    Template& operator=(Template const &ref);
+    virtual ~Template();
 public:
     Stamp *stamp;
     bool isGravityAffected, isRollable;
     double tempCoefficient;
     double radius;
+private:
+    void load_version_1(PyEngine::StreamHandle &instream);
+    void save_version_1(PyEngine::StreamHandle &outstream);
+public:
+    void load_bin(PyEngine::StreamHandle &instream);
+    void save_bin(PyEngine::StreamHandle &outstream);
 };
 
 struct GameObject: public Template {
 public:
     GameObject();
+    GameObject(GameObject const &ref);
+    GameObject& operator=(GameObject const &ref);
+    virtual ~GameObject();
 public:
     double x, y, phi;
     Movement *movement;

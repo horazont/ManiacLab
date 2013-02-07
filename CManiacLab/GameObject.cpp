@@ -24,6 +24,7 @@ authors named in the AUTHORS file.
 **********************************************************************/
 #include "GameObject.hpp"
 
+#include "IOUtils.hpp"
 #include "Errors.hpp"
 #include "Physics.hpp"
 
@@ -37,10 +38,120 @@ Template::Template():
 
 }
 
+Template::Template(Template const &ref):
+    stamp(ref.stamp),
+    isGravityAffected(ref.isGravityAffected),
+    isRollable(ref.isRollable),
+    tempCoefficient(ref.tempCoefficient),
+    radius(ref.radius)
+{
+
+}
+
+Template& Template::operator=(Template const &ref)
+{
+    if (stamp) {
+	delete stamp;
+    }
+    stamp = ref.stamp;
+    isGravityAffected = ref.isGravityAffected;
+    isRollable = ref.isRollable;
+    tempCoefficient = ref.tempCoefficient;
+    return *this;
+}
+
+Template::~Template()
+{
+    if (stamp) {
+	delete stamp;
+    }
+}
+
+void Template::load_version_1(PyEngine::StreamHandle &instream)
+{
+    uint16_t binflags = instream->readUInt16();
+
+    assert(binflags & TBF_HAS_STAMP);
+    if (stamp) {
+	delete stamp;
+    }
+    BoolCellStamp boolstamp;
+    load_cell_stamp(instream, boolstamp);
+    stamp = new Stamp(boolstamp);
+
+    isGravityAffected = (binflags & TBF_GRAVITY_AFFECTED) != 0;
+    isRollable = (binflags & TBF_ROLLABLE) != 0;
+
+    tempCoefficient = instream->readT<double>();
+    radius = instream->readT<double>();
+}
+
+void Template::save_version_1(PyEngine::StreamHandle &outstream)
+{
+    uint16_t binflags = 0;
+    if (isGravityAffected) {
+	binflags |= TBF_GRAVITY_AFFECTED;
+    }
+    if (isRollable) {
+	binflags |= TBF_ROLLABLE;
+    }
+    if (stamp) {
+	binflags |= TBF_HAS_STAMP;
+	save_cell_stamp(outstream, stamp->getMap());
+    }
+
+    outstream->writeT<double>(tempCoefficient);
+    outstream->writeT<double>(radius);
+}
+
+void Template::load_bin(PyEngine::StreamHandle &instream)
+{
+    uint8_t version = instream->readUInt8();
+    switch (version)
+    {
+    case 1:
+	load_version_1(instream);
+	break;
+    default:
+	throw PyEngine::Exception("invalid template format version");
+    }
+}
+
+void Template::save_bin(PyEngine::StreamHandle &outstream)
+{
+    outstream->writeUInt8(1);
+    save_version_1(outstream);
+}
+
+
 GameObject::GameObject():
     Template::Template(),
     x(0), y(0), phi(0),
     movement(0)
+{
+
+}
+
+GameObject::GameObject(GameObject const &ref):
+    Template::Template(ref),
+    x(ref.x), y(ref.y), phi(ref.phi),
+    movement(ref.movement)
+{
+
+}
+
+GameObject& GameObject::operator=(GameObject const &ref)
+{
+    Template::operator=(static_cast<Template const&>(ref));
+    x = ref.x;
+    y = ref.y;
+    phi = ref.phi;
+    movement = nullptr;
+    phy = ref.phy;
+    return *this;
+}
+
+GameObject::~GameObject()
 {
 
 }
