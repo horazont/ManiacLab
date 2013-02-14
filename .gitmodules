@@ -2,3 +2,6 @@
 	path = PyEngine
 	url = https://github.com/zombofant/pyengine
 	branch = devel
+[submodule "structstream"]
+	path = structstream
+	url = https://github.com/horazont/structstream
