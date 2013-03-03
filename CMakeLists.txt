@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 set(CMAKE_CXX_FLAGS "-g -Wall -std=c++11")
+add_subdirectory(structstream EXCLUDE_FROM_ALL)
 add_subdirectory(PyEngine)
 set(CMAKE_CXX_FLAGS "-g -Wall -std=c++11 -pedantic -msse -msse2 -msse3 -mmmx -O2 -Werror")
 
@@ -20,8 +21,9 @@ set(MANIACLAB_SOURCES
 )
 
 include_directories(${PYENGINE_INCLUDE_DIRS})
+include_directories(structstream)
 add_definitions(${PYENGINE_DEFINITIONS})
 
 add_executable(ml maniaclab.cpp ${MANIACLAB_SOURCES})
-add_dependencies(ml ${PYENGINE_DEPENDENCIES})
+add_dependencies(ml ${PYENGINE_DEPENDENCIES} structstream++)
 target_link_libraries(ml ${PYENGINE_LINK_TARGETS} "pthread")
