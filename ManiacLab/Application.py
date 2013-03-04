@@ -57,10 +57,10 @@ from Engine.UI.Theme import Theme
 import Engine.GL.Base as GL
 from Engine.UI.CSS.Rect import Rect
 
-class ManiacLab(Engine.Application.Application):
-    def __init__(self):
-        args = self.parse_args()
+import MainMenu
 
+class ManiacLab(Engine.Application.Application):
+    def __init__(self, args):
         display = CWindow.display
         modes = display.DisplayModes
         modes.sort(reverse=True)
@@ -92,14 +92,12 @@ class ManiacLab(Engine.Application.Application):
         self.theme = Theme()
         self.theme.addRules(ResourceManager().require("ui.css"))
 
-        main_screen = self._primaryWidget
-        window = WindowWidget(self._windowLayer)
-        window.Title.Text = "Test"
-        window.AbsoluteRect.XYWH = (32, 32, 128, 128)
+        self.show_thread_regions = False
+
+        self.mode = MainMenu.Mode()
+        self.mode.enable(self.mainScreen)
 
         self.theme.applyStyles(self)
-
-        self.show_thread_regions = False
 
     def clearCairoSurface(self):
         ctx = self._cairoContext
@@ -126,20 +124,8 @@ class ManiacLab(Engine.Application.Application):
             data=(GL_RGBA, GL_UNSIGNED_BYTE, None))
         self._cairoSurface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
         self._cairoContext = cairo.Context(self._cairoSurface)
-        self._pangoContext = Pango.PangoCairoContext(self._cairoContext)
+        self._pangoContext = Pango.PangoCairo.create_context(self._cairoContext)
         self.updateRenderingContext()
-
-    def parse_args(self):
-        parser = argparse.ArgumentParser()
-        parser.add_argument(
-            "--no-threaded-simulation",
-            dest="threaded_simulation",
-            default=True,
-            action="store_false",
-            help="Disable multithreading for the simulation."
-        )
-
-        return parser.parse_args()
 
     def frameSynced(self):
         pass
