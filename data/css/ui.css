@@ -1,0 +1,47 @@
+root {
+    font-family: "Cantarell";
+
+}
+
+MainMenu {
+    margin: auto;
+    width: 400;
+    height: 600;
+}
+
+MainMenu label.title {
+    color: rgba(1, 1, 1, 1);
+    font-size: 36;
+    font-weight: bold;
+    text-align: center;
+    height: 48;
+}
+
+MainMenu label.subtitle {
+    color: rgba(1, 1, 1, 1);
+    font-size: 16;
+    font-weight: bold;
+    text-align: center;
+    height: 32;
+    margin-bottom: 20;
+}
+
+MainMenu button {
+    margin-top: 10;
+    margin-bottom: 10;
+    margin-left: 10;
+    margin-right: 10;
+    border: 2 solid rgba(0.0, 0.6, 0.6, 1.0);
+    padding: 10;
+    border-radius: 16;
+    text-align: center;
+    font-weight: bold;
+    font-size: 24;
+    vertical-align: middle;
+    color: rgba(1.0, 1.0, 1.0, 0.8);
+    font-family: "Linux Libertine";
+}
+
+MainMenu button:hover {
+    background: rgba(0.0, 0.8, 0.8, 0.3);
+}
