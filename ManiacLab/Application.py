@@ -86,7 +86,7 @@ class ManiacLab(Engine.Application.Application):
         vfs.mount('/data', MountDirectory(os.path.join(os.getcwd(), "data")), MountPriority.FileSystem)
         ResourceManager(vfs)
 
-        glClearColor(0., 0., 0.1, 1.);
+        glClearColor(0., 0., 0.0, 1.);
         self._window.setTitle("ManiacLab")
 
         self.theme = Theme()

@@ -1,3 +1,4 @@
+# encoding=utf-8
 from __future__ import print_function, unicode_literals, division
 from our_future import *
 
@@ -12,7 +13,7 @@ class MainMenu(VBox):
 
         title = LabelWidget(self, text="ManiacLab")
         title.StyleClasses.add("title")
-        subtitle = LabelWidget(self, text="main menu")
+        subtitle = LabelWidget(self, text="◀ main menu ▶")
         subtitle.StyleClasses.add("subtitle")
 
         buttons = [

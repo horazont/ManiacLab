@@ -1,47 +1,47 @@
 root {
     font-family: "Cantarell";
-
 }
 
 MainMenu {
     margin: auto;
     width: 400;
     height: 600;
+    font-weight: bold;
+    text-align: center;
+    color: rgba(1, 1, 1, 1);
+
+    border-left: 2 solid rgba(0.5, 0.5, 0.5, 1.0);
+    border-right: 2 solid rgba(0.5, 0.5, 0.5, 1.0);
+    padding-left: 16;
+    padding-right: 16;
+
+    box-spacing-y: 32;
 }
 
 MainMenu label.title {
-    color: rgba(1, 1, 1, 1);
     font-size: 36;
-    font-weight: bold;
-    text-align: center;
     height: 48;
 }
 
 MainMenu label.subtitle {
-    color: rgba(1, 1, 1, 1);
     font-size: 16;
-    font-weight: bold;
-    text-align: center;
-    height: 32;
-    margin-bottom: 20;
+    height: 20;
+    margin-top: -24;
+    margin-bottom: 6;
 }
 
 MainMenu button {
-    margin-top: 10;
-    margin-bottom: 10;
-    margin-left: 10;
-    margin-right: 10;
-    border: 2 solid rgba(0.0, 0.6, 0.6, 1.0);
+    margin-left: 16;
+    margin-right: 16;
+    border: 2 solid rgba(0.0, 0.5, 0.7, 1.0);
     padding: 10;
-    border-radius: 16;
-    text-align: center;
-    font-weight: bold;
-    font-size: 24;
+    border-radius: 0;
+    font-size: 20;
     vertical-align: middle;
     color: rgba(1.0, 1.0, 1.0, 0.8);
-    font-family: "Linux Libertine";
 }
 
 MainMenu button:hover {
-    background: rgba(0.0, 0.8, 0.8, 0.3);
+    background: rgba(0.0, 0.5, 0.8, 0.3);
+    color: inherit;
 }
