@@ -3,7 +3,7 @@ from __future__ import print_function, unicode_literals, division
 from our_future import *
 
 import Mode
-from Engine.UI import ParentWidget, ButtonWidget, VBox, LabelWidget
+from Engine.UI import ParentWidget, ButtonWidget, VBox, LabelWidget, Space
 
 import Engine.UI.CSS.Minilanguage
 
@@ -17,10 +17,15 @@ class MainMenu(VBox):
         subtitle.StyleClasses.add("subtitle")
 
         buttons = [
+            Space(self),
             ButtonWidget(self, caption="Select profile"),
+            Space(self),
             ButtonWidget(self, caption="Continue playing"),
+            Space(self),
             ButtonWidget(self, caption="Map editor"),
-            ButtonWidget(self, caption="Quit")
+            Space(self),
+            ButtonWidget(self, caption="Quit"),
+            Space(self),
             ]
 
         self.AbsoluteRect.Width = 400
