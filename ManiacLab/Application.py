@@ -93,10 +93,10 @@ class ManiacLab(Engine.Application.Application):
 
         self.show_thread_regions = False
 
-        self.mode = MainMenu.Mode()
-        self.mode.enable(self.mainScreen)
+        self.currentMode = None
+        self.mainMenuMode = MainMenu.Mode()
 
-        self.theme.applyStyles(self)
+        self.switchMode(self.mainMenuMode)
 
     def _recreateCairoContext(self, width, height):
         super(ManiacLab, self)._recreateCairoContext(width, height)
@@ -107,6 +107,13 @@ class ManiacLab(Engine.Application.Application):
         self.cairoTex = Texture2D(
             potW, potH, format=GL_RGBA,
             data=(GL_RGBA, GL_UNSIGNED_BYTE, None))
+
+    def switchMode(self, mode):
+        if self.currentMode is not None:
+            self.currentMode.disable()
+        self.currentMode = mode
+        self.currentMode.enable(self.mainScreen)
+        self.invalidate()
 
     def frameSynced(self):
         pass
