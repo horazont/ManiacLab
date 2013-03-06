@@ -1,6 +1,49 @@
 root {
     font-family: "Cantarell";
+    font-size: 11;
+    color: rgba(1, 1, 1, 1);
 }
+
+button {
+    text-align: center;
+    vertical-align: middle;
+}
+
+menuseparator {
+    height: 1;
+    border-top: 1 solid rgba(0, 0.5, 0.8, 0.8);
+    margin-top: 4;
+    margin-bottom: 2;
+    margin-left: 5;
+    margin-right: 5;
+}
+
+menubutton {
+    width: auto;
+    vertical-align: middle;
+    padding-left: 5;
+    padding-right: 5;
+    box-spacing-x: 16;
+}
+
+menu {
+    margin: -1;
+    border: 1 solid rgba(0.0, 0.5, 0.8, 0.8);
+    padding: 1;
+    background: rgba(0.0, 0.15, 0.24, 0.7);
+}
+
+menu > menubutton {
+    padding-left: 24;
+    padding-right: 16;
+    margin-top: 2;
+    margin-bottom: 2;
+}
+
+menubutton:hover {
+    background: rgba(0.0, 0.5, 0.8, 0.3);
+}
+/* Main menu */
 
 MainMenu {
     margin: auto;
@@ -8,10 +51,9 @@ MainMenu {
     height: 600;
     font-weight: bold;
     text-align: center;
-    color: rgba(1, 1, 1, 1);
 
-    border-left: 2 solid rgba(0.5, 0.5, 0.5, 1.0);
-    border-right: 2 solid rgba(0.5, 0.5, 0.5, 1.0);
+    border-left: 3 solid rgba(0.5, 0.5, 0.5, 1.0);
+    border-right: 3 solid rgba(0.5, 0.5, 0.5, 1.0);
     padding-left: 32;
     padding-right: 32;
     padding-bottom: 16;
@@ -32,11 +74,10 @@ MainMenu label.subtitle {
 MainMenu button {
     margin-left: 16;
     margin-right: 16;
-    border: 2 solid rgba(0.0, 0.5, 0.7, 1.0);
+    border: 1 solid rgba(0.0, 0.5, 0.7, 1.0);
     padding: 10;
-    border-radius: 0;
+    border-radius: 4;
     font-size: 20;
-    vertical-align: middle;
     color: rgba(1.0, 1.0, 1.0, 0.8);
     flex: 2;
 }
@@ -52,4 +93,30 @@ MainMenu button:hover {
 
 MainMenu space {
     flex: 1;
+}
+
+/* Map editor */
+
+MapEditor {
+    background: rgba(0, 0, 0, 1.0);
+}
+
+MapEditor hbox.title {
+    height: 25;
+    background: rgba(0, 0.5, 0.8, 0.3);
+    border-bottom: 1 solid rgba(1, 1, 1, 1);
+}
+
+MapEditor hbox.title button {
+    width: 100;
+}
+
+MapEditor hbox.title button:hover {
+    background: rgba(0.0, 0.5, 0.8, 0.3);
+    color: inherit;
+}
+
+MapEditor menubar {
+    flex: 1;
+    padding-left: 2;
 }

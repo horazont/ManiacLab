@@ -56,6 +56,7 @@ import Engine.GL.Base as GL
 from Engine.UI.CSS.Rect import Rect
 
 import MainMenu
+import MapEditor
 
 class ManiacLab(Engine.Application.Application):
     def __init__(self, args):
@@ -95,6 +96,7 @@ class ManiacLab(Engine.Application.Application):
 
         self.currentMode = None
         self.mainMenuMode = MainMenu.Mode()
+        self.mapEditorMode = MapEditor.Mode()
 
         self.switchMode(self.mainMenuMode)
 

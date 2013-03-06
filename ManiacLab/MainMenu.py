@@ -22,7 +22,7 @@ class MainMenu(AbstractVBox):
             Space(self),
             ButtonWidget(self, caption="Continue playing"),
             Space(self),
-            ButtonWidget(self, caption="Map editor"),
+            ButtonWidget(self, caption="Map editor", onclick=self.mapEditor),
             Space(self),
             ButtonWidget(self, caption="Quit", onclick=self.quit),
             Space(self),
@@ -30,6 +30,9 @@ class MainMenu(AbstractVBox):
 
         self.AbsoluteRect.Width = 400
         self.AbsoluteRect.Height = len(buttons) * 30
+
+    def mapEditor(self, sender):
+        self.RootWidget.switchMode(self.RootWidget.mapEditorMode)
 
     def quit(self, sender):
         self.RootWidget.handleWMQuit()
