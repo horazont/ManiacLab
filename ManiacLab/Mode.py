@@ -7,7 +7,7 @@ class Mode(object):
         self.desktopWidgets = []
 
     def enable(self, onDesktop):
-        windowLayer = onDesktop.getRootWidget().WindowLayer
+        windowLayer = onDesktop.RootWidget.WindowLayer
         for window in self.windows:
             windowLayer.add(window)
         for desktopW in self.desktopWidgets:

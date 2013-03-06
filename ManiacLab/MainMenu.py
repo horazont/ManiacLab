@@ -3,11 +3,11 @@ from __future__ import print_function, unicode_literals, division
 from our_future import *
 
 import Mode
-from Engine.UI import ParentWidget, ButtonWidget, VBox, LabelWidget, Space
+from Engine.UI import ParentWidget, ButtonWidget, AbstractVBox, LabelWidget, Space
 
 import Engine.UI.CSS.Minilanguage
 
-class MainMenu(VBox):
+class MainMenu(AbstractVBox):
     def __init__(self, parent, **kwargs):
         super(MainMenu, self).__init__(parent, **kwargs)
 
@@ -24,12 +24,15 @@ class MainMenu(VBox):
             Space(self),
             ButtonWidget(self, caption="Map editor"),
             Space(self),
-            ButtonWidget(self, caption="Quit"),
+            ButtonWidget(self, caption="Quit", onclick=self.quit),
             Space(self),
             ]
 
         self.AbsoluteRect.Width = 400
         self.AbsoluteRect.Height = len(buttons) * 30
+
+    def quit(self, sender):
+        self.RootWidget.handleWMQuit()
 
 
 class Mode(Mode.Mode):
