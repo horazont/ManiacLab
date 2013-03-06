@@ -26,7 +26,6 @@ from our_future import *
 
 import argparse
 import os
-import cairo
 import sys
 import copy
 
@@ -37,7 +36,6 @@ from OpenGL.GL import *
 import Engine.Application
 import Engine.CEngine.Window as CWindow
 import Engine.CEngine.Window.key as key
-import Engine.CEngine.Pango as Pango
 import Engine.CEngine.GL as CGL
 
 from Engine.GL.Texture import Texture2D
@@ -86,11 +84,12 @@ class ManiacLab(Engine.Application.Application):
         vfs.mount('/data', MountDirectory(os.path.join(os.getcwd(), "data")), MountPriority.FileSystem)
         ResourceManager(vfs)
 
-        glClearColor(0., 0., 0.0, 1.);
+        glClearColor(0., 0.05, 0.1, 1.);
         self._window.setTitle("ManiacLab")
 
-        self.theme = Theme()
-        self.theme.addRules(ResourceManager().require("ui.css"))
+        theme = Theme()
+        theme.addRules(ResourceManager().require("ui.css"))
+        self.Theme = theme
 
         self.show_thread_regions = False
 
@@ -99,33 +98,15 @@ class ManiacLab(Engine.Application.Application):
 
         self.theme.applyStyles(self)
 
-    def clearCairoSurface(self):
-        ctx = self._cairoContext
-        ctx.set_source_rgba(0., 0., 0., 0.)
-        ctx.set_operator(cairo.OPERATOR_SOURCE)
-        ctx.paint()
-        ctx.set_operator(cairo.OPERATOR_OVER)
-        ctx.set_line_cap(cairo.LINE_CAP_SQUARE)
+    def _recreateCairoContext(self, width, height):
+        super(ManiacLab, self)._recreateCairoContext(width, height)
+        potW, potH = makePOT(width), makePOT(height)
 
-    def doAlign(self):
-        super(ManiacLab, self).doAlign()
-
-        mainScreen = self._primaryWidget
-
-        w, h = mainScreen.AbsoluteRect.Width, mainScreen.AbsoluteRect.Height
-        if hasattr(self, "_cairoSurface") and w == self._cairoSurface.get_width() and h == self._cairoSurface.get_height():
-            return
-        potW, potH = makePOT(w), makePOT(h)
-
-        self.cairoTexCoords = (w / potW, h / potH)
+        self.cairoTexCoords = (width / potW, height / potH)
 
         self.cairoTex = Texture2D(
             potW, potH, format=GL_RGBA,
             data=(GL_RGBA, GL_UNSIGNED_BYTE, None))
-        self._cairoSurface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
-        self._cairoContext = cairo.Context(self._cairoSurface)
-        self._pangoContext = Pango.PangoCairo.create_context(self._cairoContext)
-        self.updateRenderingContext()
 
     def frameSynced(self):
         pass
@@ -144,12 +125,14 @@ class ManiacLab(Engine.Application.Application):
         glOrtho(wx, ww, wh, wy, -1., 1.)
         glMatrixMode(GL_MODELVIEW)
 
-        self.clearCairoSurface()
         self.render()
+
         self.cairoTex.bind()
 
+        if self.surfaceDirty or True:
+            # only re-transfer texture if something changed
+            CGL.glTexCairoSurfaceSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self._cairoSurface)
         s, t = self.cairoTexCoords
-        CGL.glTexCairoSurfaceSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self._cairoSurface)
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_BLEND)
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
