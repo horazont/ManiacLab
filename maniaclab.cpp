@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
     LogServer *const log = PyEngine::log;
 
     StreamHandle xmlfile(new FileStream("log.xml", OM_WRITE, WM_OVERWRITE));
-    log->addSink(LogStdOutSink(All & (~Debug)));
+    log->addSink(LogStdOutSink(All));
     log->logf(Debug, "Set up stdout sink");
 
     log->addSink(LogSinkHandle(
@@ -137,4 +137,3 @@ int main(int argc, char** argv) {
 // c-file-style: "k&r"
 // c-basic-offset: 4
 // End:
-

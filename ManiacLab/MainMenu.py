@@ -3,7 +3,7 @@ from __future__ import print_function, unicode_literals, division
 from our_future import *
 
 import Mode
-from Engine.UI import ParentWidget, ButtonWidget, AbstractVBox, LabelWidget, Space
+from Engine.UI import ParentWidget, Button, AbstractVBox, LabelWidget, Space
 
 import Engine.UI.CSS.Minilanguage
 
@@ -18,13 +18,13 @@ class MainMenu(AbstractVBox):
 
         buttons = [
             Space(self),
-            ButtonWidget(self, caption="Select profile"),
+            Button(self, caption="Select profile"),
             Space(self),
-            ButtonWidget(self, caption="Continue playing"),
+            Button(self, caption="Continue playing"),
             Space(self),
-            ButtonWidget(self, caption="Map editor", onclick=self.mapEditor),
+            Button(self, caption="Map editor", onclick=self.mapEditor),
             Space(self),
-            ButtonWidget(self, caption="Quit", onclick=self.quit),
+            Button(self, caption="Quit", onclick=self.quit),
             Space(self),
             ]
 
@@ -45,4 +45,4 @@ class Mode(Mode.Mode):
             MainMenu(None)
             )
 
-Engine.UI.CSS.Minilanguage.ElementNames().registerWidgetClass(MainMenu)
+Engine.UI.CSS.Minilanguage.ElementNames().register_widget_class(MainMenu)

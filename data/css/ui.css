@@ -9,6 +9,16 @@ button {
     vertical-align: middle;
 }
 
+edit {
+    padding: 1;
+    border: 1 solid rgba(0, 0.5, 0.8, 0.8);
+    background: rgba(0, 0, 0, 1);
+}
+
+edit:focused {
+    background: rgba(0.1, 0.1, 0.1, 1);
+}
+
 menuseparator {
     height: 1;
     border-top: 1 solid rgba(0, 0.5, 0.8, 0.8);
@@ -34,15 +44,105 @@ menu {
 }
 
 menu > menubutton {
-    padding-left: 24;
-    padding-right: 16;
     margin-top: 2;
     margin-bottom: 2;
+}
+
+menubutton:disabled {
+    color: rgba(0.6, 0.6, 0.6, 1.0);
 }
 
 menubutton:hover {
     background: rgba(0.0, 0.5, 0.8, 0.3);
 }
+
+menubutton:disabled:hover {
+    background: transparent;
+}
+
+scrollbar.horizontal {
+    height: 14;
+}
+
+scrollbar.vertical {
+    width: 14;
+}
+
+scrollbar {
+    background-color: rgba(0, 0.5, 0.8, 0.2);
+    border: 1 solid rgba(0, 0.5, 0.8, 0.8);
+}
+
+scrollbutton {
+    font-size: 8;
+    text-align: center;
+    vertical-align: middle;
+    background-color: rgba(0, 0.5, 0.8, 0.4);
+}
+
+scrollbutton:hover {
+    background-color: rgba(0, 0.5, 0.8, 0.5);
+}
+
+scrollbar.horizontal scrollbutton.up {
+    border-left: 1 solid rgba(0, 0.5, 0.8, 0.8);
+}
+
+scrollbar.horizontal scrollbutton.down {
+    border-right: 1 solid rgba(0, 0.5, 0.8, 0.8);
+}
+
+scrollbar.vertical scrollbutton.up {
+    border-top: 1 solid rgba(0, 0.5, 0.8, 0.8);
+}
+
+scrollbar.vertical scrollbutton.down {
+    border-bottom: 1 solid rgba(0, 0.5, 0.8, 0.8);
+}
+
+scrollthumb {
+    background-color: rgba(0, 0.5, 0.8, 0.4);
+    border: 1 solid rgba(0, 0.5, 0.8, 0.8);
+    border-radius: 2;
+    margin: 1;
+}
+
+scrollthumb:hover {
+    background-color: rgba(0, 0.5, 0.8, 0.5);
+}
+
+window {
+    border: 1 solid rgba(0, 0.5, 0.8, 0.9);
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 2;
+    padding: 2;
+}
+
+window > titlebar {
+    background-color: rgba(0, 0.5, 0.8, 0.2);
+    border-bottom: 1 solid rgba(0, 0.5, 0.8, 0.75);
+    height: 20;
+    font-weight: bold;
+    padding-left: 2;
+    border-top-left-radius: 2;
+    border-top-right-radius: 2;
+    margin-left: -2;
+    margin-right: -2;
+    margin-top: -2;
+}
+
+window:focused > titlebar, window:active > titlebar {
+    background-color: rgba(0, 0.5, 0.8, 0.4);
+}
+
+window > titlebar label {
+    flex: 1;
+}
+
+modallayer {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
 /* Main menu */
 
 MainMenu {
@@ -98,7 +198,6 @@ MainMenu space {
 /* Map editor */
 
 MapEditor {
-    background: rgba(0, 0, 0, 1.0);
 }
 
 MapEditor hbox.title {
@@ -119,4 +218,29 @@ MapEditor hbox.title button:hover {
 MapEditor menubar {
     flex: 1;
     padding-left: 2;
+}
+
+MapEditor hbox.title edit {
+    width: 250;
+}
+
+MapEditor hbox.scroll.horiz {
+    flex: 4;
+    width: 16;
+}
+
+MapEditor vbox.scroll {
+    height: 16;
+    margin-right: 16;
+}
+
+MapEditor scrollbar {
+    flex: 4;
+}
+
+MapEditor scrollbar.horizontal {
+}
+
+MapEditor hbox.edit {
+    height: 30;
 }

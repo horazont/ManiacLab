@@ -5,7 +5,7 @@ from our_future import *
 import Mode
 from Engine.UI import ParentWidget, ButtonWidget, \
     AbstractVBox, LabelWidget, Space, HBox, \
-    MenuBar, Menu
+    MenuBar, Menu, Edit, ScrollBar, ScrollMode, VBox, Window
 
 import Engine.UI.CSS.Minilanguage
 
@@ -16,34 +16,90 @@ class MapEditor(AbstractVBox):
         titleBox = HBox(self)
         titleBox.StyleClasses.add("title")
 
+        # edit = Edit(titleBox)
+
         menuBar = MenuBar(titleBox)
 
-        _, menu_map = menuBar.addButtonAndMenu("Map")
-        menu_map.addButton("New map", hotkeyString="Ctrl+N")
-        menu_map.addButton("Open…", hotkeyString="Ctrl+O")
-        menu_map.addSeparator()
-        menu_map.addButton("Save", hotkeyString="Ctrl+S")
-        menu_map.addButton("Save as…", hotkeyString="Shift+Ctrl+S")
-        menu_map.addSeparator()
-        menu_map.addButton("Back to main menu",
+        _, menu_map = menuBar.add_button_and_menu("Map")
+        menu_map.add_button("New map",
+                            hotkey_string="Ctrl+N",
+                            disabled=True)
+        menu_map.add_button("Open…",
+                            hotkey_string="Ctrl+O",
+                            disabled=True)
+        menu_map.add_separator()
+        menu_map.add_button("Save",
+                            hotkey_string="Ctrl+S",
+                            disabled=True)
+        menu_map.add_button("Save as…",
+                            hotkey_string="Shift+Ctrl+S",
+                            disabled=True)
+        menu_map.add_separator()
+        menu_map.add_button("Back to main menu",
                            onclick=self.backToMainMenu,
-                           hotkeyString="Ctrl+Q")
+                           hotkey_string="Ctrl+Q")
 
-        _, menu_edit = menuBar.addButtonAndMenu("Edit")
-        menu_edit.addButton("Undo", hotkeyString="Ctrl+Z")
-        menu_edit.addButton("Redo", hotkeyString="Ctrl+Y")
-        menu_edit.addSeparator()
-        menu_edit.addButton("Cut", hotkeyString="Ctrl+X")
-        menu_edit.addButton("Copy", hotkeyString="Ctrl+C")
-        menu_edit.addButton("Paste", hotkeyString="Ctrl+V")
-        menu_edit.addButton("Delete", hotkeyString="Del")
+        _, menu_edit = menuBar.add_button_and_menu("Edit")
+        menu_edit.add_button("Undo",
+                             hotkey_string="Ctrl+Z",
+                             disabled=True)
+        menu_edit.add_button("Redo",
+                             hotkey_string="Ctrl+Y",
+                             disabled=True)
+        menu_edit.add_separator()
+        menu_edit.add_button("Cut",
+                             hotkey_string="Ctrl+X",
+                             disabled=True)
+        menu_edit.add_button("Copy",
+                             hotkey_string="Ctrl+C",
+                             disabled=True)
+        menu_edit.add_button("Paste",
+                             hotkey_string="Ctrl+V",
+                             disabled=True)
+        menu_edit.add_button("Delete",
+                             hotkey_string="Del",
+                             disabled=True)
 
-        _, menu_tools = menuBar.addButtonAndMenu("Tools")
-        menu_tools.addButton("Tile editor…")
-        menu_tools.addButton("Map settings…")
+        _, menu_tools = menuBar.add_button_and_menu("Tools")
+        menu_tools.add_button("Tile editor…",
+                              disabled=True)
+        menu_tools.add_button("Map settings…",
+                              disabled=True)
+
+        self._info_label = LabelWidget(titleBox)
+
+        anonbox = VBox(self)
+
+        barhbox = HBox(anonbox)
+        barhbox.StyleClasses.add("scroll")
+        Space(barhbox)
+
+        barvbox = VBox(anonbox)
+        barvbox.StyleClasses.add("scroll")
+
+        scrollbar_v = ScrollBar(barhbox,
+                                ScrollMode.VERTICAL,
+                                on_scroll=self._scrollbar_scroll)
+        scrollbar_h = ScrollBar(barvbox,
+                                ScrollMode.HORIZONTAL,
+                                on_scroll=self._scrollbar_scroll)
+
+        self._scrollbar_v = scrollbar_v
+        self._scrollbar_h = scrollbar_h
+
+        for scrollbar in [scrollbar_h, scrollbar_v]:
+            scrollbar.Range = (0, 500)
+            scrollbar.Position = 40
+            scrollbar.Page = 10
 
     def backToMainMenu(self, sender):
         self.RootWidget.switchMode(self.RootWidget.mainMenuMode)
+
+    def _scrollbar_scroll(self, old_position, new_position):
+        self._info_label.Text = "v: {:4d}; h: {:4d}".format(
+            self._scrollbar_v.Position,
+            self._scrollbar_h.Position
+            )
 
 class Mode(Mode.Mode):
     def __init__(self):
@@ -53,4 +109,4 @@ class Mode(Mode.Mode):
             )
 
 
-Engine.UI.CSS.Minilanguage.ElementNames().registerWidgetClass(MapEditor)
+Engine.UI.CSS.Minilanguage.ElementNames().register_widget_class(MapEditor)

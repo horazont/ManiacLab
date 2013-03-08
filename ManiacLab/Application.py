@@ -35,7 +35,7 @@ from OpenGL.GL import *
 
 import Engine.Application
 import Engine.CEngine.Window as CWindow
-import Engine.CEngine.Window.key as key
+import Engine.CEngine.key as key
 import Engine.CEngine.GL as CGL
 
 from Engine.GL.Texture import Texture2D
@@ -48,7 +48,7 @@ import Engine.Resources.CSSLoader
 import Engine.Resources.MaterialLoader
 import Engine.Resources.ShaderLoader
 
-from Engine.GL import makePOT
+from Engine.GL import make_pot
 
 from Engine.UI import SceneWidget, VBox, HBox, LabelWidget, WindowWidget
 from Engine.UI.Theme import Theme
@@ -78,7 +78,7 @@ class ManiacLab(Engine.Application.Application):
 
         super(ManiacLab, self).__init__(CWindow.display,
                                         geometry=(1024,768),
-                                        displayMode=displayMode)
+                                        display_mode=displayMode)
         del displayMode
         del candidate
         vfs = XDGFileSystem('maniaclab')
@@ -89,7 +89,7 @@ class ManiacLab(Engine.Application.Application):
         self._window.setTitle("ManiacLab")
 
         theme = Theme()
-        theme.addRules(ResourceManager().require("ui.css"))
+        theme.add_rules(ResourceManager().require("ui.css"))
         self.Theme = theme
 
         self.show_thread_regions = False
@@ -100,9 +100,9 @@ class ManiacLab(Engine.Application.Application):
 
         self.switchMode(self.mainMenuMode)
 
-    def _recreateCairoContext(self, width, height):
-        super(ManiacLab, self)._recreateCairoContext(width, height)
-        potW, potH = makePOT(width), makePOT(height)
+    def _recreate_cairo_context(self, width, height):
+        super(ManiacLab, self)._recreate_cairo_context(width, height)
+        potW, potH = make_pot(width), make_pot(height)
 
         self.cairoTexCoords = (width / potW, height / potH)
 
@@ -114,7 +114,7 @@ class ManiacLab(Engine.Application.Application):
         if self.currentMode is not None:
             self.currentMode.disable()
         self.currentMode = mode
-        self.currentMode.enable(self.mainScreen)
+        self.currentMode.enable(self.main_screen)
         self.invalidate()
 
     def frameSynced(self):
@@ -126,7 +126,7 @@ class ManiacLab(Engine.Application.Application):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
 
-        wx, wy, ww, wh = self._primaryWidget.AbsoluteRect.XYWH
+        wx, wy, ww, wh = self._primary_widget.AbsoluteRect.XYWH
 
         glViewport(0, 0, ww, wh)
         glMatrixMode(GL_PROJECTION)
@@ -138,9 +138,9 @@ class ManiacLab(Engine.Application.Application):
 
         self.cairoTex.bind()
 
-        if self.surfaceDirty or True:
+        if self.surface_dirty or True:
             # only re-transfer texture if something changed
-            CGL.glTexCairoSurfaceSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self._cairoSurface)
+            CGL.glTexCairoSurfaceSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self._cairo_surface)
         s, t = self.cairoTexCoords
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_BLEND)
