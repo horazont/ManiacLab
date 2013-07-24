@@ -28,17 +28,50 @@ authors named in the AUTHORS file.
 
 #include "Level.hpp"
 #include "GameObject.hpp"
+#include "Tileset.hpp"
 
 using namespace boost::python;
 
 BOOST_PYTHON_MODULE(_cmaniaclab)
 {
+    class_<TilesetInfo, TilesetInfoHandle>("TilesetInfo")
+        .add_property("unique_name", &TilesetInfo::unique_name)
+        .add_property("display_name", &TilesetInfo::display_name)
+        .add_property("author", &TilesetInfo::author)
+        .add_property("description", &TilesetInfo::description)
+        ;
+
+    class_<Tileset, TilesetHandle>("Tileset", init<>())
+        .add_property("unique_name",
+                      make_function(&Tileset::get_unique_name,
+                                    return_value_policy<copy_const_reference>()),
+                      &Tileset::set_unique_name)
+        .add_property("display_name",
+                      make_function(&Tileset::get_display_name,
+                                    return_value_policy<copy_const_reference>()),
+                      &Tileset::set_display_name)
+        .add_property("author",
+                      make_function(&Tileset::get_author,
+                                    return_value_policy<copy_const_reference>()),
+                      &Tileset::set_author)
+        .add_property("description",
+                      make_function(&Tileset::get_description,
+                                    return_value_policy<copy_const_reference>()),
+                      &Tileset::set_description)
+        .def("save_to_stream", &Tileset::save_to_stream)
+        ;
+
     class_<Level, LevelHandle>("Level", init<CoordInt, CoordInt, bool>())
         .def("update", &Level::update)
         .def("physics_to_gl_texture", &Level::physics_to_gl_texture)
         .def("debug_test_object", &Level::debug_test_object)
         .def("debug_test_stamp", &Level::debug_test_stamp)
         .def("debug_output", &Level::debug_output);
+
+    def("read_tileset_info", &TilesetInfo::read_from_stream,
+        return_value_policy<manage_new_object>());
+    def("load_tileset_from_stream", &Tileset::load_from_stream,
+        return_value_policy<manage_new_object>());
 }
 
 void add_maniac_lab_to_inittab()

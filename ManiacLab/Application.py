@@ -34,6 +34,7 @@ import _cmaniaclab as CManiacLab
 from OpenGL.GL import *
 
 import Engine.Application
+import Engine.CEngine as CEngine
 import Engine.CEngine.Window as CWindow
 import Engine.CEngine.key as key
 import Engine.CEngine.GL as CGL
@@ -56,7 +57,10 @@ import Engine.GL.Base as GL
 from Engine.UI.CSS.Rect import Rect
 
 import MainMenu
+import LoadingMode
 import MapEditor
+import TilesetEditor
+import TilesetFinder
 
 class ManiacLab(Engine.Application.Application):
     def __init__(self, args):
@@ -84,6 +88,7 @@ class ManiacLab(Engine.Application.Application):
         vfs = XDGFileSystem('maniaclab')
         vfs.mount('/data', MountDirectory(os.path.join(os.getcwd(), "data")), MountPriority.FileSystem)
         ResourceManager(vfs)
+        self.vfs = vfs
 
         glClearColor(0., 0.05, 0.1, 1.);
         self._window.setTitle("ManiacLab")
@@ -97,8 +102,25 @@ class ManiacLab(Engine.Application.Application):
         self.currentMode = None
         self.mainMenuMode = MainMenu.Mode()
         self.mapEditorMode = MapEditor.Mode()
+        self.tilesetEditorMode = TilesetEditor.Mode()
+        self.loadingMode = LoadingMode.Mode()
 
-        self.switchMode(self.mainMenuMode)
+        self.switchMode(self.loadingMode)
+
+        fake_tileset = CManiacLab.Tileset()
+        fake_tileset.unique_name = b"ml_core"
+        fake_tileset.display_name = b"ManiacLab base tileset"
+        fake_tileset.author = b"Jonas Wielicki"
+        fake_tileset.description = b"""The basic tileset of ManiacLab."""
+
+        fl = vfs.open("/data/tilesets/core.tileset", "w")
+        fake_tileset.save_to_stream(CEngine.Stream(fl))
+        fl.close()
+
+        self.loadingMode.set_current_task("Looking for tilesets...")
+        TilesetFinder.find_tilesets(
+            vfs, "/data/tilesets",
+            self.tilesets_found)
 
     def _recreate_cairo_context(self, width, height):
         super(ManiacLab, self)._recreate_cairo_context(width, height)
@@ -109,6 +131,10 @@ class ManiacLab(Engine.Application.Application):
         self.cairoTex = Texture2D(
             potW, potH, format=GL_RGBA,
             data=(GL_RGBA, GL_UNSIGNED_BYTE, None))
+
+    def tilesets_found(self, tilesets):
+        self.tilesets = tilesets
+        self.switchMode(self.mainMenuMode)
 
     def switchMode(self, mode):
         if self.currentMode is not None:

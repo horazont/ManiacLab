@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: IOUtils.hpp
+File name: BaseObjects.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,14 +22,19 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_UTILS_H
-#define _ML_IO_UTILS_H
+#ifndef _ML_BASE_OBJECTS_H
+#define _ML_BASE_OBJECTS_H
 
-#include <CEngine/IO/Stream.hpp>
+#include "GameObject.hpp"
 
-#include "Stamp.hpp"
+struct Wall: public GameObject {
+public:
+    Wall();
+};
 
-void load_cell_stamp(PyEngine::StreamHandle &instream, BoolCellStamp stamp);
-void save_cell_stamp(PyEngine::StreamHandle &outstream, const BoolCellStamp &stamp);
+struct SquareWall: public Wall {
+public:
+    SquareWall();
+};
 
 #endif
