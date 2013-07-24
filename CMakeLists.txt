@@ -11,20 +11,20 @@ get_property(PYENGINE_DEFINITIONS DIRECTORY PyEngine PROPERTY PYENGINE_DEFINITIO
 get_property(PYENGINE_INCLUDE_DIRS DIRECTORY PyEngine PROPERTY PYENGINE_INCLUDE_DIRS)
 
 set(MANIACLAB_SOURCES
-    "CManiacLab/IOUtils.cpp"
-    "CManiacLab/GameObject.cpp"
-    "CManiacLab/Movements.cpp"
-    "CManiacLab/Stamp.cpp"
-    "CManiacLab/Physics.cpp"
-    "CManiacLab/Level.cpp"
-    "CManiacLab/TestObject.cpp"
-    "CManiacLab/PythonInterface.cpp"
-    "CManiacLab/StructstreamIntf.cpp"
-    "CManiacLab/Tileset.cpp"
+    "src/io/StructstreamIntf.cpp"
+    "src/logic/GameObject.cpp"
+    "src/logic/Movements.cpp"
+    "src/logic/Stamp.cpp"
+    "src/logic/Physics.cpp"
+    "src/logic/Level.cpp"
+    "src/logic/TestObject.cpp"
+    "src/logic/PythonInterface.cpp"
+    "src/logic/Tileset.cpp"
 )
 
 include_directories(${PYENGINE_INCLUDE_DIRS})
 include_directories(structstream)
+include_directories("src")
 add_definitions(${PYENGINE_DEFINITIONS})
 
 add_executable(ml maniaclab.cpp ${MANIACLAB_SOURCES})

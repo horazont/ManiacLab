@@ -24,7 +24,6 @@ authors named in the AUTHORS file.
 **********************************************************************/
 #include "GameObject.hpp"
 
-#include "IOUtils.hpp"
 #include "Errors.hpp"
 #include "Physics.hpp"
 
@@ -51,7 +50,7 @@ Template::Template(Template const &ref):
 Template& Template::operator=(Template const &ref)
 {
     if (stamp) {
-	delete stamp;
+        delete stamp;
     }
     stamp = ref.stamp;
     is_gravity_affected = ref.is_gravity_affected;
@@ -63,66 +62,9 @@ Template& Template::operator=(Template const &ref)
 Template::~Template()
 {
     if (stamp) {
-	delete stamp;
+        delete stamp;
     }
 }
-
-void Template::load_version_1(PyEngine::StreamHandle &instream)
-{
-    uint16_t binflags = instream->readUInt16();
-
-    assert(binflags & TBF_HAS_STAMP);
-    if (stamp) {
-	delete stamp;
-    }
-    BoolCellStamp boolstamp;
-    load_cell_stamp(instream, boolstamp);
-    stamp = new Stamp(boolstamp);
-
-    is_gravity_affected = (binflags & TBF_GRAVITY_AFFECTED) != 0;
-    is_rollable = (binflags & TBF_ROLLABLE) != 0;
-
-    temp_coefficient = instream->readT<double>();
-    radius = instream->readT<double>();
-}
-
-void Template::save_version_1(PyEngine::StreamHandle &outstream)
-{
-    uint16_t binflags = 0;
-    if (is_gravity_affected) {
-	binflags |= TBF_GRAVITY_AFFECTED;
-    }
-    if (is_rollable) {
-	binflags |= TBF_ROLLABLE;
-    }
-    if (stamp) {
-	binflags |= TBF_HAS_STAMP;
-	save_cell_stamp(outstream, stamp->get_map());
-    }
-
-    outstream->writeT<double>(temp_coefficient);
-    outstream->writeT<double>(radius);
-}
-
-void Template::load_bin(PyEngine::StreamHandle &instream)
-{
-    uint8_t version = instream->readUInt8();
-    switch (version)
-    {
-    case 1:
-	load_version_1(instream);
-	break;
-    default:
-	throw PyEngine::Exception("invalid template format version");
-    }
-}
-
-void Template::save_bin(PyEngine::StreamHandle &outstream)
-{
-    outstream->writeUInt8(1);
-    save_version_1(outstream);
-}
-
 
 GameObject::GameObject():
     Template::Template(),

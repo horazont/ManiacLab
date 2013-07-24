@@ -34,8 +34,8 @@ authors named in the AUTHORS file.
 #include <CEngine/GL/AbstractImage.hpp>
 #include <CEngine/IO/Stream.hpp>
 
-#include "Stamp.hpp"
-#include "StructstreamIntf.hpp"
+#include "logic/Stamp.hpp"
+#include "io/StructstreamIntf.hpp"
 
 class Tileset;
 class Tile;

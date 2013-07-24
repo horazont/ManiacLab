@@ -24,7 +24,7 @@ authors named in the AUTHORS file.
 **********************************************************************/
 #include "StructstreamIntf.hpp"
 
-#include "Tileset.hpp"
+#include "logic/Tileset.hpp"
 
 #include <unistd.h>
 

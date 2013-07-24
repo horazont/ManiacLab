@@ -50,7 +50,7 @@ inline double clamp(const double value, const double min, const double max)
 inline double max(const double a, const double b)
 {
     if (a > b)
-	return a;
+        return a;
     return b;
 }
 

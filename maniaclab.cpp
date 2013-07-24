@@ -43,7 +43,7 @@ authors named in the AUTHORS file.
 #include "CEngine/PythonInterface/Package.hpp"
 #include "CEngine/PythonInterface/CairoHelpers.hpp"
 
-#include "CManiacLab/PythonInterface.hpp"
+#include "src/logic/PythonInterface.hpp"
 
 using namespace boost::python;
 using namespace PyEngine;

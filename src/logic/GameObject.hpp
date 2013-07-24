@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: IOUtils.hpp
+File name: GameObject.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,14 +22,53 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_UTILS_H
-#define _ML_IO_UTILS_H
+#ifndef _ML_GAME_OBJECT_H
+#define _ML_GAME_OBJECT_H
 
 #include <CEngine/IO/Stream.hpp>
+#include <CEngine/Misc/Exception.hpp>
 
+#include "Movements.hpp"
 #include "Stamp.hpp"
 
-void load_cell_stamp(PyEngine::StreamHandle &instream, BoolCellStamp stamp);
-void save_cell_stamp(PyEngine::StreamHandle &outstream, const BoolCellStamp &stamp);
+struct Cell;
+class Level;
+class Movement;
+
+// If this ever exceeds two bytes, an increase in the version number is
+// mandatory!
+enum TemplateBinaryFlags {
+    TBF_HAS_STAMP             = 0x0001,
+    TBF_GRAVITY_AFFECTED      = 0x0002,
+    TBF_ROLLABLE              = 0x0004,
+};
+
+struct Template {
+public:
+    Template();
+    Template(Template const &ref);
+    Template& operator=(Template const &ref);
+    virtual ~Template();
+
+public:
+    Stamp *stamp;
+    bool is_gravity_affected, is_rollable;
+    double temp_coefficient;
+    double radius;
+
+};
+
+struct GameObject: public Template {
+public:
+    GameObject();
+    GameObject(GameObject const &ref);
+    GameObject& operator=(GameObject const &ref);
+    virtual ~GameObject();
+public:
+    double x, y, phi;
+    Movement *movement;
+
+    CoordPair phy;
+};
 
 #endif
