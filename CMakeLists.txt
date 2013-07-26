@@ -10,7 +10,7 @@ get_property(PYENGINE_LINK_TARGETS DIRECTORY PyEngine PROPERTY PYENGINE_LINK_TAR
 get_property(PYENGINE_DEFINITIONS DIRECTORY PyEngine PROPERTY PYENGINE_DEFINITIONS)
 get_property(PYENGINE_INCLUDE_DIRS DIRECTORY PyEngine PROPERTY PYENGINE_INCLUDE_DIRS)
 
-set(MANIACLAB_SOURCES
+set(LIB_SOURCES
     "src/io/StructstreamIntf.cpp"
     "src/logic/GameObject.cpp"
     "src/logic/Movements.cpp"
@@ -22,11 +22,18 @@ set(MANIACLAB_SOURCES
     "src/logic/Tileset.cpp"
 )
 
+set(GAME_SOURCES
+    "src/game/Application.cpp"
+)
+
+set(EDITOR_SOURCES
+)
+
 include_directories(${PYENGINE_INCLUDE_DIRS})
 include_directories(structstream)
 include_directories("src")
 add_definitions(${PYENGINE_DEFINITIONS})
 
-add_executable(ml maniaclab.cpp ${MANIACLAB_SOURCES})
+add_executable(ml "src/game/maniaclab.cpp" ${GAME_SOURCES})
 add_dependencies(ml ${PYENGINE_DEPENDENCIES} structstream++)
 target_link_libraries(ml ${PYENGINE_LINK_TARGETS} "pthread" structstream++)
