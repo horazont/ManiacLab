@@ -1,9 +1,9 @@
+#include <GL/glew.h>
+
 #include <CEngine/IO/Log.hpp>
 #include <CEngine/IO/Time.hpp>
-
 #include <CEngine/WindowInterface/Display.hpp>
 #include <CEngine/WindowInterface/Window.hpp>
-
 #include <CEngine/UI/Widgets/RootWidget.hpp>
 
 class Application: public PyEngine::UI::RootWidget
@@ -21,7 +21,7 @@ private:
     PyEngine::Display &_dpy;
     PyEngine::WindowHandle _window;
 
-    unsigned int _cairo_tex;
+    GLuint _cairo_tex;
     unsigned int _cairo_tex_w;
     unsigned int _cairo_tex_h;
     float _cairo_tex_s;

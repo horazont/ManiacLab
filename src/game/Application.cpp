@@ -1,6 +1,6 @@
 #include "Application.hpp"
 
-#include <GL/glew.h>
+#include <iostream>
 
 #include <CEngine/GL/CairoUtils.hpp>
 
@@ -28,6 +28,7 @@ Application::Application(
         const coord_dimensions_t &dimensions,
         bool fullscreen,
         DisplayMode *display_mode):
+    RootWidget(),
     _log(PyEngine::log->getChannel("maniaclab")),
     _dpy(dpy),
     _window(nullptr),
@@ -112,13 +113,13 @@ Application::Application(
     );
 
     set_theme(theme);
-
-    glGenTextures(1, &_cairo_tex);
 }
 
 Application::~Application()
 {
-    glDeleteTextures(1, &_cairo_tex);
+    if (_cairo_tex != 0) {
+        glDeleteTextures(1, &_cairo_tex);
+    }
 }
 
 void Application::_recreate_cairo_surface(
@@ -133,6 +134,10 @@ void Application::_recreate_cairo_surface(
     _cairo_tex_s = (float)width / pot_w;
     _cairo_tex_t = (float)height / pot_h;
 
+    if (_cairo_tex == 0) {
+        glGenTextures(1, &_cairo_tex);
+    }
+
     if ((pot_w != _cairo_tex_w) || (pot_h != _cairo_tex_h)) {
         glBindTexture(GL_TEXTURE_2D, _cairo_tex);
         glTexImage2D(
@@ -142,7 +147,7 @@ void Application::_recreate_cairo_surface(
             pot_w,
             pot_h,
             0,
-            GL_RGBA,
+            GL_LUMINANCE,
             GL_UNSIGNED_BYTE,
             nullptr);
         raiseLastGLError();
@@ -154,6 +159,9 @@ void Application::_recreate_cairo_surface(
         glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
         raiseLastGLError();
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        _cairo_tex_w = pot_w;
+        _cairo_tex_h = pot_h;
     }
 }
 
@@ -173,12 +181,11 @@ void Application::frame_unsynced(TimeFloat deltaT)
     render();
 
     glBindTexture(GL_TEXTURE_2D, _cairo_tex);
-    if (get_surface_dirty()) {
+    if (get_surface_dirty() || true) {
         glTexCairoSurfaceSubImage2D(
             GL_TEXTURE_2D, 0,
             0, 0,
             get_cairo_surface());
-        raiseLastGLError();
     }
 
     float s = _cairo_tex_s,
