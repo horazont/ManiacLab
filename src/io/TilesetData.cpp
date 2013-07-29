@@ -38,15 +38,16 @@ TileVisualRecordHandle FrameData::image_data_to_record(ID id) const
 
 /* structstream decls */
 
-const ID SSID_TILESET = 0x4d4c5473;
+const ID SSID_TILESET_HEADER = 0x4d4c5473;
+const ID SSID_TILESET_HEADER_DISPLAY_NAME = 0x40;
+const ID SSID_TILESET_HEADER_UNIQUE_NAME = 0x41;
+const ID SSID_TILESET_HEADER_DESCRIPTION = 0x42;
+const ID SSID_TILESET_HEADER_AUTHOR = 0x43;
+const ID SSID_TILESET_HEADER_LICENSE = 0x44;
+const ID SSID_TILESET_HEADER_VERSION = 0x45;
 
-const ID SSID_TILESET_DISPLAY_NAME = 0x40;
-const ID SSID_TILESET_UNIQUE_NAME = 0x41;
-const ID SSID_TILESET_DESCRIPTION = 0x42;
-const ID SSID_TILESET_AUTHOR = 0x43;
-const ID SSID_TILESET_LICENSE = 0x44;
-const ID SSID_TILESET_VERSION = 0x45;
-const ID SSID_TILESET_TILE = 0x46;
+const ID SSID_TILESET = 0x4d4c547364;
+const ID SSID_TILESET_TILE = 0x40;
 
 const ID SSID_TILE_DISPLAY_NAME = 0x40;
 const ID SSID_TILE_UNIQUE_NAME = 0x41;
@@ -232,55 +233,90 @@ typedef struct_decl<
 
 typedef struct_decl<
     Container,
-    SSID_TILESET,
+    SSID_TILESET_HEADER,
     struct_members<
         member_string<
             UTF8Record,
-            SSID_TILESET_DISPLAY_NAME,
-            TilesetData,
-            &TilesetData::display_name>,
+            SSID_TILESET_HEADER_DISPLAY_NAME,
+            TilesetHeaderData,
+            &TilesetHeaderData::display_name>,
         member_string<
             UTF8Record,
-            SSID_TILESET_UNIQUE_NAME,
-            TilesetData,
-            &TilesetData::unique_name>,
+            SSID_TILESET_HEADER_UNIQUE_NAME,
+            TilesetHeaderData,
+            &TilesetHeaderData::unique_name>,
         member_string<
             UTF8Record,
-            SSID_TILESET_DESCRIPTION,
-            TilesetData,
-            &TilesetData::description>,
+            SSID_TILESET_HEADER_DESCRIPTION,
+            TilesetHeaderData,
+            &TilesetHeaderData::description>,
         member_string<
             UTF8Record,
-            SSID_TILESET_LICENSE,
-            TilesetData,
-            &TilesetData::license>,
+            SSID_TILESET_HEADER_LICENSE,
+            TilesetHeaderData,
+            &TilesetHeaderData::license>,
         member_string<
             UTF8Record,
-            SSID_TILESET_VERSION,
-            TilesetData,
-            &TilesetData::version>,
+            SSID_TILESET_HEADER_VERSION,
+            TilesetHeaderData,
+            &TilesetHeaderData::version>
+        >
+    > TilesetHeaderDecl;
+
+typedef struct_decl<
+    Container,
+    SSID_TILESET,
+    struct_members<
         member_struct<
-            TilesetData,
+            TilesetBodyData,
             container<
                 TileDecl,
-                std::back_insert_iterator<decltype(TilesetData::tiles)>
+                std::back_insert_iterator<decltype(TilesetBodyData::tiles)>
                 >,
-            &TilesetData::tiles>
+            &TilesetBodyData::tiles>
         >
-    > TilesetDecl;
+    > TilesetBodyDecl;
 
 /* free functions */
 
 std::unique_ptr<TilesetData> load_tileset_from_stream(const StreamHandle &stream)
 {
-    std::unique_ptr<TilesetData> result;
+    std::unique_ptr<TilesetData> result(new TilesetData());
+    IOIntfHandle io(new PyEngineStream(stream));
+
+    StreamSink sink(new SinkChain({
+        deserialize<only<TilesetHeaderDecl, true, true>>(result->header),
+        deserialize<only<TilesetBodyDecl, true, true>>(result->body)
+    }));
+
+    try {
+        FromBitstream(
+            io,
+            maniac_lab_registry,
+            sink).read_all();
+    } catch (const RecordNotFound &err) {
+        return nullptr;
+    } catch (const std::runtime_error &err) {
+        PyEngine::log->log(Error)
+            << "While loading tileset: " << err.what() << std::endl;
+        return nullptr;
+    }
+
+    return result;
+}
+
+std::unique_ptr<TilesetHeaderData> load_tileset_header_from_stream(const StreamHandle &stream)
+{
+    std::unique_ptr<TilesetHeaderData> result(new TilesetHeaderData());
     IOIntfHandle io(new PyEngineStream(stream));
 
     try {
         FromBitstream(
             io,
             maniac_lab_registry,
-            deserialize<only<TilesetDecl>>(*result.get())).read_all();
+            deserialize<only<TilesetHeaderDecl, true, true>>(*result.get())).read_all();
+    } catch (const RecordNotFound &err) {
+        return nullptr;
     } catch (const std::runtime_error &err) {
         PyEngine::log->log(Error)
             << "While loading tileset: " << err.what() << std::endl;
@@ -296,6 +332,7 @@ void save_tileset_to_stream(
 {
     IOIntfHandle io(new PyEngineStream(stream));
     StreamSink sink(new ToBitstream(io));
-    serialize_to_sink<TilesetDecl>(tileset, sink);
+    serialize_to_sink<TilesetHeaderDecl>(tileset.header, sink);
+    serialize_to_sink<TilesetBodyDecl>(tileset.body, sink);
     sink->end_of_stream();
 }

@@ -69,7 +69,7 @@ struct TileData
     std::vector<TileVisualData> additional_visuals;
 };
 
-struct TilesetData
+struct TilesetHeaderData
 {
     std::string display_name;
     std::string unique_name;
@@ -78,12 +78,25 @@ struct TilesetData
     std::string author;
     std::string license;
     std::string version;
+};
 
+struct TilesetBodyData
+{
     std::vector<TileData> tiles;
+};
+
+struct TilesetData
+{
+    TilesetHeaderData header;
+    TilesetBodyData body;
 };
 
 std::unique_ptr<TilesetData> load_tileset_from_stream(
     const PyEngine::StreamHandle &stream);
+
+std::unique_ptr<TilesetHeaderData> load_tileset_header_from_stream(
+    const PyEngine::StreamHandle &stream);
+
 
 void save_tileset_to_stream(
     const TilesetData &tileset,
