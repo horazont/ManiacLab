@@ -28,6 +28,14 @@ void FrameData::image_data_from_record(const TileVisualRecordHandle &rec)
     image = *rec.get();
 }
 
+TileVisualRecordHandle FrameData::image_data_to_record(ID id) const
+{
+    TileVisualRecordHandle rec_h = NodeHandleFactory<TileVisualRecord>::create(id);
+    TileVisualRecord &rec = *rec_h;
+    rec.set(image.width, image.height, image.format, image.data.data());
+    return rec_h;
+}
+
 /* structstream decls */
 
 const ID SSID_TILESET = 0x4d4c5473;
@@ -267,13 +275,12 @@ std::unique_ptr<TilesetData> load_tileset_from_stream(const StreamHandle &stream
 {
     std::unique_ptr<TilesetData> result;
     IOIntfHandle io(new PyEngineStream(stream));
-    RegistryHandle registry(new Registry());
 
     try {
         FromBitstream(
             io,
-            registry,
-            deserialize<TilesetDecl>(*result.get())).read_all();
+            maniac_lab_registry,
+            deserialize<only<TilesetDecl>>(*result.get())).read_all();
     } catch (const std::runtime_error &err) {
         PyEngine::log->log(Error)
             << "While loading tileset: " << err.what() << std::endl;
@@ -281,4 +288,14 @@ std::unique_ptr<TilesetData> load_tileset_from_stream(const StreamHandle &stream
     }
 
     return result;
+}
+
+void save_tileset_to_stream(
+    const TilesetData &tileset,
+    const PyEngine::StreamHandle &stream)
+{
+    IOIntfHandle io(new PyEngineStream(stream));
+    StreamSink sink(new ToBitstream(io));
+    serialize_to_sink<TilesetDecl>(tileset, sink);
+    sink->end_of_stream();
 }

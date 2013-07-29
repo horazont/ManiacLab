@@ -46,7 +46,7 @@ TileVisualRecord::TileVisualRecord(const TileVisualRecord &ref):
     _width(ref._width),
     _height(ref._height),
     _format(ref._format),
-    _pixels(malloc(ref.raw_size()))
+    _pixels((uint8_t*)malloc(ref.raw_size()))
 {
     memcpy(_pixels, ref._pixels, raw_size());
 }
@@ -82,7 +82,8 @@ void TileVisualRecord::read(IOIntf *stream)
     intptr_t to_read = raw_size();
     if (to_read <= old_size) {
         sread(stream, _pixels, to_read);
-        _pixels = realloc(_pixels, to_read);
+        _pixels = (uint8_t*)realloc(_pixels, to_read);
+        assert(_pixels);
         return;
     }
 
@@ -105,7 +106,7 @@ void TileVisualRecord::read(IOIntf *stream)
                     << "of size " << new_size << "." << submit;
                 return;
             }
-            _pixels = new_pixels;
+            _pixels = (uint8_t*)new_pixels;
             current_size = new_offs;
         }
 
@@ -134,6 +135,23 @@ intptr_t TileVisualRecord::raw_size() const
 NodeHandle TileVisualRecord::copy() const
 {
     return NodeHandleFactory<TileVisualRecord>::copy(*this);
+}
+
+void TileVisualRecord::set(
+        VarUInt width, VarUInt height,
+        TileVisualFormat format,
+        uint8_t const*pixels)
+{
+    const intptr_t new_size = width*height*get_pixel_size(format);
+    uint8_t *new_pixels = (uint8_t*)realloc(_pixels, new_size);
+    if (!new_pixels) {
+        throw std::runtime_error("Out of memory: cannot set visual record contents.");
+    }
+    _width = width;
+    _height = height;
+    _format = format;
+    _pixels = new_pixels;
+    memcpy(_pixels, pixels, new_size);
 }
 
 /* PyEngineStream */
@@ -181,3 +199,7 @@ intptr_t get_pixel_size(TileVisualFormat format)
         return 0;
     };
 }
+
+RegistryHandle maniac_lab_registry = RegistryHandle(new Registry({
+    std::pair<RecordType, NodeConstructor>(RT_TILE_VISUAL, &NodeHandleFactory<TileVisualRecord>::create)
+    }));

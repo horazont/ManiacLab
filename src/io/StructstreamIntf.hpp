@@ -33,8 +33,7 @@ authors named in the AUTHORS file.
 
 namespace SS = StructStream;
 
-static const SS::RecordType RT_TILE_IMAGE = SS::RT_APP_NOSIZE_MIN;
-static const SS::RecordType
+static const SS::RecordType RT_TILE_VISUAL = SS::RT_APP_NOSIZE_MIN;
 
 class TileVisualRecord: public SS::DataRecord
 {
@@ -48,14 +47,14 @@ public:
 protected:
     SS::VarUInt _width, _height;
     TileVisualFormat _format;
-    void *_pixels;
+    uint8_t *_pixels;
 
 public:
     virtual void read(SS::IOIntf *stream);
     virtual void write(SS::IOIntf *stream) const;
 
     virtual SS::RecordType record_type() const {
-        return RT_TILE_IMAGE;
+        return RT_TILE_VISUAL;
     };
 
     virtual void raw_get(void *to) const { assert(false); };
@@ -76,13 +75,17 @@ public:
         return _height;
     };
 
-    inline void const* get_pixels() const {
+    inline uint8_t const* get_pixels() const {
         return _pixels;
     };
 
     inline TileVisualFormat get_format() const {
         return _format;
     };
+
+    void set(SS::VarUInt width, SS::VarUInt height,
+             TileVisualFormat format,
+             uint8_t const*pixels);
 };
 
 typedef std::shared_ptr<TileVisualRecord> TileVisualRecordHandle;
@@ -100,5 +103,7 @@ public:
 };
 
 intptr_t get_pixel_size(TileVisualFormat format);
+
+extern SS::RegistryHandle maniac_lab_registry;
 
 #endif
