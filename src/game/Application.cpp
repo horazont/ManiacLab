@@ -247,7 +247,8 @@ Application::Application(
                                 SelectorPtr(new Is("button",
                                             SelectorPtr(new State(Hovered)))))),
         rule_group({
-            simple_rule<BackgroundRule>(FillPtr(new Colour(0, 0.5, 0.8, 0.3)))
+            simple_rule<BackgroundRule>(FillPtr(new Colour(0, 0.5, 0.8, 0.3))),
+            simple_rule<TextColourRule>(Inherit)
         })
     );
 
