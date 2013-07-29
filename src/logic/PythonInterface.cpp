@@ -28,12 +28,13 @@ authors named in the AUTHORS file.
 
 #include "Level.hpp"
 #include "GameObject.hpp"
-#include "Tileset.hpp"
+//~ #include "Tileset.hpp"
 
 using namespace boost::python;
 
 BOOST_PYTHON_MODULE(_cmaniaclab)
 {
+  /*
     class_<TilesetInfo, TilesetInfoHandle>("TilesetInfo")
         .add_property("unique_name", &TilesetInfo::unique_name)
         .add_property("display_name", &TilesetInfo::display_name)
@@ -60,6 +61,7 @@ BOOST_PYTHON_MODULE(_cmaniaclab)
                       &Tileset::set_description)
         .def("save_to_stream", &Tileset::save_to_stream)
         ;
+    */
 
     class_<Level, LevelHandle>("Level", init<CoordInt, CoordInt, bool>())
         .def("update", &Level::update)
@@ -68,10 +70,10 @@ BOOST_PYTHON_MODULE(_cmaniaclab)
         .def("debug_test_stamp", &Level::debug_test_stamp)
         .def("debug_output", &Level::debug_output);
 
-    def("read_tileset_info", &TilesetInfo::read_from_stream,
+    /*def("read_tileset_info", &TilesetInfo::read_from_stream,
         return_value_policy<manage_new_object>());
     def("load_tileset_from_stream", &Tileset::load_from_stream,
-        return_value_policy<manage_new_object>());
+        return_value_policy<manage_new_object>());*/
 }
 
 void add_maniac_lab_to_inittab()

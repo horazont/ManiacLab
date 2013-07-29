@@ -25,55 +25,31 @@ authors named in the AUTHORS file.
 #ifndef _ML_STRUCTSTREAM_H
 #define _ML_STRUCTSTREAM_H
 
-#include "structstream/structstream.hpp"
-#include "CEngine/IO/Stream.hpp"
+#include <CEngine/IO/Stream.hpp>
+
+#include <structstream/structstream.hpp>
+
+#include "Common.hpp"
 
 namespace SS = StructStream;
 
-static const SS::ID ML_TILESET_CONT = 0x40;
-static const SS::ID ML_TILESET_UNIQUE_NAME = 0x41;
-static const SS::ID ML_TILESET_DISPLAY_NAME = 0x42;
-static const SS::ID ML_TILESET_AUTHOR = 0x43;
-static const SS::ID ML_TILESET_DESCRIPTION = 0x44;
-static const SS::ID ML_TILESET_REFERENCE = 0x45;
+static const SS::RecordType RT_TILE_IMAGE = SS::RT_APP_NOSIZE_MIN;
+static const SS::RecordType
 
-static const SS::ID ML_TILE_CONT = 0x46;
-static const SS::ID ML_TILE_UNIQUE_NAME = 0x47;
-static const SS::ID ML_TILE_DISPLAY_NAME = 0x48;
-static const SS::ID ML_TILE_IS_GRAVITY_AFFECTED = 0x49;
-static const SS::ID ML_TILE_IS_ROLLABLE = 0x4A;
-static const SS::ID ML_TILE_TEMP_COEFFICIENT = 0x4B;
-static const SS::ID ML_TILE_ROLL_RADIUS = 0x4C;
-static const SS::ID ML_TILE_IS_STICKY = 0x4D;
-static const SS::ID ML_TILE_IS_EDIBLE = 0x4E;
-
-static const SS::ID ML_TILE_MODEL_CONT = 0x60;
-static const SS::ID ML_TILE_MODEL_IMAGE_CONT = 0x61;
-static const SS::ID ML_TILE_MODEL_IMAGE_DATA = 0x62;
-static const SS::ID ML_TILE_MODEL_IMAGE_DURATION = 0x63;
-
-static const SS::ID ML_TILE_IMAGE_CONT = 0x64;
-static const SS::ID ML_TILE_IMAGE_DURATION = 0x65;
-static const SS::ID ML_TILE_IMAGE_IMAGE = 0x66;
-
-static const SS::ID ML_TILESET_REFERENCE_CONT = 0x6A;
-static const SS::ID ML_TILESET_REFERENCE_NAME = 0x6B;
-static const SS::ID ML_TILESET_REFERENCE_EXCLUDE = 0x6C;
-
-static const SS::RecordType RT_TILE_IMAGE = SS::RT_APPBLOB_MIN;
-
-class TileImage;
-
-class TileImageRecord: public SS::DataRecord
+class TileVisualRecord: public SS::DataRecord
 {
 protected:
-    explicit TileImageRecord(SS::ID id);
-    TileImageRecord(const TileImageRecord &ref);
+    explicit TileVisualRecord(SS::ID id);
+    TileVisualRecord(const TileVisualRecord &ref);
+
 public:
-    virtual ~TileImageRecord();
+    virtual ~TileVisualRecord();
+
 protected:
     SS::VarUInt _width, _height;
+    TileVisualFormat _format;
     void *_pixels;
+
 public:
     virtual void read(SS::IOIntf *stream);
     virtual void write(SS::IOIntf *stream) const;
@@ -84,17 +60,32 @@ public:
 
     virtual void raw_get(void *to) const { assert(false); };
     virtual void raw_set(const void *from) { assert(false); };
-    virtual intptr_t raw_size() const { assert(false); };
+    virtual intptr_t raw_size() const;
 
     virtual std::string datastr() const { assert(false); };
 
     virtual SS::NodeHandle copy() const;
 
-    friend class SS::NodeHandleFactory<TileImageRecord>;
-    friend class TileImage;
+    friend class SS::NodeHandleFactory<TileVisualRecord>;
+
+    inline SS::VarUInt get_width() const {
+        return _width;
+    };
+
+    inline SS::VarUInt get_height() const {
+        return _height;
+    };
+
+    inline void const* get_pixels() const {
+        return _pixels;
+    };
+
+    inline TileVisualFormat get_format() const {
+        return _format;
+    };
 };
 
-typedef std::shared_ptr<TileImageRecord> TileImageRecordHandle;
+typedef std::shared_ptr<TileVisualRecord> TileVisualRecordHandle;
 
 struct PyEngineStream: SS::IOIntf {
 public:
@@ -107,5 +98,7 @@ public:
     virtual intptr_t write(const void *buf, const intptr_t len);
     virtual intptr_t skip(const intptr_t len);
 };
+
+intptr_t get_pixel_size(TileVisualFormat format);
 
 #endif

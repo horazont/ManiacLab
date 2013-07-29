@@ -24,64 +24,116 @@ authors named in the AUTHORS file.
 **********************************************************************/
 #include "StructstreamIntf.hpp"
 
-#include "logic/Tileset.hpp"
-
 #include <unistd.h>
+
+#include <CEngine/IO/Log.hpp>
 
 using namespace StructStream;
 using namespace PyEngine;
 
-TileImageRecord::TileImageRecord(ID id):
+TileVisualRecord::TileVisualRecord(ID id):
     DataRecord(id),
     _width(0),
     _height(0),
+    _format(TVF_LUMINANCE),
     _pixels(0)
 {
 
 }
 
-TileImageRecord::TileImageRecord(const TileImageRecord &ref):
+TileVisualRecord::TileVisualRecord(const TileVisualRecord &ref):
     DataRecord(ref._id),
     _width(ref._width),
     _height(ref._height),
-    _pixels(malloc(_width*_height*TileImage::BytesPerPixel))
+    _format(ref._format),
+    _pixels(malloc(ref.raw_size()))
 {
-    memcpy(_pixels, ref._pixels, _width*_height*TileImage::BytesPerPixel);
+    memcpy(_pixels, ref._pixels, raw_size());
 }
 
-TileImageRecord::~TileImageRecord()
+TileVisualRecord::~TileVisualRecord()
 {
     free(_pixels);
     _pixels = nullptr;
 }
 
-void TileImageRecord::read(IOIntf *stream)
+void TileVisualRecord::read(IOIntf *stream)
 {
-    _width = Utils::read_varuint(stream);
-    _height = Utils::read_varuint(stream);
+    VarUInt new_width = Utils::read_varuint(stream);
+    VarUInt new_height = Utils::read_varuint(stream);
+    TileVisualFormat new_format = (TileVisualFormat)Utils::read_varuint(stream);
 
-    // TODO: insert limits check here
+    if (get_pixel_size(new_format) == 0) {
+        PyEngine::log->getChannel("io")->log(Error)
+            << "Unknown pixel format encountered: " << new_format
+            << submit;
+        throw std::runtime_error("Unknown pixel format encountered.");
+    }
 
-    const VarUInt size = _width*_height*TileImage::BytesPerPixel;
+    intptr_t old_size = raw_size();
 
-    _pixels = realloc(_pixels, size);
-    sread(stream, _pixels, size);
+    _width = new_width;
+    _height = new_height;
+    _format = new_format;
+
+    static const intptr_t chunk_size = 1<<20;
+    const intptr_t new_size = raw_size();
+
+    intptr_t to_read = raw_size();
+    if (to_read <= old_size) {
+        sread(stream, _pixels, to_read);
+        _pixels = realloc(_pixels, to_read);
+        return;
+    }
+
+    intptr_t current_size = old_size;
+    intptr_t read_offs = 0;
+    while (to_read > 0) {
+        const intptr_t curr_step = std::min(chunk_size, to_read);
+        const intptr_t new_offs = read_offs + curr_step;
+        if (new_offs > current_size) {
+            void *new_pixels = realloc(_pixels, new_offs);
+            if (!new_pixels) {
+                new_pixels = realloc(_pixels, 1);
+                assert(new_pixels); // allocation of 1 must be possible...
+                *((uint8_t*)_pixels) = 0;
+                _width = 1;
+                _height = 1;
+                _format = TVF_LUMINANCE;
+                PyEngine::log->log(Error)
+                    << "Memory allocation failure while reading visual "
+                    << "of size " << new_size << "." << submit;
+                return;
+            }
+            _pixels = new_pixels;
+            current_size = new_offs;
+        }
+
+        sread(stream, &((uint8_t*)_pixels)[read_offs], curr_step);
+        to_read -= curr_step;
+    }
 }
 
-void TileImageRecord::write(IOIntf *stream) const
+void TileVisualRecord::write(IOIntf *stream) const
 {
     write_header(stream);
 
     Utils::write_varuint(stream, _width);
     Utils::write_varuint(stream, _height);
 
-    const VarUInt size = _width*_height*TileImage::BytesPerPixel;
+    const VarUInt size = _width*_height*4;
     swrite(stream, _pixels, size);
 }
 
-NodeHandle TileImageRecord::copy() const
+intptr_t TileVisualRecord::raw_size() const
 {
-    return NodeHandleFactory<TileImageRecord>::copy(*this);
+    const intptr_t pixel_size = get_pixel_size(_format);
+    return pixel_size * _width * _height;
+}
+
+NodeHandle TileVisualRecord::copy() const
+{
+    return NodeHandleFactory<TileVisualRecord>::copy(*this);
 }
 
 /* PyEngineStream */
@@ -112,4 +164,20 @@ intptr_t PyEngineStream::skip(const intptr_t len)
     } else {
         return this->IOIntf::skip(len);
     }
+}
+
+/* free functions */
+
+intptr_t get_pixel_size(TileVisualFormat format)
+{
+    switch (format) {
+    case TVF_LUMINANCE:
+        return 1;
+    case TVF_LUMINANCE_ALPHA:
+        return 2;
+    case TVF_RGBA:
+        return 4;
+    default:
+        return 0;
+    };
 }
