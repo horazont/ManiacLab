@@ -33,6 +33,8 @@ authors named in the AUTHORS file.
 #include <CEngine/WindowInterface/Window.hpp>
 #include <CEngine/UI/Widgets/RootWidget.hpp>
 
+#include "MainMenu.hpp"
+
 class Application: public PyEngine::UI::RootWidget
 {
 public:
@@ -54,9 +56,15 @@ private:
     float _cairo_tex_s;
     float _cairo_tex_t;
 
+    Mode *_current_mode;
+    MainMenuMode _mode_main_menu;
+
 protected:
     void _recreate_cairo_surface(unsigned int width,
                                  unsigned int height) override;
+
+protected:
+    void set_mode(Mode *mode);
 
 public:
     void frame_unsynced(PyEngine::TimeFloat deltaT) override;

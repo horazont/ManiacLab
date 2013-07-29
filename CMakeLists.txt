@@ -23,6 +23,8 @@ set(LIB_SOURCES
 )
 
 set(GAME_SOURCES
+    "src/game/Mode.cpp"
+    "src/game/MainMenu.cpp"
     "src/game/Application.cpp"
 )
 
