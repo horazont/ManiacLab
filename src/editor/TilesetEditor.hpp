@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: TilesetEditor.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,38 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
+#ifndef _ML_TILESET_EDITOR_H
+#define _ML_TILESET_EDITOR_H
 
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
+#include "Editor.hpp"
+
+#include "io/TilesetData.hpp"
+
+#include "TilesetEditee.hpp"
+
+class TilesetEditor: public Editor
+{
+public:
+    TilesetEditor(RootWindow *root,
+                  Gtk::Container *parent,
+                  TilesetEditee *editee);
+
+private:
+    TilesetEditee *_editee;
+    Gtk::Box _main_box;
+
+public:
+    inline TilesetEditee *editee() {
+        return _editee;
+    };
+
+public:
+    void disable() override;
+    void enable() override;
+
+public:
+    void file_save(const PyEngine::StreamHandle &stream) override;
+
 };
 
 #endif

@@ -1,3 +1,27 @@
+/**********************************************************************
+File name: TilesetData.cpp
+This file is part of: ManiacLab
+
+LICENSE
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about ManiacLab please e-mail one of the
+authors named in the AUTHORS file.
+**********************************************************************/
 #include "TilesetData.hpp"
 
 #include <CEngine/IO/Log.hpp>
@@ -38,7 +62,6 @@ TileVisualRecordHandle FrameData::image_data_to_record(ID id) const
 
 /* structstream decls */
 
-const ID SSID_TILESET_HEADER = 0x4d4c5473;
 const ID SSID_TILESET_HEADER_DISPLAY_NAME = 0x40;
 const ID SSID_TILESET_HEADER_UNIQUE_NAME = 0x41;
 const ID SSID_TILESET_HEADER_DESCRIPTION = 0x42;
@@ -59,6 +82,7 @@ const ID SSID_TILE_ROLL_RADIUS = 0x46;
 const ID SSID_TILE_TEMP_COEFFICIENT = 0x47;
 const ID SSID_TILE_DEFAULT_VISUAL = 0x48;
 const ID SSID_TILE_ADDITIONAL_VISUAL = 0x49;
+const ID SSID_TILE_IS_BLOCKING = 0x4A;
 
 const ID SSID_VISUAL = 0; // -- will not appear in file
 const ID SSID_VISUAL_IMAGE = 0x41;
@@ -204,6 +228,12 @@ typedef struct_decl<
             bool,
             &TileData::is_gravity_affected>,
         member<
+            BoolRecord,
+            SSID_TILE_IS_BLOCKING,
+            TileData,
+            bool,
+            &TileData::is_blocking>,
+        member<
             Float32Record,
             SSID_TILE_ROLL_RADIUS,
             TileData,
@@ -252,6 +282,11 @@ typedef struct_decl<
             &TilesetHeaderData::description>,
         member_string<
             UTF8Record,
+            SSID_TILESET_HEADER_AUTHOR,
+            TilesetHeaderData,
+            &TilesetHeaderData::author>,
+        member_string<
+            UTF8Record,
             SSID_TILESET_HEADER_LICENSE,
             TilesetHeaderData,
             &TilesetHeaderData::license>,
@@ -270,7 +305,7 @@ typedef struct_decl<
         member_struct<
             TilesetBodyData,
             container<
-                TileDecl,
+                heap_value<TileDecl, std::shared_ptr<TileData>>,
                 std::back_insert_iterator<decltype(TilesetBodyData::tiles)>
                 >,
             &TilesetBodyData::tiles>
@@ -279,15 +314,42 @@ typedef struct_decl<
 
 /* free functions */
 
-std::unique_ptr<TilesetData> load_tileset_from_stream(const StreamHandle &stream)
+std::pair<StreamSink, std::unique_ptr<TilesetData>>
+    create_tileset_sink()
 {
     std::unique_ptr<TilesetData> result(new TilesetData());
-    IOIntfHandle io(new PyEngineStream(stream));
-
     StreamSink sink(new SinkChain({
         deserialize<only<TilesetHeaderDecl, true, true>>(result->header),
         deserialize<only<TilesetBodyDecl, true, true>>(result->body)
     }));
+
+    return std::make_pair(sink, std::move(result));
+}
+
+std::unique_ptr<TilesetData> load_tileset_from_tree(const ContainerHandle &root)
+{
+    std::unique_ptr<TilesetData> result;
+    StreamSink sink;
+    std::tie(sink, result) = create_tileset_sink();
+
+    try {
+        FromTree(sink, root);
+    } catch (const RecordNotFound &err) {
+        PyEngine::log->log(Error)
+            << "Given tree is not a tileset: " << err.what() << submit;
+        return nullptr;
+    }
+
+    return result;
+}
+
+std::unique_ptr<TilesetData> load_tileset_from_stream(const StreamHandle &stream)
+{
+    IOIntfHandle io(new PyEngineStream(stream));
+
+    std::unique_ptr<TilesetData> result;
+    StreamSink sink;
+    std::tie(sink, result) = create_tileset_sink();
 
     try {
         FromBitstream(
@@ -295,10 +357,12 @@ std::unique_ptr<TilesetData> load_tileset_from_stream(const StreamHandle &stream
             maniac_lab_registry,
             sink).read_all();
     } catch (const RecordNotFound &err) {
+        PyEngine::log->log(Error)
+            << "Given stream is not a tileset: " << err.what() << submit;
         return nullptr;
     } catch (const std::runtime_error &err) {
         PyEngine::log->log(Error)
-            << "While loading tileset: " << err.what() << std::endl;
+            << "While loading tileset: " << err.what() << submit;
         return nullptr;
     }
 
@@ -319,7 +383,7 @@ std::unique_ptr<TilesetHeaderData> load_tileset_header_from_stream(const StreamH
         return nullptr;
     } catch (const std::runtime_error &err) {
         PyEngine::log->log(Error)
-            << "While loading tileset: " << err.what() << std::endl;
+            << "While loading tileset: " << err.what() << submit;
         return nullptr;
     }
 

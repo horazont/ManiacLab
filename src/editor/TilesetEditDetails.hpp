@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: TilesetEditDetails.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,40 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
+#ifndef _ML_TILESET_EDIT_DETAILS_H
+#define _ML_TILESET_EDIT_DETAILS_H
 
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
+#include <gtkmm.h>
+
+#include "io/TilesetData.hpp"
+
+class TilesetEditDetails: public Gtk::Dialog
+{
+public:
+    TilesetEditDetails(BaseObjectType *cobject,
+                       const Glib::RefPtr<Gtk::Builder> &builder);
+
+private:
+    Glib::RefPtr<Gtk::Builder> _builder;
+
+private:
+    SharedTileset _editee;
+
+private:
+    Gtk::Entry *_author;
+    Gtk::TextView *_description;
+    Gtk::Entry *_display_name;
+    Gtk::Entry *_license;
+    Gtk::Entry *_unique_name;
+    Gtk::Entry *_version;
+
+private:
+    void display_name_changed();
+    void response(int response_id);
+
+public:
+    void edit_tileset(const SharedTileset &editee);
+
 };
 
 #endif

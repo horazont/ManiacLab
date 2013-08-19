@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: LevelData.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,11 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
+#ifndef _ML_LEVEL_DATA_H
+#define _ML_LEVEL_DATA_H
 
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
-};
+#include <structstream/static.hpp>
+
+const StructStream::ID SSID_LEVEL_HEADER = 0x4d4c4c76;
 
 #endif

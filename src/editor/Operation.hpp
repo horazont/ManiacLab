@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: Operation.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,37 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
+#ifndef _ML_OPERATION_H
+#define _ML_OPERATION_H
 
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
+#include <stdexcept>
+#include <memory>
+
+class OperationNotUndoable: public std::logic_error
+{
+public:
+    OperationNotUndoable(const std::string &what_arg);
+    OperationNotUndoable(const char *what_arg);
+    OperationNotUndoable(const OperationNotUndoable &ref) = default;
+    OperationNotUndoable& operator=(
+        const OperationNotUndoable &ref) = default;
 };
+
+class Operation
+{
+public:
+    Operation();
+    Operation(const Operation &ref);
+    Operation& operator=(const Operation &ref);
+    virtual ~Operation();
+
+public:
+    virtual void execute();
+    virtual bool is_undoable();
+    virtual void undo();
+
+};
+
+typedef std::unique_ptr<Operation> OperationPtr;
 
 #endif

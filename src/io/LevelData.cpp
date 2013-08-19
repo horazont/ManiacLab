@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: LevelData.cpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,4 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
-
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
-};
-
-#endif
+#include "LevelData.hpp"

@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: ml-edit.cpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,41 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
+#include <cassert>
 
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
-};
+#include <gtkmm.h>
 
-#endif
+#include "RootWindow.hpp"
+
+#include <CEngine/IO/FileStream.hpp>
+#include <CEngine/IO/Log.hpp>
+
+#include "io/TilesetData.hpp"
+
+using namespace Gtk;
+using namespace Glib;
+using namespace PyEngine;
+
+int main(int argc, char *argv[])
+{
+    LogServer *const log = PyEngine::log;
+
+    StreamHandle xmlfile(new FileStream("ml-edit.log.xml", OM_WRITE, WM_OVERWRITE));
+    log->addSink(LogStdOutSink(All));
+    log->addSink(LogSinkHandle(
+        new LogXMLSink(All & (~Debug), xmlfile, "log.xsl", "ManiacLab Editor")
+    ));
+
+    Main app(argc, argv);
+
+    RefPtr<Builder> builder = Builder::create_from_file("data/ui/editor.glade");
+
+    RootWindow *window;
+
+    builder->get_widget_derived("root", window);
+    assert(window);
+
+    app.run(*window);
+    delete window;
+    return 0;
+}

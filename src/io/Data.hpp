@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: Data.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,24 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
+#ifndef _ML_DATA_H
+#define _ML_DATA_H
 
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
+#include "LevelData.hpp"
+#include "TilesetData.hpp"
+
+enum FileType {
+    FT_NO_STRUCTSTREAM,
+    FT_EMPTY,
+    FT_UNSUPPORTED,
+    FT_NO_MANIACLAB,
+    FT_LEVEL,
+    FT_TILESET
 };
+
+FileType get_type_from_tree(const StructStream::ContainerHandle &root);
+
+std::pair<StructStream::ContainerHandle, FileType> load_tree_from_stream(
+    const PyEngine::StreamHandle &stream);
 
 #endif

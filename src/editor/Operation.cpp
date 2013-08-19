@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: Operation.cpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,55 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
+#include "Operation.hpp"
 
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
-};
+/* OperationNotUndoable */
 
-#endif
+OperationNotUndoable::OperationNotUndoable(const std::string &what_arg):
+    std::logic_error(what_arg)
+{
+
+}
+
+OperationNotUndoable::OperationNotUndoable(const char *what_arg):
+    std::logic_error(what_arg)
+{
+
+}
+
+/* Operation */
+
+Operation::Operation()
+{
+
+}
+
+Operation::Operation(const Operation &ref)
+{
+
+}
+
+Operation& Operation::operator=(const Operation &ref)
+{
+    return *this;
+}
+
+Operation::~Operation()
+{
+
+}
+
+void Operation::execute()
+{
+
+}
+
+bool Operation::is_undoable()
+{
+    return false;
+}
+
+void Operation::undo()
+{
+    throw OperationNotUndoable("This operation cannot be un-done.");
+}

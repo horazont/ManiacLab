@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: TilesetEditor.cpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,40 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
+#include "TilesetEditor.hpp"
 
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
-};
+#include "RootWindow.hpp"
 
-#endif
+using namespace Gtk;
+using namespace Glib;
+
+/* TilesetEditor */
+
+TilesetEditor::TilesetEditor(
+        RootWindow *root,
+        Container *parent,
+        TilesetEditee *editee):
+    Editor(root, parent),
+    _editee(editee)
+{
+    Label *test = manage(new Label("test"));
+    _main_box.pack_start(*test, PACK_EXPAND_PADDING);
+
+    parent->add(_main_box);
+    parent->show_all_children();
+}
+
+void TilesetEditor::disable()
+{
+    _root->get_menu_tileset()->hide();
+}
+
+void TilesetEditor::enable()
+{
+    _root->get_menu_tileset()->show();
+}
+
+void TilesetEditor::file_save(const PyEngine::StreamHandle &stream)
+{
+    save_tileset_to_stream(*_editee->editee(), stream);
+}

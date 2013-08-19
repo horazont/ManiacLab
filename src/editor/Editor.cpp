@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Common.hpp
+File name: Editor.cpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,13 +22,74 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_IO_COMMON_H
-#define _ML_IO_COMMON_H
+#include "Editor.hpp"
 
-enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
-};
+using namespace Gtk;
+using namespace Glib;
 
-#endif
+/* Editor */
+
+Editor::Editor(RootWindow *root, Container *parent):
+    _root(root),
+    _parent(parent),
+    _filename_known(false),
+    _filename()
+{
+
+}
+
+Editor::~Editor()
+{
+
+}
+
+void Editor::set_filename(const std::string &name)
+{
+    _filename_known = true;
+    _filename = name;
+}
+
+void Editor::unset_filename()
+{
+    _filename_known = false;
+}
+
+void Editor::disable()
+{
+
+}
+
+void Editor::enable()
+{
+
+}
+
+void Editor::edit_copy()
+{
+
+}
+
+void Editor::edit_cut()
+{
+
+}
+
+void Editor::edit_delete()
+{
+
+}
+
+void Editor::edit_paste()
+{
+
+}
+
+void Editor::edit_select_all()
+{
+
+}
+
+void Editor::file_save(const PyEngine::StreamHandle &stream)
+{
+    assert(false);
+}

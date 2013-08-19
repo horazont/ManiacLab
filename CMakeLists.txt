@@ -16,7 +16,9 @@ pkg_check_modules(GTKMM gtkmm-3.0)
 
 set(LIB_SOURCES
     "src/io/StructstreamIntf.cpp"
+    "src/io/LevelData.cpp"
     "src/io/TilesetData.cpp"
+    "src/io/Data.cpp"
     "src/logic/GameObject.cpp"
     "src/logic/Movements.cpp"
     "src/logic/Stamp.cpp"
@@ -35,6 +37,12 @@ set(GAME_SOURCES
 
 set(EDITOR_SOURCES
     ${LIB_SOURCES}
+    "src/editor/GTKUtils.cpp"
+    "src/editor/Operation.cpp"
+    "src/editor/Editor.cpp"
+    "src/editor/TilesetEditee.cpp"
+    "src/editor/TilesetEditor.cpp"
+    "src/editor/TilesetEditDetails.cpp"
     "src/editor/RootWindow.cpp"
 )
 
