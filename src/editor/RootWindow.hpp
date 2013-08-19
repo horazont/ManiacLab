@@ -49,6 +49,7 @@ private:
     Editor *_current_editor;
 
 private:
+    Glib::RefPtr<Gtk::RecentManager> _recent;
     Glib::RefPtr<Gtk::Builder> _builder;
     Gtk::MenuItem *_menu_level;
     Gtk::MenuItem *_menu_tileset;

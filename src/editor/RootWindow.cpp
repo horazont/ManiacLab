@@ -78,6 +78,7 @@ RootWindow::RootWindow(
     _tileset_editors(),
     _editors(),
     _current_editor(nullptr),
+    _recent(RecentManager::create()),
     _builder(builder),
     _menu_level(nullptr),
     _menu_tileset(nullptr),
@@ -292,7 +293,7 @@ void RootWindow::dlg_create_tileset_response(int response_id)
 void RootWindow::dlg_open_file_activate()
 {
     _dlg_open_file->hide();
-    open_file(_dlg_open_file->get_filename());
+    dlg_open_file_response(2);
 }
 
 void RootWindow::dlg_open_file_response(int response_id)
@@ -310,6 +311,7 @@ void RootWindow::dlg_open_file_response(int response_id)
             return;
         }
         _dlg_open_file->hide();
+        _recent->add_item(_dlg_open_file->get_uri());
         open_file(filename);
         break;
     }
@@ -323,7 +325,7 @@ void RootWindow::dlg_open_file_response(int response_id)
 void RootWindow::dlg_save_file_activate()
 {
     _dlg_save_file->hide();
-    save_file(_dlg_save_file->get_filename());
+    dlg_save_file_response(2);
 }
 
 void RootWindow::dlg_save_file_response(int response_id)
@@ -341,6 +343,7 @@ void RootWindow::dlg_save_file_response(int response_id)
             return;
         }
         _dlg_save_file->hide();
+        _recent->add_item(_dlg_save_file->get_uri());
         save_file(filename);
         break;
     }
