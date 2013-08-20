@@ -69,3 +69,53 @@ bool Operation::is_undoable()
 {
     return true;
 }
+
+/* OperationGroup */
+
+OperationGroup::OperationGroup():
+    Operation(),
+    _operations()
+{
+
+}
+
+void OperationGroup::execute()
+{
+    for (auto &op: _operations) {
+        op->execute();
+    }
+}
+
+bool OperationGroup::is_undoable()
+{
+    for (auto &op: _operations) {
+        if (!op->is_undoable()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void OperationGroup::undo()
+{
+    if (!is_undoable()) {
+        not_undoable();
+    }
+
+    for (auto it = _operations.rbegin();
+         it != _operations.rend();
+         ++it)
+    {
+        (*it)->undo();
+    }
+}
+
+void OperationGroup::add_operation(OperationPtr &&operation)
+{
+    _operations.push_back(std::move(operation));
+}
+
+bool OperationGroup::empty()
+{
+    return _operations.empty();
+}

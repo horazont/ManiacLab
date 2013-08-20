@@ -181,5 +181,33 @@ protected:
 
 };
 
+class OpSetTileRollRadius: public OpSetTileAttribute<float>
+{
+public:
+    OpSetTileRollRadius(
+        TilesetEditee *tileset,
+        const SharedTile &tile,
+        const float &value);
+
+protected:
+    const float &get_value() const override;
+    void set_value(const float &value) override;
+
+};
+
+class OpSetTileTempCoefficient: public OpSetTileAttribute<float>
+{
+public:
+    OpSetTileTempCoefficient(
+        TilesetEditee *tileset,
+        const SharedTile &tile,
+        const float &value);
+
+protected:
+    const float &get_value() const override;
+    void set_value(const float &value) override;
+
+};
+
 
 #endif

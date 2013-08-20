@@ -27,6 +27,7 @@ authors named in the AUTHORS file.
 
 #include <stdexcept>
 #include <memory>
+#include <vector>
 
 class OperationNotUndoable: public std::logic_error
 {
@@ -57,5 +58,26 @@ public:
 };
 
 typedef std::unique_ptr<Operation> OperationPtr;
+
+class OperationGroup: public Operation
+{
+public:
+    OperationGroup();
+    OperationGroup(const OperationGroup &ref) = delete;
+    OperationGroup& operator=(const OperationGroup &ref) = delete;
+
+private:
+    std::vector<OperationPtr> _operations;
+
+public:
+    void execute() override;
+    bool is_undoable() override;
+    void undo() override;
+
+public:
+    void add_operation(OperationPtr &&operation);
+    bool empty();
+
+};
 
 #endif

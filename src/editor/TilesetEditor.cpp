@@ -97,46 +97,21 @@ TilesetEditor::TilesetEditor(
     _tile_unique_name.set_sensitive(false);
 
     configure_switch(_tile_blocking);
-    bind_editing_done(_tile_blocking,
-                      &TilesetEditor::tile_blocking_editing_done);
-
     configure_switch(_tile_destructible);
-    bind_editing_done(_tile_destructible,
-                      &TilesetEditor::tile_destructible_editing_done);
-
     configure_switch(_tile_edible);
-    bind_editing_done(_tile_edible,
-                      &TilesetEditor::tile_edible_editing_done);
-
     configure_switch(_tile_gravity_affected);
-    bind_editing_done(_tile_gravity_affected,
-                      &TilesetEditor::tile_gravity_affected_editing_done);
-
     configure_switch(_tile_rollable);
-    bind_editing_done(_tile_rollable,
-                      &TilesetEditor::tile_rollable_editing_done);
-
     configure_switch(_tile_sticky);
-    bind_editing_done(_tile_sticky,
-                      &TilesetEditor::tile_sticky_editing_done);
-
 
     configure_spin_button(_tile_roll_radius);
     _tile_roll_radius.set_increments(0.01, 0.1);
     _tile_roll_radius.set_range(0, 1);
-    bind_editing_done(_tile_roll_radius,
-                      &TilesetEditor::tile_roll_radius_editing_done);
 
     configure_spin_button(_tile_temp_coefficient);
     _tile_temp_coefficient.set_increments(0.01, 0.1);
     _tile_temp_coefficient.set_range(1e-2, 1e3);
-    bind_editing_done(_tile_temp_coefficient,
-                      &TilesetEditor::tile_temp_coefficient_editing_done);
 
     configure_entry(_tile_display_name);
-    bind_editing_done(_tile_display_name,
-                      &TilesetEditor::tile_display_name_editing_done);
-
     configure_entry(_tile_unique_name);
 
     setup_tile_property_grid(_tile_prop_grid);
@@ -298,10 +273,59 @@ TreeNodeChildren::iterator TilesetEditor::find_tile_row(const SharedTile &tile)
     return *it;
 }
 
+void TilesetEditor::flush_tile_props()
+{
+    std::unique_ptr<OperationGroup> ops(new OperationGroup());
+
+    std::string display_name = _tile_display_name.get_text();
+    if ((display_name != "") && (display_name != _current_tile->display_name)) {
+        ops->add_operation(OperationPtr(new OpSetTileDisplayName(
+            _editee, _current_tile, display_name)));
+    }
+
+    if (_tile_blocking.get_active() != _current_tile->is_blocking) {
+        ops->add_operation(OperationPtr(new OpSetTileBlocking(
+            _editee, _current_tile, _tile_blocking.get_active())));
+    }
+    if (_tile_destructible.get_active() != _current_tile->is_destructible) {
+        ops->add_operation(OperationPtr(new OpSetTileDestructible(
+            _editee, _current_tile, _tile_destructible.get_active())));
+    }
+    if (_tile_edible.get_active() != _current_tile->is_edible) {
+        ops->add_operation(OperationPtr(new OpSetTileEdible(
+            _editee, _current_tile, _tile_edible.get_active())));
+    }
+    if (_tile_gravity_affected.get_active() != _current_tile->is_gravity_affected) {
+        ops->add_operation(OperationPtr(new OpSetTileGravityAffected(
+            _editee, _current_tile, _tile_gravity_affected.get_active())));
+    }
+    if (_tile_rollable.get_active() != _current_tile->is_rollable) {
+        ops->add_operation(OperationPtr(new OpSetTileRollable(
+            _editee, _current_tile, _tile_rollable.get_active())));
+    }
+    if (_tile_sticky.get_active() != _current_tile->is_sticky) {
+        ops->add_operation(OperationPtr(new OpSetTileSticky(
+            _editee, _current_tile, _tile_sticky.get_active())));
+    }
+
+    if (_tile_roll_radius.get_value() != _current_tile->roll_radius) {
+        ops->add_operation(OperationPtr(new OpSetTileRollRadius(
+            _editee, _current_tile, _tile_roll_radius.get_value())));
+    }
+    if (_tile_temp_coefficient.get_value() != _current_tile->temp_coefficient) {
+        ops->add_operation(OperationPtr(new OpSetTileTempCoefficient(
+            _editee, _current_tile, _tile_temp_coefficient.get_value())));
+    }
+
+    if (!ops->empty()) {
+        _root->execute_operation(std::move(ops));
+    }
+}
+
 void TilesetEditor::select_tile(const SharedTile &tile)
 {
     if (_current_tile) {
-
+        flush_tile_props();
     }
     _current_tile = tile;
     if (_current_tile) {
@@ -393,45 +417,12 @@ void TilesetEditor::editee_tile_deleted(
     TreeNodeChildren::iterator row_iter = find_tile_row(tile);
     assert(row_iter != _tile_list->children().end());
     _tile_list->erase(row_iter);
-}
-
-void TilesetEditor::tile_blocking_editing_done()
-{
-    _editee->set_tile_blocking(
-        _current_tile,
-        _tile_blocking.get_active());
-}
-
-void TilesetEditor::tile_destructible_editing_done()
-{
-    _editee->set_tile_destructible(
-        _current_tile,
-        _tile_destructible.get_active());
-}
-
-void TilesetEditor::tile_display_name_editing_done()
-{
-    if (_tile_display_name.get_text() == "") {
-        _tile_display_name.set_text(_current_tile->display_name);
-        return;
+    if (tile == _current_tile) {
+        // force _current_tile to nullptr, to avoid updating a deleted
+        // tile
+        _current_tile = nullptr;
+        select_tile(nullptr);
     }
-
-    _root->execute_operation(OperationPtr(new OpSetTileDisplayName(
-        _editee, _current_tile, _tile_display_name.get_text())));
-}
-
-void TilesetEditor::tile_edible_editing_done()
-{
-    _editee->set_tile_edible(
-        _current_tile,
-        _tile_edible.get_active());
-}
-
-void TilesetEditor::tile_gravity_affected_editing_done()
-{
-    _editee->set_tile_gravity_affected(
-        _current_tile,
-        _tile_gravity_affected.get_active());
 }
 
 void TilesetEditor::tile_list_view_row_activated(
@@ -443,34 +434,6 @@ void TilesetEditor::tile_list_view_row_activated(
 
     SharedTile tile = SharedTile((*iter)[_tile_columns.col_tile]);
     select_tile(tile);
-}
-
-void TilesetEditor::tile_roll_radius_editing_done()
-{
-    _editee->set_tile_roll_radius(
-        _current_tile,
-        _tile_roll_radius.get_value());
-}
-
-void TilesetEditor::tile_rollable_editing_done()
-{
-    _editee->set_tile_rollable(
-        _current_tile,
-        _tile_rollable.get_active());
-}
-
-void TilesetEditor::tile_sticky_editing_done()
-{
-    _editee->set_tile_sticky(
-        _current_tile,
-        _tile_sticky.get_active());
-}
-
-void TilesetEditor::tile_temp_coefficient_editing_done()
-{
-    _editee->set_tile_temp_coefficient(
-        _current_tile,
-        _tile_temp_coefficient.get_value());
 }
 
 void TilesetEditor::disable()
@@ -503,5 +466,8 @@ void TilesetEditor::enable()
 
 void TilesetEditor::file_save(const PyEngine::StreamHandle &stream)
 {
+    if (_current_tile) {
+        flush_tile_props();
+    }
     save_tileset_to_stream(*_editee->editee(), stream);
 }

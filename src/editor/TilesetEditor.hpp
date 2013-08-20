@@ -104,18 +104,9 @@ protected:
     void editee_tile_deleted(
         TilesetEditee *editee,
         const SharedTile &tile);
-    void tile_blocking_editing_done();
-    void tile_destructible_editing_done();
-    void tile_display_name_editing_done();
-    void tile_edible_editing_done();
-    void tile_gravity_affected_editing_done();
     void tile_list_view_row_activated(
         const Gtk::TreeModel::Path &path,
         Gtk::TreeViewColumn *column);
-    void tile_roll_radius_editing_done();
-    void tile_rollable_editing_done();
-    void tile_sticky_editing_done();
-    void tile_temp_coefficient_editing_done();
 
 public:
     inline TilesetEditee *editee() {
