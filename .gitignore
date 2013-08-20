@@ -1,9 +1,11 @@
-ml
+ml-game
+ml-edit
+libml.a
 Makefile
 *.cmake
 CMakeFiles
 CMakeCache.txt
-log.xml
+*log.xml
 *.pyc
 *~
 .local/

@@ -29,20 +29,20 @@ set(LIB_SOURCES
 )
 
 set(GAME_SOURCES
-    ${LIB_SOURCES}
     "src/game/Mode.cpp"
     "src/game/MainMenu.cpp"
     "src/game/Application.cpp"
 )
 
 set(EDITOR_SOURCES
-    ${LIB_SOURCES}
     "src/editor/GTKUtils.cpp"
     "src/editor/Operation.cpp"
     "src/editor/Editor.cpp"
     "src/editor/TilesetEditee.cpp"
+    "src/editor/TilesetOperations.cpp"
     "src/editor/TilesetEditor.cpp"
     "src/editor/TilesetEditDetails.cpp"
+    "src/editor/NewTile.cpp"
     "src/editor/RootWindow.cpp"
 )
 
@@ -51,16 +51,20 @@ include_directories(structstream)
 include_directories("src")
 add_definitions(${PYENGINE_DEFINITIONS})
 
-add_executable(ml "src/game/maniaclab.cpp" ${GAME_SOURCES})
-add_dependencies(ml ${PYENGINE_DEPENDENCIES} structstream++)
-target_link_libraries(ml ${PYENGINE_LINK_TARGETS} "pthread" structstream++)
+add_library(ml ${LIB_SOURCES})
+target_link_libraries(ml ${PYENGINE_LINK_TARGETS} structstream++)
+
+add_executable(ml-game "src/game/maniaclab.cpp" ${GAME_SOURCES})
+add_dependencies(ml-game ${PYENGINE_DEPENDENCIES} structstream++ ml)
+target_link_libraries(ml-game ${PYENGINE_LINK_TARGETS} "pthread" structstream++ ml)
 
 include_directories(${GTKMM_INCLUDE_DIRS})
 
 add_executable(ml-edit "src/editor/ml-edit.cpp" ${EDITOR_SOURCES})
-add_dependencies(ml-edit structstream++)
+add_dependencies(ml-edit structstream++ ml)
 target_link_libraries(ml-edit
     "pthread"
     structstream++
     ${GTKMM_LIBRARIES}
-    ${PYENGINE_LINK_TARGETS})
+    ${PYENGINE_LINK_TARGETS}
+    ml)

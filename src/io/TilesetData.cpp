@@ -60,6 +60,25 @@ TileVisualRecordHandle FrameData::image_data_to_record(ID id) const
     return rec_h;
 }
 
+/* TileData */
+
+TileData::TileData():
+    unique_name(),
+    display_name(),
+    is_blocking(false),
+    is_destructible(false),
+    is_edible(false),
+    is_gravity_affected(false),
+    is_rollable(false),
+    is_sticky(false),
+    roll_radius(1),
+    temp_coefficient(1),
+    default_visual(),
+    additional_visuals()
+{
+
+}
+
 /* structstream decls */
 
 const ID SSID_TILESET_HEADER_DISPLAY_NAME = 0x40;
@@ -70,8 +89,9 @@ const ID SSID_TILESET_HEADER_LICENSE = 0x44;
 const ID SSID_TILESET_HEADER_VERSION = 0x45;
 
 const ID SSID_TILESET = 0x4d4c547364;
-const ID SSID_TILESET_TILE = 0x40;
+const ID SSID_TILESET_TILES = 0x40;
 
+const ID SSID_TILE = 0x746c;
 const ID SSID_TILE_DISPLAY_NAME = 0x40;
 const ID SSID_TILE_UNIQUE_NAME = 0x41;
 const ID SSID_TILE_IS_ROLLABLE = 0x42;
@@ -81,21 +101,22 @@ const ID SSID_TILE_IS_GRAVITY_AFFECTED = 0x45;
 const ID SSID_TILE_ROLL_RADIUS = 0x46;
 const ID SSID_TILE_TEMP_COEFFICIENT = 0x47;
 const ID SSID_TILE_DEFAULT_VISUAL = 0x48;
-const ID SSID_TILE_ADDITIONAL_VISUAL = 0x49;
+const ID SSID_TILE_ADDITIONAL_VISUALS = 0x49;
 const ID SSID_TILE_IS_BLOCKING = 0x4A;
+const ID SSID_TILE_IS_DESTRUCTIBLE = 0x4B;
 
-const ID SSID_VISUAL = 0; // -- will not appear in file
-const ID SSID_VISUAL_IMAGE = 0x41;
+const ID SSID_VISUAL = 0x7673;
+const ID SSID_VISUAL_FRAMES = 0x40;
 
-const ID SSID_FRAME = 0; // -- will not appear in file
+const ID SSID_FRAME = 0x6672;
 const ID SSID_FRAME_IMAGE_DATA = 0x40;
 const ID SSID_FRAME_DURATION = 0x41;
 
-const ID SSID_VISUAL_MATCH = 0; // -- will not appear in file
+const ID SSID_VISUAL_MATCH = 0x766d;
 const ID SSID_VISUAL_MATCH_RELEVANT = 0x40;
 const ID SSID_VISUAL_MATCH_UNIQUE_NAME = 0x41;
 
-const ID SSID_TILE_VISUAL = 0; // -- will not appear in file
+const ID SSID_TILE_VISUAL = 0x7673;
 const ID SSID_TILE_VISUAL_MATCH_TOP = 0x40;
 const ID SSID_TILE_VISUAL_MATCH_LEFT = 0x41;
 const ID SSID_TILE_VISUAL_MATCH_RIGHT = 0x42;
@@ -129,6 +150,7 @@ typedef struct_decl<
             VisualData,
             container<
                 FrameDecl,
+                SSID_VISUAL_FRAMES,
                 std::back_insert_iterator<decltype(VisualData::frames)>
                 >,
             &VisualData::frames>
@@ -191,7 +213,7 @@ typedef struct_decl<
 
 typedef struct_decl<
     Container,
-    SSID_TILESET_TILE,
+    SSID_TILE,
     struct_members<
         member_string<
             UTF8Record,
@@ -234,6 +256,12 @@ typedef struct_decl<
             bool,
             &TileData::is_blocking>,
         member<
+            BoolRecord,
+            SSID_TILE_IS_DESTRUCTIBLE,
+            TileData,
+            bool,
+            &TileData::is_destructible>,
+        member<
             Float32Record,
             SSID_TILE_ROLL_RADIUS,
             TileData,
@@ -254,10 +282,10 @@ typedef struct_decl<
             TileData,
             container<
                 TileVisualDecl,
+                SSID_TILE_ADDITIONAL_VISUALS,
                 std::back_insert_iterator<decltype(TileData::additional_visuals)>
                 >,
-            &TileData::additional_visuals,
-            SSID_TILE_ADDITIONAL_VISUAL>
+            &TileData::additional_visuals>
         >
     > TileDecl;
 
@@ -306,6 +334,7 @@ typedef struct_decl<
             TilesetBodyData,
             container<
                 heap_value<TileDecl, std::shared_ptr<TileData>>,
+                SSID_TILESET_TILES,
                 std::back_insert_iterator<decltype(TilesetBodyData::tiles)>
                 >,
             &TilesetBodyData::tiles>
@@ -328,6 +357,8 @@ std::pair<StreamSink, std::unique_ptr<TilesetData>>
 
 std::unique_ptr<TilesetData> load_tileset_from_tree(const ContainerHandle &root)
 {
+    tree_debug(root, std::cout);
+
     std::unique_ptr<TilesetData> result;
     StreamSink sink;
     std::tie(sink, result) = create_tileset_sink();

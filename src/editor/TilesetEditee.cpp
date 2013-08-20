@@ -46,8 +46,8 @@ void TilesetEditee::changed()
 void TilesetEditee::require_unique_tile_name(
         const std::string &unique_name)
 {
-    if (_tile_map.find(unique_name) != _tile_map.end()) {
-        throw std::runtime_error("Cannot create two tiles with same unique name.");
+    if (!check_unique_name(unique_name)) {
+        throw std::invalid_argument("Cannot create two tiles with same unique name.");
     }
 }
 
@@ -69,15 +69,19 @@ void TilesetEditee::tile_deleted(const SharedTile &tile)
     changed();
 }
 
-SharedTile TilesetEditee::add_tile(std::unique_ptr<TileData> &&tile)
+SharedTile TilesetEditee::add_tile(const SharedTile &tile)
 {
     require_unique_tile_name(tile->unique_name);
 
-    SharedTile new_tile(tile.release());
-    _editee->body.tiles.push_back(new_tile);
-    _tile_map[new_tile->unique_name] = new_tile;
-    tile_created(new_tile);
-    return new_tile;
+    _editee->body.tiles.push_back(tile);
+    _tile_map[tile->unique_name] = tile;
+    tile_created(tile);
+    return tile;
+}
+
+bool TilesetEditee::check_unique_name(const std::string &unique_name)
+{
+    return (_tile_map.find(unique_name) == _tile_map.end());
 }
 
 void TilesetEditee::delete_tile(const SharedTile &tile)
@@ -107,6 +111,7 @@ SharedTile TilesetEditee::new_tile(const std::string &unique_name)
 {
     TileData *new_tile = new TileData();
     new_tile->unique_name = unique_name;
+    new_tile->display_name = unique_name;
     return add_tile(std::unique_ptr<TileData>(new_tile));
 }
 
@@ -153,4 +158,104 @@ void TilesetEditee::set_version(const std::string &value)
     }
     _editee->header.version = value;
     changed();
+}
+
+void TilesetEditee::set_tile_blocking(const SharedTile &tile, bool value)
+{
+    if (tile->is_blocking == value) {
+        return;
+    }
+    tile->is_blocking = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_destructible(const SharedTile &tile, bool value)
+{
+    if (tile->is_destructible == value) {
+        return;
+    }
+    tile->is_destructible = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_display_name(
+        const SharedTile &tile,
+        const std::string &value)
+{
+    if (tile->display_name == value) {
+        return;
+    }
+    if (value == "") {
+        throw std::invalid_argument("Tile display name must not be empty.");
+    }
+    tile->display_name = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_edible(const SharedTile &tile, bool value)
+{
+    if (tile->is_edible == value) {
+        return;
+    }
+    tile->is_edible = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_gravity_affected(const SharedTile &tile, bool value)
+{
+    if (tile->is_gravity_affected == value) {
+        return;
+    }
+    tile->is_gravity_affected = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_roll_radius(
+        const SharedTile &tile,
+        float value)
+{
+    if (tile->roll_radius == value) {
+        return;
+    }
+    if (value < 0) {
+        value = 0;
+    } else if (value > 1) {
+        value = 1;
+    }
+    tile->roll_radius = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_rollable(const SharedTile &tile, bool value)
+{
+    if (tile->is_rollable == value) {
+        return;
+    }
+    tile->is_rollable = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_sticky(const SharedTile &tile, bool value)
+{
+    if (tile->is_sticky == value) {
+        return;
+    }
+    tile->is_sticky = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_temp_coefficient(
+        const SharedTile &tile,
+        float value)
+{
+    if (tile->temp_coefficient == value) {
+        return;
+    }
+    if (value <= 0) {
+        return;
+    } else if (value > 100) {
+        value = 100;
+    }
+    tile->temp_coefficient = value;
+    tile_changed(tile);
 }

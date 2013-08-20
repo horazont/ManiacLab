@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: Operation.hpp
+File name: NewTile.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,40 +22,31 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#ifndef _ML_OPERATION_H
-#define _ML_OPERATION_H
+#ifndef _ML_NEW_TILE_H
+#define _ML_NEW_TILE_H
 
-#include <stdexcept>
-#include <memory>
+#include <gtkmm.h>
 
-class OperationNotUndoable: public std::logic_error
+class NewTile: public Gtk::Dialog
 {
 public:
-    OperationNotUndoable(const std::string &what_arg);
-    OperationNotUndoable(const char *what_arg);
-    OperationNotUndoable(const OperationNotUndoable &ref) = default;
-    OperationNotUndoable& operator=(
-        const OperationNotUndoable &ref) = default;
-};
+    NewTile(BaseObjectType *cobject,
+            const Glib::RefPtr<Gtk::Builder> &builder);
 
-class Operation
-{
-public:
-    Operation();
-    Operation(const Operation &ref);
-    Operation& operator=(const Operation &ref);
-    virtual ~Operation();
+private:
+    Glib::RefPtr<Gtk::Builder> _builder;
+
+private:
+    Gtk::Entry *_unique_name;
 
 protected:
-    void not_undoable();
+    void on_response(int response_id) override;
+    void unique_name_activate();
+    void unique_name_changed();
 
 public:
-    virtual void execute() = 0;
-    virtual bool is_undoable();
-    virtual void undo() = 0;
+    std::string get_unique_name();
 
 };
-
-typedef std::unique_ptr<Operation> OperationPtr;
 
 #endif

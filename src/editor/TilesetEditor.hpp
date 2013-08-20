@@ -31,6 +31,15 @@ authors named in the AUTHORS file.
 
 #include "TilesetEditee.hpp"
 
+class TileListModelColumns: public Gtk::TreeModelColumnRecord
+{
+public:
+    TileListModelColumns();
+
+    Gtk::TreeModelColumn<SharedTile> col_tile;
+    Gtk::TreeModelColumn<Glib::ustring> col_display_name;
+};
+
 class TilesetEditor: public Editor
 {
 public:
@@ -40,7 +49,73 @@ public:
 
 private:
     TilesetEditee *_editee;
-    Gtk::Box _main_box;
+    sigc::connection _conn_delete_tile;
+    sigc::connection _conn_edit_details;
+    sigc::connection _conn_new_tile;
+
+    Gtk::Grid _tile_prop_grid;
+    Gtk::Switch _tile_blocking,
+                _tile_destructible,
+                _tile_edible,
+                _tile_gravity_affected,
+                _tile_rollable,
+                _tile_sticky;
+    Gtk::SpinButton _tile_roll_radius,
+                    _tile_temp_coefficient;
+    Gtk::Entry _tile_display_name,
+               _tile_unique_name;
+
+    TileListModelColumns _tile_columns;
+    Glib::RefPtr<Gtk::ListStore> _tile_list;
+    Gtk::TreeView _tile_list_view;
+
+private:
+    SharedTile _current_tile;
+
+private:
+    void bind_editing_done(Gtk::Entry &widget,
+                           void (TilesetEditor::*handler)());
+    void bind_editing_done(Gtk::Switch &widget,
+                           void (TilesetEditor::*handler)());
+    void configure_entry(Gtk::Entry &widget);
+    void configure_spin_button(Gtk::SpinButton &widget);
+    void configure_switch(Gtk::Switch &widget);
+    void initialize_contents();
+    void setup_tile_list_view(Gtk::TreeView &view);
+    void setup_tile_property_grid(Gtk::Grid &grid);
+    void setup_tile_toolbar(Gtk::Toolbar &toolbar);
+
+protected:
+    Gtk::TreeNodeChildren::iterator find_tile_row(const SharedTile &tile);
+    void flush_tile_props();
+    void select_tile(const SharedTile &tile);
+    void update_tile_props();
+
+protected:
+    void action_new_tile();
+    void action_delete_tile();
+    void action_edit_details();
+    void editee_tile_changed(
+        TilesetEditee *editee,
+        const SharedTile &tile);
+    void editee_tile_created(
+        TilesetEditee *editee,
+        const SharedTile &tile);
+    void editee_tile_deleted(
+        TilesetEditee *editee,
+        const SharedTile &tile);
+    void tile_blocking_editing_done();
+    void tile_destructible_editing_done();
+    void tile_display_name_editing_done();
+    void tile_edible_editing_done();
+    void tile_gravity_affected_editing_done();
+    void tile_list_view_row_activated(
+        const Gtk::TreeModel::Path &path,
+        Gtk::TreeViewColumn *column);
+    void tile_roll_radius_editing_done();
+    void tile_rollable_editing_done();
+    void tile_sticky_editing_done();
+    void tile_temp_coefficient_editing_done();
 
 public:
     inline TilesetEditee *editee() {

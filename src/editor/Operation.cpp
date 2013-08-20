@@ -60,17 +60,12 @@ Operation::~Operation()
 
 }
 
-void Operation::execute()
+void Operation::not_undoable()
 {
-
+    throw OperationNotUndoable("This operation cannot be un-done.");
 }
 
 bool Operation::is_undoable()
 {
-    return false;
-}
-
-void Operation::undo()
-{
-    throw OperationNotUndoable("This operation cannot be un-done.");
+    return true;
 }

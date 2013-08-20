@@ -29,13 +29,17 @@ authors named in the AUTHORS file.
 
 #include <sigc++/sigc++.h>
 
+namespace sigc {
+SIGC_FUNCTORS_DEDUCE_RESULT_TYPE_WITH_DECLTYPE
+}
+
 #include "io/TilesetData.hpp"
 #include "logic/Stamp.hpp"
 
 class TilesetEditee;
 
 typedef sigc::signal<void, TilesetEditee*> TilesetNotifyEvent;
-typedef sigc::signal<void, TilesetEditee*, SharedTile> TilesetTileEvent;
+typedef sigc::signal<void, TilesetEditee*, const SharedTile&> TilesetTileEvent;
 
 class TilesetEditee
 {
@@ -68,7 +72,8 @@ public:
     };
 
 public:
-    SharedTile add_tile(std::unique_ptr<TileData> &&tile);
+    SharedTile add_tile(const SharedTile &tile);
+    bool check_unique_name(const std::string &name);
     void delete_tile(const SharedTile &tile);
     SharedTile duplicate_tile(const SharedTile &src,
                               const std::string &unique_name);
@@ -82,21 +87,37 @@ public:
     void set_version(const std::string &value);
 
 public:
-    void set_tile_attributes(const SharedTile &tile,
-        bool is_rollable,
-        bool is_sticky,
-        bool is_gravity_affected,
-        bool is_edible,
-        bool is_blocking);
+    void set_tile_blocking(const SharedTile &tile, bool value);
     void set_tile_cell_stamp(const SharedTile &tile,
                              const BoolCellStamp &stamp);
+    void set_tile_destructible(const SharedTile &tile, bool value);
     void set_tile_display_name(const SharedTile &tile,
                                const std::string &value);
+    void set_tile_edible(const SharedTile &tile, bool value);
+    void set_tile_gravity_affected(const SharedTile &tile, bool value);
     void set_tile_roll_radius(const SharedTile &tile,
                               float value);
+    void set_tile_rollable(const SharedTile &tile, bool value);
+    void set_tile_sticky(const SharedTile &tile, bool value);
     void set_tile_temp_coefficient(const SharedTile &tile,
                                    float value);
 
+public:
+    inline TilesetNotifyEvent &signal_changed() {
+        return _changed;
+    };
+
+    inline TilesetTileEvent &signal_tile_changed() {
+        return _tile_changed;
+    };
+
+    inline TilesetTileEvent &signal_tile_created() {
+        return _tile_created;
+    };
+
+    inline TilesetTileEvent &signal_tile_deleted() {
+        return _tile_deleted;
+    };
 };
 
 typedef std::unique_ptr<TilesetEditee> TilesetEditeePtr;

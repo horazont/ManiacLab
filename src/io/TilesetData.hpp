@@ -80,14 +80,17 @@ struct TileVisualData
 
 struct TileData
 {
+    TileData();
+
     std::string unique_name;
     std::string display_name;
 
-    bool is_rollable;
-    bool is_sticky;
+    bool is_blocking;
+    bool is_destructible;
     bool is_edible;
     bool is_gravity_affected;
-    bool is_blocking;
+    bool is_rollable;
+    bool is_sticky;
 
     float roll_radius;
     float temp_coefficient;

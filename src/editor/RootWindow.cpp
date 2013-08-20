@@ -35,20 +35,6 @@ using namespace Glib;
 using namespace StructStream;
 using namespace PyEngine;
 
-inline void bind_action(
-    const RefPtr<Builder> &builder,
-    const std::string &name,
-    const Action::SlotActivate &slot,
-    RefPtr<Action> *action_dest = nullptr)
-{
-    RefPtr<Action> action;
-    action = action.cast_dynamic(builder->get_object(name));
-    action->signal_activate().connect(slot);
-    if (action_dest) {
-        *action_dest = action;
-    }
-}
-
 inline std::string get_entry_text(
     const RefPtr<Builder> &builder,
     const std::string &name)
@@ -78,6 +64,8 @@ RootWindow::RootWindow(
     _tileset_editors(),
     _editors(),
     _current_editor(nullptr),
+    _undo_stack(),
+    _redo_stack(),
     _recent(RecentManager::create()),
     _builder(builder),
     _menu_level(nullptr),
@@ -86,6 +74,14 @@ RootWindow::RootWindow(
         builder->get_object("actions_level"))),
     _actions_tileset(_actions_tileset.cast_dynamic(
         builder->get_object("actions_tileset"))),
+    _accel_level(_accel_level.cast_dynamic(
+        builder->get_object("accel_level"))),
+    _accel_tileset(_accel_tileset.cast_dynamic(
+        builder->get_object("accel_tileset"))),
+    _action_undo(_action_undo.cast_dynamic(
+        builder->get_object("action_edit_undo"))),
+    _action_redo(_action_redo.cast_dynamic(
+        builder->get_object("action_edit_redo"))),
     _tabs(nullptr),
     _action_save(),
     _action_save_as(),
@@ -100,7 +96,14 @@ RootWindow::RootWindow(
     _builder->get_widget("menu_level", _menu_level);
     _menu_level->hide();
 
-    RefPtr<Action> action;
+    add_accel_group(RefPtr<AccelGroup>::cast_dynamic(
+        builder->get_object("accel_common")));
+
+    {
+        RefPtr<Action> action = RefPtr<Action>::cast_dynamic(
+            _builder->get_object("action_file_quit"));
+        action->disconnect_accelerator();
+    }
 
     /* Configure actions */
 
@@ -128,8 +131,15 @@ RootWindow::RootWindow(
 
 
     bind_action(
-        _builder, "action_tileset_edit_details",
-        sigc::mem_fun(*this, &RootWindow::action_tileset_edit_details));
+        _builder, "action_help_about",
+        sigc::mem_fun(*this, &RootWindow::action_help_about));
+
+    _action_undo->signal_activate().connect(
+        sigc::mem_fun(*this, &RootWindow::action_edit_undo));
+
+    _action_redo->signal_activate().connect(
+        sigc::mem_fun(*this, &RootWindow::action_edit_redo));
+
 
     /* End of configure actions */
 
@@ -152,6 +162,8 @@ RootWindow::RootWindow(
     _dlg_save_file->set_action(FILE_CHOOSER_ACTION_SAVE);
     _dlg_save_file->set_do_overwrite_confirmation();
 
+    _builder->get_widget_derived("dlg_new_tile", _dlg_new_tile);
+
     _builder->get_widget_derived("dlg_tileset_details", _dlg_tileset_details);
 
     {
@@ -173,12 +185,15 @@ RootWindow::RootWindow(
     _dlg_create_tileset->signal_response().connect(
         sigc::mem_fun(*this, &RootWindow::dlg_create_tileset_response));
 
+    _builder->get_widget("dlg_about", _dlg_about);
+
     Entry *entry;
     _builder->get_widget("create_tileset_unique_name", entry);
     entry->signal_activate().connect(
         sigc::mem_fun(*this, &RootWindow::dlg_create_tileset_activate));
 
     switch_editor(nullptr);
+    update_undo_redo_sensitivity();
 }
 
 RootWindow::~RootWindow()
@@ -230,14 +245,37 @@ void RootWindow::action_file_quit()
     hide();
 }
 
-void RootWindow::action_tileset_edit_details()
+void RootWindow::action_edit_undo()
 {
-    TilesetEditor *editor =
-        dynamic_cast<TilesetEditor*>(_current_editor);
-    assert(editor);
-    SharedTileset tileset = editor->editee()->editee();
+    if (_undo_stack.empty()) {
+        return;
+    }
 
-    _dlg_tileset_details->edit_tileset(tileset);
+    OperationPtr &operation = _undo_stack.back();
+    operation->undo();
+    _redo_stack.push_back(std::move(operation));
+    _undo_stack.pop_back();
+
+    update_undo_redo_sensitivity();
+}
+
+void RootWindow::action_edit_redo()
+{
+    if (_redo_stack.empty()) {
+        return;
+    }
+
+    OperationPtr &operation = _redo_stack.back();
+    operation->execute();
+    _undo_stack.push_back(std::move(operation));
+    _redo_stack.pop_back();
+
+    update_undo_redo_sensitivity();
+}
+
+void RootWindow::action_help_about()
+{
+    _dlg_about->run();
 }
 
 void RootWindow::dlg_create_tileset_activate()
@@ -364,6 +402,12 @@ void RootWindow::tabs_switch_page(Widget *page, guint page_num)
     switch_editor(new_editor);
 }
 
+void RootWindow::update_undo_redo_sensitivity()
+{
+    _action_undo->set_sensitive(!_undo_stack.empty());
+    _action_redo->set_sensitive(!_redo_stack.empty());
+}
+
 void RootWindow::open_file(const std::string &filename)
 {
     ContainerHandle root;
@@ -470,6 +514,46 @@ Gtk::MenuItem *RootWindow::get_menu_tileset()
     return _menu_tileset;
 }
 
+void RootWindow::disable_level_controls()
+{
+    remove_accel_group(_accel_level);
+    _actions_level->set_sensitive(false);
+    _menu_level->set_visible(false);
+}
+
+void RootWindow::disable_tileset_controls()
+{
+    remove_accel_group(_accel_tileset);
+    _actions_tileset->set_sensitive(false);
+    _menu_tileset->set_visible(false);
+}
+
+void RootWindow::enable_level_controls()
+{
+    _menu_level->set_visible(true);
+    _actions_level->set_sensitive(true);
+    add_accel_group(_accel_level);
+}
+
+void RootWindow::enable_tileset_controls()
+{
+    _menu_tileset->set_visible(true);
+    _actions_tileset->set_sensitive(true);
+    add_accel_group(_accel_tileset);
+}
+
+void RootWindow::execute_operation(OperationPtr &&operation)
+{
+    operation->execute();
+    if (!operation->is_undoable()) {
+        _undo_stack.clear();
+    } else {
+        _undo_stack.push_back(std::move(operation));
+    }
+    _redo_stack.clear();
+    update_undo_redo_sensitivity();
+}
+
 TilesetEditor *RootWindow::get_tileset_editor(TilesetEditee *editee)
 {
     auto editee_it = _loaded_tilesets.find(editee->editee().get());
@@ -481,6 +565,8 @@ TilesetEditor *RootWindow::get_tileset_editor(TilesetEditee *editee)
     }
 
     Gtk::Box *editor_box = manage(new Box());
+    editor_box->set_hexpand(true);
+    editor_box->set_vexpand(true);
     TilesetEditor *editor = new TilesetEditor(this, editor_box, editee);
     _editors.push_back(editor);
     _tabs->append_page(*editor_box, editee->editee()->header.unique_name + " (Tileset)");

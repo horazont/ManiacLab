@@ -27,11 +27,14 @@ authors named in the AUTHORS file.
 
 #include <unordered_map>
 #include <vector>
+#include <deque>
 
 #include <gtkmm.h>
 
 #include "TilesetEditor.hpp"
 #include "TilesetEditDetails.hpp"
+#include "NewTile.hpp"
+#include "Operation.hpp"
 
 class RootWindow: public Gtk::Window
 {
@@ -48,6 +51,9 @@ private:
 
     Editor *_current_editor;
 
+    std::deque<std::unique_ptr<Operation>> _undo_stack;
+    std::deque<std::unique_ptr<Operation>> _redo_stack;
+
 private:
     Glib::RefPtr<Gtk::RecentManager> _recent;
     Glib::RefPtr<Gtk::Builder> _builder;
@@ -55,11 +61,17 @@ private:
     Gtk::MenuItem *_menu_tileset;
     Glib::RefPtr<Gtk::ActionGroup> _actions_level;
     Glib::RefPtr<Gtk::ActionGroup> _actions_tileset;
+    Glib::RefPtr<Gtk::AccelGroup> _accel_level;
+    Glib::RefPtr<Gtk::AccelGroup> _accel_tileset;
+    Glib::RefPtr<Gtk::Action> _action_undo;
+    Glib::RefPtr<Gtk::Action> _action_redo;
     Gtk::Notebook *_tabs;
 
     Glib::RefPtr<Gtk::Action> _action_save, _action_save_as;
 
+    Gtk::AboutDialog *_dlg_about;
     Gtk::Dialog *_dlg_create_tileset;
+    NewTile *_dlg_new_tile;
     Gtk::FileChooserDialog *_dlg_open_file;
     Gtk::FileChooserDialog *_dlg_save_file;
     TilesetEditDetails *_dlg_tileset_details;
@@ -70,7 +82,9 @@ protected:
     void action_file_save();
     void action_file_save_as();
     void action_file_quit();
-    void action_tileset_edit_details();
+    void action_edit_undo();
+    void action_edit_redo();
+    void action_help_about();
     void dlg_create_tileset_activate();
     void dlg_create_tileset_response(int response_id);
     void dlg_open_file_activate();
@@ -78,6 +92,9 @@ protected:
     void dlg_save_file_activate();
     void dlg_save_file_response(int response_id);
     void tabs_switch_page(Gtk::Widget *page, guint page_num);
+
+protected:
+    void update_undo_redo_sensitivity();
 
 public:
     void open_file(const std::string &filename);
@@ -96,6 +113,23 @@ public:
     inline Glib::RefPtr<Gtk::ActionGroup> get_actions_tileset() {
         return _actions_tileset;
     };
+
+    inline TilesetEditDetails *get_dlg_tileset_details() {
+        return _dlg_tileset_details;
+    };
+
+    inline NewTile *get_dlg_new_tile() {
+        return _dlg_new_tile;
+    };
+
+public:
+    void disable_level_controls();
+    void disable_tileset_controls();
+    void enable_level_controls();
+    void enable_tileset_controls();
+
+public:
+    void execute_operation(OperationPtr &&operation);
 
 public:
     /**
