@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: NewTile.cpp
+File name: DuplicateTile.cpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,35 +22,50 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#include "NewTile.hpp"
+#include "DuplicateTile.hpp"
 
 #include "GTKUtils.hpp"
 
 using namespace Glib;
 using namespace Gtk;
 
-/* NewTile */
+/* DuplicateTile */
 
-NewTile::NewTile(
+DuplicateTile::DuplicateTile(
         BaseObjectType *cobject,
         const RefPtr<Builder> &builder):
     UniqueNameDialog(
         cobject,
         builder,
-        get_entry(builder, "new_tile_unique_name"))
+        get_entry(builder, "duplicate_tile_unique_name")),
+    _rewrite_to_new(nullptr),
+    _response(false)
 {
+    _builder->get_widget("duplicate_tile_rewrite_to_new",
+                         _rewrite_to_new);
+
     show_all_children();
 }
 
-void NewTile::response_abort()
+void DuplicateTile::response_abort()
 {
-    _unique_name->set_text("");
+    _response = false;
 }
 
-std::string NewTile::get_unique_name()
+void DuplicateTile::response_ok()
 {
-    _unique_name->set_text("");
+    _response = true;
+}
+
+bool DuplicateTile::get_duplicate_settings(
+        std::string &new_name,
+        bool &rewrite_references_to_self)
+{
+    _response = false;
+    _unique_name->set_text(new_name);
+    _rewrite_to_new->set_active(rewrite_references_to_self);
     run();
-    return _unique_name->get_text();
+    new_name = _unique_name->get_text();
+    rewrite_references_to_self = _rewrite_to_new->get_active();
+    return _response;
 }
-

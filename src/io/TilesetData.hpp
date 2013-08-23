@@ -85,10 +85,12 @@ struct TileData
     std::string unique_name;
     std::string display_name;
 
+    bool is_actor;
     bool is_blocking;
     bool is_destructible;
     bool is_edible;
     bool is_gravity_affected;
+    bool is_movable;
     bool is_rollable;
     bool is_sticky;
 

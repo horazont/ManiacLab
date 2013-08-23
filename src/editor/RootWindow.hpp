@@ -34,6 +34,7 @@ authors named in the AUTHORS file.
 #include "TilesetEditor.hpp"
 #include "TilesetEditDetails.hpp"
 #include "NewTile.hpp"
+#include "DuplicateTile.hpp"
 #include "Operation.hpp"
 
 class RootWindow: public Gtk::Window
@@ -55,7 +56,6 @@ private:
     std::deque<std::unique_ptr<Operation>> _redo_stack;
 
 private:
-    Glib::RefPtr<Gtk::RecentManager> _recent;
     Glib::RefPtr<Gtk::Builder> _builder;
     Gtk::MenuItem *_menu_level;
     Gtk::MenuItem *_menu_tileset;
@@ -71,6 +71,7 @@ private:
 
     Gtk::AboutDialog *_dlg_about;
     Gtk::Dialog *_dlg_create_tileset;
+    DuplicateTile *_dlg_duplicate_tile;
     NewTile *_dlg_new_tile;
     Gtk::FileChooserDialog *_dlg_open_file;
     Gtk::FileChooserDialog *_dlg_save_file;
@@ -120,6 +121,10 @@ public:
 
     inline NewTile *get_dlg_new_tile() {
         return _dlg_new_tile;
+    };
+
+    inline DuplicateTile *get_dlg_duplicate_tile() {
+        return _dlg_duplicate_tile;
     };
 
 public:

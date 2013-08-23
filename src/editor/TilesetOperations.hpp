@@ -1,3 +1,27 @@
+/**********************************************************************
+File name: TilesetOperations.hpp
+This file is part of: ManiacLab
+
+LICENSE
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+FEEDBACK & QUESTIONS
+
+For feedback and questions about ManiacLab please e-mail one of the
+authors named in the AUTHORS file.
+**********************************************************************/
 #ifndef _ML_TILESET_OPERATIONS_H
 #define _ML_TILESET_OPERATIONS_H
 
@@ -23,6 +47,27 @@ public:
 
 private:
     const std::string _unique_name;
+    SharedTile _tile;
+
+public:
+    void execute() override;
+    void undo() override;
+
+};
+
+class OpDuplicateTile: public TilesetOperation
+{
+public:
+    OpDuplicateTile(
+        TilesetEditee *tileset,
+        const SharedTile &src,
+        const std::string &unique_name,
+        bool rewrite_references_to_self);
+
+private:
+    const SharedTile _src;
+    const std::string _unique_name;
+    const bool _rewrite_references_to_self;
     SharedTile _tile;
 
 public:
@@ -97,6 +142,20 @@ protected:
 
 };
 
+class OpSetTileActor: public OpSetTileAttribute<bool>
+{
+public:
+    OpSetTileActor(
+        TilesetEditee *tileset,
+        const SharedTile &tile,
+        const bool &value);
+
+protected:
+    const bool &get_value() const override;
+    void set_value(const bool &value) override;
+
+};
+
 class OpSetTileBlocking: public OpSetTileAttribute<bool>
 {
 public:
@@ -143,6 +202,20 @@ class OpSetTileGravityAffected: public OpSetTileAttribute<bool>
 {
 public:
     OpSetTileGravityAffected(
+        TilesetEditee *tileset,
+        const SharedTile &tile,
+        const bool &value);
+
+protected:
+    const bool &get_value() const override;
+    void set_value(const bool &value) override;
+
+};
+
+class OpSetTileMovable: public OpSetTileAttribute<bool>
+{
+public:
+    OpSetTileMovable(
         TilesetEditee *tileset,
         const SharedTile &tile,
         const bool &value);

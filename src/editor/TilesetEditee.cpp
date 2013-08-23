@@ -99,12 +99,15 @@ void TilesetEditee::delete_tile(const SharedTile &tile)
 
 SharedTile TilesetEditee::duplicate_tile(
         const SharedTile &src,
-        const std::string &unique_name)
+        const std::string &unique_name,
+        bool rewrite_references_to_self)
 {
+    assert(src);
     TileData *new_tile = new TileData();
     *new_tile = *src;
     new_tile->unique_name = unique_name;
-    return add_tile(std::unique_ptr<TileData>(new_tile));
+    // FIXME: apply rewrite_references_to_self
+    return add_tile(std::shared_ptr<TileData>(new_tile));
 }
 
 SharedTile TilesetEditee::new_tile(const std::string &unique_name)
@@ -112,7 +115,7 @@ SharedTile TilesetEditee::new_tile(const std::string &unique_name)
     TileData *new_tile = new TileData();
     new_tile->unique_name = unique_name;
     new_tile->display_name = unique_name;
-    return add_tile(std::unique_ptr<TileData>(new_tile));
+    return add_tile(std::shared_ptr<TileData>(new_tile));
 }
 
 void TilesetEditee::set_author(const std::string &value)
@@ -158,6 +161,15 @@ void TilesetEditee::set_version(const std::string &value)
     }
     _editee->header.version = value;
     changed();
+}
+
+void TilesetEditee::set_tile_actor(const SharedTile &tile, bool value)
+{
+    if (tile->is_actor == value) {
+        return;
+    }
+    tile->is_actor = value;
+    tile_changed(tile);
 }
 
 void TilesetEditee::set_tile_blocking(const SharedTile &tile, bool value)
@@ -207,6 +219,15 @@ void TilesetEditee::set_tile_gravity_affected(const SharedTile &tile, bool value
         return;
     }
     tile->is_gravity_affected = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_movable(const SharedTile &tile, bool value)
+{
+    if (tile->is_movable == value) {
+        return;
+    }
+    tile->is_movable = value;
     tile_changed(tile);
 }
 

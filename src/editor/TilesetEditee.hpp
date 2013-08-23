@@ -76,7 +76,8 @@ public:
     bool check_unique_name(const std::string &name);
     void delete_tile(const SharedTile &tile);
     SharedTile duplicate_tile(const SharedTile &src,
-                              const std::string &unique_name);
+                              const std::string &unique_name,
+                              bool rewrite_references_to_self);
     SharedTile new_tile(const std::string &unique_name);
 
 public:
@@ -87,6 +88,7 @@ public:
     void set_version(const std::string &value);
 
 public:
+    void set_tile_actor(const SharedTile &tile, bool value);
     void set_tile_blocking(const SharedTile &tile, bool value);
     void set_tile_cell_stamp(const SharedTile &tile,
                              const BoolCellStamp &stamp);
@@ -95,6 +97,7 @@ public:
                                const std::string &value);
     void set_tile_edible(const SharedTile &tile, bool value);
     void set_tile_gravity_affected(const SharedTile &tile, bool value);
+    void set_tile_movable(const SharedTile &tile, bool value);
     void set_tile_roll_radius(const SharedTile &tile,
                               float value);
     void set_tile_rollable(const SharedTile &tile, bool value);

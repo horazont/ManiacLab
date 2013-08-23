@@ -66,7 +66,6 @@ RootWindow::RootWindow(
     _current_editor(nullptr),
     _undo_stack(),
     _redo_stack(),
-    _recent(RecentManager::create()),
     _builder(builder),
     _menu_level(nullptr),
     _menu_tileset(nullptr),
@@ -163,7 +162,7 @@ RootWindow::RootWindow(
     _dlg_save_file->set_do_overwrite_confirmation();
 
     _builder->get_widget_derived("dlg_new_tile", _dlg_new_tile);
-
+    _builder->get_widget_derived("dlg_duplicate_tile", _dlg_duplicate_tile);
     _builder->get_widget_derived("dlg_tileset_details", _dlg_tileset_details);
 
     {
@@ -232,6 +231,9 @@ void RootWindow::action_file_save()
     }
 
     save_file(_current_editor->get_filename());
+    RecentManager::get_default()->add_item(
+        // FIXME: this is most likely not portable
+        "file://"+_current_editor->get_filename());
 }
 
 void RootWindow::action_file_save_as()
@@ -349,7 +351,7 @@ void RootWindow::dlg_open_file_response(int response_id)
             return;
         }
         _dlg_open_file->hide();
-        _recent->add_item(_dlg_open_file->get_uri());
+        RecentManager::get_default()->add_item(_dlg_open_file->get_uri());
         open_file(filename);
         break;
     }
@@ -381,7 +383,7 @@ void RootWindow::dlg_save_file_response(int response_id)
             return;
         }
         _dlg_save_file->hide();
-        _recent->add_item(_dlg_save_file->get_uri());
+        RecentManager::get_default()->add_item(_dlg_save_file->get_uri());
         save_file(filename);
         break;
     }

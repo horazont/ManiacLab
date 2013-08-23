@@ -1,5 +1,5 @@
 /**********************************************************************
-File name: NewTile.cpp
+File name: DuplicateTile.hpp
 This file is part of: ManiacLab
 
 LICENSE
@@ -22,35 +22,30 @@ FEEDBACK & QUESTIONS
 For feedback and questions about ManiacLab please e-mail one of the
 authors named in the AUTHORS file.
 **********************************************************************/
-#include "NewTile.hpp"
+#ifndef _ML_DUPLICATE_TILE_H
+#define _ML_DUPLICATE_TILE_H
 
-#include "GTKUtils.hpp"
+#include "UniqueNameDialog.hpp"
 
-using namespace Glib;
-using namespace Gtk;
-
-/* NewTile */
-
-NewTile::NewTile(
-        BaseObjectType *cobject,
-        const RefPtr<Builder> &builder):
-    UniqueNameDialog(
-        cobject,
-        builder,
-        get_entry(builder, "new_tile_unique_name"))
+class DuplicateTile: public UniqueNameDialog
 {
-    show_all_children();
-}
+public:
+    DuplicateTile(BaseObjectType *cobject,
+                  const Glib::RefPtr<Gtk::Builder> &builder);
 
-void NewTile::response_abort()
-{
-    _unique_name->set_text("");
-}
+protected:
+    Gtk::CheckButton *_rewrite_to_new;
+    bool _response;
 
-std::string NewTile::get_unique_name()
-{
-    _unique_name->set_text("");
-    run();
-    return _unique_name->get_text();
-}
+protected:
+    void response_abort() override;
+    void response_ok() override;
 
+public:
+    bool get_duplicate_settings(
+        std::string &new_name,
+        bool &rewrite_references_to_self);
+
+};
+
+#endif

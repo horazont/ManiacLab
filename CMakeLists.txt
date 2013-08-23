@@ -42,7 +42,9 @@ set(EDITOR_SOURCES
     "src/editor/TilesetOperations.cpp"
     "src/editor/TilesetEditor.cpp"
     "src/editor/TilesetEditDetails.cpp"
+    "src/editor/UniqueNameDialog.cpp"
     "src/editor/NewTile.cpp"
+    "src/editor/DuplicateTile.cpp"
     "src/editor/RootWindow.cpp"
 )
 

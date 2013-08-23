@@ -25,24 +25,16 @@ authors named in the AUTHORS file.
 #ifndef _ML_NEW_TILE_H
 #define _ML_NEW_TILE_H
 
-#include <gtkmm.h>
+#include "UniqueNameDialog.hpp"
 
-class NewTile: public Gtk::Dialog
+class NewTile: public UniqueNameDialog
 {
 public:
     NewTile(BaseObjectType *cobject,
             const Glib::RefPtr<Gtk::Builder> &builder);
 
-private:
-    Glib::RefPtr<Gtk::Builder> _builder;
-
-private:
-    Gtk::Entry *_unique_name;
-
 protected:
-    void on_response(int response_id) override;
-    void unique_name_activate();
-    void unique_name_changed();
+    void response_abort() override;
 
 public:
     std::string get_unique_name();

@@ -31,14 +31,19 @@ authors named in the AUTHORS file.
 using namespace Gtk;
 using namespace Glib;
 
-inline Label *managed_label(const std::string &text)
+inline Label *managed_label(
+    const std::string &text,
+    RefPtr<SizeGroup> group = RefPtr<SizeGroup>())
 {
     Label *label = manage(new Label());
     label->set_text(text);
     label->set_alignment(ALIGN_START, ALIGN_CENTER);
-    label->set_single_line_mode(false);
-    label->set_line_wrap_mode(Pango::WRAP_WORD);
-    label->set_ellipsize(Pango::ELLIPSIZE_MIDDLE);
+    //label->set_single_line_mode(false);
+    //label->set_line_wrap_mode(Pango::WRAP_WORD);
+    //label->set_ellipsize(Pango::ELLIPSIZE_MIDDLE);
+    if (group) {
+        group->add_widget(*label);
+    }
     return label;
 }
 
@@ -66,9 +71,13 @@ TilesetEditor::TilesetEditor(
         TilesetEditee *editee):
     Editor(root, parent),
     _editee(editee),
+    _conn_delete_tile(),
+    _conn_duplicate_tile(),
     _conn_edit_details(),
     _conn_new_tile(),
-    _tile_prop_grid(),
+    _tile_props(),
+    _tile_size_group(SizeGroup::create(SIZE_GROUP_HORIZONTAL)),
+    _tile_actor(),
     _tile_blocking(),
     _tile_destructible(),
     _tile_edible(),
@@ -96,10 +105,12 @@ TilesetEditor::TilesetEditor(
     _tile_unique_name.set_icon_activatable(false);
     _tile_unique_name.set_sensitive(false);
 
+    configure_switch(_tile_actor);
     configure_switch(_tile_blocking);
     configure_switch(_tile_destructible);
     configure_switch(_tile_edible);
     configure_switch(_tile_gravity_affected);
+    configure_switch(_tile_movable);
     configure_switch(_tile_rollable);
     configure_switch(_tile_sticky);
 
@@ -114,14 +125,28 @@ TilesetEditor::TilesetEditor(
     configure_entry(_tile_display_name);
     configure_entry(_tile_unique_name);
 
-    setup_tile_property_grid(_tile_prop_grid);
+    Gtk::Grid *tile_props_generic = manage(new Grid());
+    setup_tile_props_generic(*tile_props_generic, _tile_size_group);
+    frame_grid(*tile_props_generic, _tile_props, "Generic properties");
+
+    Gtk::Grid *tile_props_game_play = manage(new Grid());
+    setup_tile_props_game_play(*tile_props_game_play, _tile_size_group);
+    frame_grid(*tile_props_game_play, _tile_props, "Game play");
+
+    Gtk::Grid *tile_props_physics = manage(new Grid());
+    setup_tile_props_physics(*tile_props_physics, _tile_size_group);
+    frame_grid(*tile_props_physics, _tile_props, "Physics");
+
+    Gtk::Grid *tile_props_actor = manage(new Grid());
+    setup_tile_props_actor(*tile_props_actor, _tile_size_group);
+    frame_grid(*tile_props_actor, _tile_props, "Actor");
 
     ScrolledWindow *tile_prop_scroll = manage(new ScrolledWindow());
     Viewport *tile_prop_viewport = manage(new Viewport(
         tile_prop_scroll->get_hadjustment(),
         tile_prop_scroll->get_vadjustment()));
     tile_prop_scroll->add(*tile_prop_viewport);
-    tile_prop_viewport->add(_tile_prop_grid);
+    tile_prop_viewport->add(_tile_props);
 
     setup_tile_list_view(_tile_list_view);
     _tile_list_view.signal_row_activated().connect(
@@ -130,13 +155,16 @@ TilesetEditor::TilesetEditor(
     Toolbar *tile_toolbar = manage(new Toolbar());
     setup_tile_toolbar(*tile_toolbar);
 
+    ScrolledWindow *tile_list_view_scroll = manage(new ScrolledWindow());
+    tile_list_view_scroll->add(_tile_list_view);
+
     VBox *tiles_box = manage(new VBox());
-    tiles_box->pack_start(_tile_list_view, true, true);
+    tiles_box->pack_start(*tile_list_view_scroll, true, true);
     tiles_box->pack_end(*tile_toolbar, false, false);
 
     VPaned *left_panel = manage(new VPaned());
-    left_panel->add(*tiles_box);
-    left_panel->add(*tile_prop_scroll);
+    left_panel->pack1(*tiles_box, false, true);
+    left_panel->pack2(*tile_prop_scroll, false, true);
     left_panel->set_position(300);
 
     HPaned *main_panel = manage(new HPaned());
@@ -148,7 +176,7 @@ TilesetEditor::TilesetEditor(
     parent->add(*main_panel);
     parent->show_all_children();
 
-    _tile_prop_grid.set_sensitive(false);
+    _tile_props.set_sensitive(false);
 
     initialize_contents();
 }
@@ -191,6 +219,23 @@ void TilesetEditor::configure_switch(Switch &widget)
     widget.set_halign(ALIGN_START);
 }
 
+void TilesetEditor::frame_grid(Gtk::Grid &grid, Gtk::Box &parent,
+                               const ustring &label_text)
+{
+    Frame *frame = manage(new Frame());
+    frame->set_shadow_type(SHADOW_NONE);
+    Label *label = manage(new Label());
+    frame->set_label_widget(*label);
+    label->set_markup("<b>"+label_text+"</b>");
+    parent.pack_start(*frame, false, true);
+
+    Alignment *align = manage(new Alignment());
+    frame->add(*align);
+    align->set_padding(0, 0, 12, 0);
+
+    align->add(grid);
+}
+
 void TilesetEditor::initialize_contents()
 {
     for (auto &tile: _editee->tiles()) {
@@ -200,44 +245,74 @@ void TilesetEditor::initialize_contents()
 
 void TilesetEditor::setup_tile_list_view(Gtk::TreeView &view)
 {
+    _tile_list->set_sort_column(
+        _tile_columns.col_display_name,
+        SORT_ASCENDING
+        );
+    view.set_vexpand(false);
     view.set_model(_tile_list);
     view.append_column(
         "Tile name", _tile_columns.col_display_name);
 }
 
-void TilesetEditor::setup_tile_property_grid(Grid &grid)
+void TilesetEditor::setup_tile_props_generic(
+    Grid &grid, Glib::RefPtr<Gtk::SizeGroup> group)
 {
     int top = 0;
 
-    grid.attach(*managed_label("Unique name"), 0, top, 1, 1);
+    grid.attach(*managed_label("Unique name", group), 0, top, 1, 1);
     grid.attach(_tile_unique_name, 1, top++, 1, 1);
 
-    grid.attach(*managed_label("Display name"), 0, top, 1, 1);
+    grid.attach(*managed_label("Display name", group), 0, top, 1, 1);
     grid.attach(_tile_display_name, 1, top++, 1, 1);
+}
 
-    grid.attach(*managed_label("Blocking"), 0, top, 1, 1);
-    grid.attach(_tile_blocking, 1, top++, 1, 1);
+void TilesetEditor::setup_tile_props_game_play(
+    Grid &grid, Glib::RefPtr<Gtk::SizeGroup> group)
+{
+    int top = 0;
 
-    grid.attach(*managed_label("Destructible"), 0, top, 1, 1);
-    grid.attach(_tile_destructible, 1, top++, 1, 1);
-
-    grid.attach(*managed_label("Edible"), 0, top, 1, 1);
+    grid.attach(*managed_label("Edible", group), 0, top, 1, 1);
     grid.attach(_tile_edible, 1, top++, 1, 1);
 
-    grid.attach(*managed_label("Gravity affected"), 0, top, 1, 1);
+    grid.attach(*managed_label("Movable", group), 0, top, 1, 1);
+    grid.attach(_tile_movable, 1, top++, 1, 1);
+
+    grid.attach(*managed_label("Roll radius", group), 0, top, 1, 1);
+    grid.attach(_tile_roll_radius, 1, top++, 1, 1);
+}
+
+void TilesetEditor::setup_tile_props_physics(
+    Grid &grid, Glib::RefPtr<Gtk::SizeGroup> group)
+{
+    int top = 0;
+
+    grid.attach(*managed_label("Blocking", group), 0, top, 1, 1);
+    grid.attach(_tile_blocking, 1, top++, 1, 1);
+
+    grid.attach(*managed_label("Destructible", group), 0, top, 1, 1);
+    grid.attach(_tile_destructible, 1, top++, 1, 1);
+
+    grid.attach(*managed_label("Gravity affected", group), 0, top, 1, 1);
     grid.attach(_tile_gravity_affected, 1, top++, 1, 1);
 
-    grid.attach(*managed_label("Rollable"), 0, top, 1, 1);
+    grid.attach(*managed_label("Round (rollable)", group), 0, top, 1, 1);
     grid.attach(_tile_rollable, 1, top++, 1, 1);
 
-    grid.attach(*managed_label("Radius"), 0, top, 1, 1);
-    grid.attach(_tile_roll_radius, 1, top++, 1, 1);
-
-    grid.attach(*managed_label("Sticky"), 0, top, 1, 1);
+    grid.attach(*managed_label("Sticky", group), 0, top, 1, 1);
     grid.attach(_tile_sticky, 1, top++, 1, 1);
 
-    grid.attach(*managed_label("Temperature coefficient"), 0, top, 1, 1);
+    grid.attach(*managed_label("T. coeff", group), 0, top, 1, 1);
     grid.attach(_tile_temp_coefficient, 1, top++, 1, 1);
+}
+
+void TilesetEditor::setup_tile_props_actor(
+    Grid &grid, Glib::RefPtr<Gtk::SizeGroup> group)
+{
+    int top = 0;
+
+    grid.attach(*managed_label("Actor mode", group), 0, top, 1, 1);
+    grid.attach(_tile_actor, 1, top++, 1, 1);
 }
 
 void TilesetEditor::setup_tile_toolbar(Toolbar &toolbar)
@@ -283,6 +358,10 @@ void TilesetEditor::flush_tile_props()
             _editee, _current_tile, display_name)));
     }
 
+    if (_tile_actor.get_active() != _current_tile->is_actor) {
+        ops->add_operation(OperationPtr(new OpSetTileActor(
+            _editee, _current_tile, _tile_actor.get_active())));
+    }
     if (_tile_blocking.get_active() != _current_tile->is_blocking) {
         ops->add_operation(OperationPtr(new OpSetTileBlocking(
             _editee, _current_tile, _tile_blocking.get_active())));
@@ -298,6 +377,10 @@ void TilesetEditor::flush_tile_props()
     if (_tile_gravity_affected.get_active() != _current_tile->is_gravity_affected) {
         ops->add_operation(OperationPtr(new OpSetTileGravityAffected(
             _editee, _current_tile, _tile_gravity_affected.get_active())));
+    }
+    if (_tile_movable.get_active() != _current_tile->is_movable) {
+        ops->add_operation(OperationPtr(new OpSetTileMovable(
+            _editee, _current_tile, _tile_movable.get_active())));
     }
     if (_tile_rollable.get_active() != _current_tile->is_rollable) {
         ops->add_operation(OperationPtr(new OpSetTileRollable(
@@ -322,6 +405,21 @@ void TilesetEditor::flush_tile_props()
     }
 }
 
+SharedTile TilesetEditor::get_selected_tile()
+{
+    TreeModel::Path path;
+    TreeViewColumn *dummy;
+    _tile_list_view.get_cursor(path, dummy);
+
+    ListStore::iterator iter = _tile_list->get_iter(path);
+    if (iter == _tile_list->children().end()) {
+        return nullptr;
+    }
+
+    TreeRow row = *iter;
+    return SharedTile(row[_tile_columns.col_tile]);
+}
+
 void TilesetEditor::select_tile(const SharedTile &tile)
 {
     if (_current_tile) {
@@ -329,11 +427,11 @@ void TilesetEditor::select_tile(const SharedTile &tile)
     }
     _current_tile = tile;
     if (_current_tile) {
-        _tile_prop_grid.set_sensitive(true);
+        _tile_props.set_sensitive(true);
 
         update_tile_props();
     } else {
-        _tile_prop_grid.set_sensitive(false);
+        _tile_props.set_sensitive(false);
     }
 }
 
@@ -359,31 +457,51 @@ void TilesetEditor::action_edit_details()
 
 void TilesetEditor::action_new_tile()
 {
-    std::string unique_name = _root->get_dlg_new_tile()->get_unique_name();
-    if (!_editee->check_unique_name(unique_name)) {
-        message_dlg(*_root,
-            "Duplicate unique name",
-            "The unique name is already in use by another tile.",
-            MESSAGE_ERROR,
-            BUTTONS_OK);
-    }
+    NewTile *dlg = _root->get_dlg_new_tile();
+
+    sigc::connection conn = dlg->signal_check_name().connect(
+        sigc::mem_fun(*_editee, &TilesetEditee::check_unique_name));
+    std::string unique_name = dlg->get_unique_name();
+    conn.disconnect();
+
     _root->execute_operation(
         OperationPtr(new OpNewTile(_editee, unique_name)));
 }
 
-void TilesetEditor::action_delete_tile()
+void TilesetEditor::action_duplicate_tile()
 {
-    TreeModel::Path path;
-    TreeViewColumn *dummy;
-    _tile_list_view.get_cursor(path, dummy);
+    DuplicateTile *dlg = _root->get_dlg_duplicate_tile();
 
-    ListStore::iterator iter = _tile_list->get_iter(path);
-    if (iter == _tile_list->children().end()) {
+    SharedTile tile = get_selected_tile();
+    if (!tile) {
         return;
     }
 
-    TreeRow row = *iter;
-    SharedTile tile = SharedTile(row[_tile_columns.col_tile]);
+    std::string unique_name = tile->unique_name + "_clone";
+    bool rewrite_references_to_self = true;
+
+    sigc::connection conn = dlg->signal_check_name().connect(
+        sigc::mem_fun(*_editee, &TilesetEditee::check_unique_name));
+    dlg->get_duplicate_settings(
+        unique_name,
+        rewrite_references_to_self);
+    conn.disconnect();
+
+    _root->execute_operation(
+        OperationPtr(new OpDuplicateTile(
+            _editee,
+            tile,
+            unique_name,
+            rewrite_references_to_self)));
+}
+
+void TilesetEditor::action_delete_tile()
+{
+    SharedTile tile = get_selected_tile();
+    if (!tile) {
+        return;
+    }
+
     _root->execute_operation(
         OperationPtr(new OpDeleteTile(_editee, tile)));
 }
@@ -408,6 +526,7 @@ void TilesetEditor::editee_tile_created(
     TreeRow row = *_tile_list->append();
     row[_tile_columns.col_tile] = tile;
     row[_tile_columns.col_display_name] = tile->display_name;
+    select_tile(tile);
 }
 
 void TilesetEditor::editee_tile_deleted(
@@ -440,6 +559,7 @@ void TilesetEditor::disable()
 {
     _root->disable_tileset_controls();
     _conn_delete_tile.disconnect();
+    _conn_duplicate_tile.disconnect();
     _conn_edit_details.disconnect();
     _conn_new_tile.disconnect();
 }
@@ -451,6 +571,11 @@ void TilesetEditor::enable()
         bind_action(
             _root->get_builder(), "action_tileset_delete_tile",
             sigc::mem_fun(*this, &TilesetEditor::action_delete_tile));
+
+    _conn_duplicate_tile =
+        bind_action(
+            _root->get_builder(), "action_tileset_duplicate_tile",
+            sigc::mem_fun(*this, &TilesetEditor::action_duplicate_tile));
 
     _conn_edit_details =
         bind_action(

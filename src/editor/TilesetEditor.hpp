@@ -50,14 +50,18 @@ public:
 private:
     TilesetEditee *_editee;
     sigc::connection _conn_delete_tile;
+    sigc::connection _conn_duplicate_tile;
     sigc::connection _conn_edit_details;
     sigc::connection _conn_new_tile;
 
-    Gtk::Grid _tile_prop_grid;
-    Gtk::Switch _tile_blocking,
+    Gtk::VBox _tile_props;
+    Glib::RefPtr<Gtk::SizeGroup> _tile_size_group;
+    Gtk::Switch _tile_actor,
+                _tile_blocking,
                 _tile_destructible,
                 _tile_edible,
                 _tile_gravity_affected,
+                _tile_movable,
                 _tile_rollable,
                 _tile_sticky;
     Gtk::SpinButton _tile_roll_radius,
@@ -80,19 +84,30 @@ private:
     void configure_entry(Gtk::Entry &widget);
     void configure_spin_button(Gtk::SpinButton &widget);
     void configure_switch(Gtk::Switch &widget);
+    void frame_grid(Gtk::Grid &grid, Gtk::Box &parent,
+                    const Glib::ustring &label_text);
     void initialize_contents();
     void setup_tile_list_view(Gtk::TreeView &view);
-    void setup_tile_property_grid(Gtk::Grid &grid);
+    void setup_tile_props_generic(
+        Gtk::Grid &grid, Glib::RefPtr<Gtk::SizeGroup> group);
+    void setup_tile_props_game_play(
+        Gtk::Grid &grid, Glib::RefPtr<Gtk::SizeGroup> group);
+    void setup_tile_props_physics(
+        Gtk::Grid &grid, Glib::RefPtr<Gtk::SizeGroup> group);
+    void setup_tile_props_actor(
+        Gtk::Grid &grid, Glib::RefPtr<Gtk::SizeGroup> group);
     void setup_tile_toolbar(Gtk::Toolbar &toolbar);
 
 protected:
     Gtk::TreeNodeChildren::iterator find_tile_row(const SharedTile &tile);
     void flush_tile_props();
+    SharedTile get_selected_tile();
     void select_tile(const SharedTile &tile);
     void update_tile_props();
 
 protected:
     void action_new_tile();
+    void action_duplicate_tile();
     void action_delete_tile();
     void action_edit_details();
     void editee_tile_changed(
