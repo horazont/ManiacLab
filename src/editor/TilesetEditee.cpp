@@ -26,7 +26,10 @@ authors named in the AUTHORS file.
 
 /* TilesetEditee */
 
-TilesetEditee::TilesetEditee(const SharedTileset &editee):
+TilesetEditee::TilesetEditee(
+        const SharedTileset &editee,
+        const std::string &name):
+    _name(name),
     _editee(editee),
     _changed(),
     _tile_changed(),
@@ -49,12 +52,6 @@ void TilesetEditee::require_unique_tile_name(
     if (!check_unique_name(unique_name)) {
         throw std::invalid_argument("Cannot create two tiles with same unique name.");
     }
-}
-
-void TilesetEditee::tile_changed(const SharedTile &tile)
-{
-    _tile_changed(this, tile);
-    changed();
 }
 
 void TilesetEditee::tile_created(const SharedTile &tile)
@@ -118,6 +115,11 @@ SharedTile TilesetEditee::new_tile(const std::string &unique_name)
     return add_tile(std::shared_ptr<TileData>(new_tile));
 }
 
+void TilesetEditee::set_name(const std::string &name)
+{
+    _name = name;
+}
+
 void TilesetEditee::set_author(const std::string &value)
 {
     if (_editee->header.author == value) {
@@ -178,6 +180,14 @@ void TilesetEditee::set_tile_blocking(const SharedTile &tile, bool value)
         return;
     }
     tile->is_blocking = value;
+    tile_changed(tile);
+}
+
+void TilesetEditee::set_tile_cell_stamp(
+    const SharedTile &tile,
+    const CellStamp &stamp)
+{
+    tile->stamp = stamp;
     tile_changed(tile);
 }
 
@@ -279,4 +289,10 @@ void TilesetEditee::set_tile_temp_coefficient(
     }
     tile->temp_coefficient = value;
     tile_changed(tile);
+}
+
+void TilesetEditee::tile_changed(const SharedTile &tile)
+{
+    _tile_changed(this, tile);
+    changed();
 }

@@ -33,7 +33,7 @@ authors named in the AUTHORS file.
 TestObject::TestObject():
     GameObject()
 {
-    static const BoolCellStamp bool_stamp[1] = {
+    static const CellStamp bool_stamp(
         /*{
             false, true, true, false,
             true, true, true, true,
@@ -86,8 +86,8 @@ TestObject::TestObject():
             false, true, true, true, false,
             false, false, true, false, false,
         }
-    };
-    stamp = new Stamp(bool_stamp[0]);
+    );
+    stamp = new Stamp(bool_stamp);
     is_gravity_affected = true;
     radius = 0.5;
 }

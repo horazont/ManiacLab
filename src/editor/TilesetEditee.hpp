@@ -44,11 +44,12 @@ typedef sigc::signal<void, TilesetEditee*, const SharedTile&> TilesetTileEvent;
 class TilesetEditee
 {
 public:
-    explicit TilesetEditee(const SharedTileset &editee);
+    TilesetEditee(const SharedTileset &editee, const std::string &name);
     TilesetEditee(const TilesetEditee &ref) = delete;
     TilesetEditee& operator=(const TilesetEditee &ref) = delete;
 
 private:
+    std::string _name;
     SharedTileset _editee;
     std::unordered_map<std::string, SharedTile> _tile_map;
     TilesetNotifyEvent _changed;
@@ -60,15 +61,19 @@ protected:
     void changed();
     void require_unique_tile_name(const std::string &unique_name);
     void tile_deleted(const SharedTile &tile);
-    void tile_changed(const SharedTile &tile);
     void tile_created(const SharedTile &tile);
 
 public:
     const std::vector<SharedTile>& tiles() const {
         return _editee->body.tiles;
     };
+
     const SharedTileset &editee() const {
         return _editee;
+    };
+
+    const std::string &get_name() const {
+        return _name;
     };
 
 public:
@@ -81,6 +86,9 @@ public:
     SharedTile new_tile(const std::string &unique_name);
 
 public:
+    void set_name(const std::string &name);
+
+public:
     void set_author(const std::string &value);
     void set_description(const std::string &value);
     void set_display_name(const std::string &value);
@@ -91,7 +99,7 @@ public:
     void set_tile_actor(const SharedTile &tile, bool value);
     void set_tile_blocking(const SharedTile &tile, bool value);
     void set_tile_cell_stamp(const SharedTile &tile,
-                             const BoolCellStamp &stamp);
+                             const CellStamp &stamp);
     void set_tile_destructible(const SharedTile &tile, bool value);
     void set_tile_display_name(const SharedTile &tile,
                                const std::string &value);
@@ -104,6 +112,9 @@ public:
     void set_tile_sticky(const SharedTile &tile, bool value);
     void set_tile_temp_coefficient(const SharedTile &tile,
                                    float value);
+
+public:
+    void tile_changed(const SharedTile &tile);
 
 public:
     inline TilesetNotifyEvent &signal_changed() {

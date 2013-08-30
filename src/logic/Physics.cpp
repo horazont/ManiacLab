@@ -219,7 +219,7 @@ void Automaton::apply_temperature_stamp(const CoordInt x, const CoordInt y,
 }
 
 void Automaton::get_cell_stamp_at(const CoordInt left, const CoordInt top,
-    CellStamp *stamp)
+    PhysicsCellStamp *stamp)
 {
     Cell **curr_cell = (Cell**)stamp;
     for (CoordInt y = 0; y < subdivision_count; y++) {

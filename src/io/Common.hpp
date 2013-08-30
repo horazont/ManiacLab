@@ -26,9 +26,7 @@ authors named in the AUTHORS file.
 #define _ML_IO_COMMON_H
 
 enum TileVisualFormat {
-    TVF_LUMINANCE,
-    TVF_LUMINANCE_ALPHA,
-    TVF_RGBA
+    TVF_BGRA
 };
 
 #endif

@@ -129,6 +129,33 @@ public:
     };
 };
 
+template <typename value_t,
+          value_t (TileData::*member_ptr),
+          void (TilesetEditee::*setter_func)(const SharedTile&, value_t)>
+class OpSetTileAttributePtr: public OpSetTileAttribute<value_t>
+{
+public:
+    OpSetTileAttributePtr(
+            TilesetEditee *tileset,
+            const SharedTile &tile,
+            const value_t &value):
+        OpSetTileAttribute<value_t>(tileset, tile, value)
+    {
+
+    };
+
+protected:
+    virtual const value_t &get_value() const
+    {
+        return this->_tile.get()->*member_ptr;
+    };
+
+    virtual void set_value(const value_t &value)
+    {
+        (this->_tileset->*setter_func)(this->_tile, value);
+    };
+};
+
 class OpSetTileDisplayName: public OpSetTileAttribute<std::string>
 {
 public:
@@ -142,145 +169,16 @@ protected:
 
 };
 
-class OpSetTileActor: public OpSetTileAttribute<bool>
-{
-public:
-    OpSetTileActor(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const bool &value);
+typedef OpSetTileAttributePtr<bool, &TileData::is_actor, &TilesetEditee::set_tile_actor> OpSetTileActor;
+typedef OpSetTileAttributePtr<bool, &TileData::is_blocking, &TilesetEditee::set_tile_blocking> OpSetTileBlocking;
+typedef OpSetTileAttributePtr<bool, &TileData::is_destructible, &TilesetEditee::set_tile_destructible> OpSetTileDestructible;
+typedef OpSetTileAttributePtr<bool, &TileData::is_edible, &TilesetEditee::set_tile_edible> OpSetTileEdible;
+typedef OpSetTileAttributePtr<bool, &TileData::is_gravity_affected, &TilesetEditee::set_tile_gravity_affected> OpSetTileGravityAffected;
+typedef OpSetTileAttributePtr<bool, &TileData::is_movable, &TilesetEditee::set_tile_movable> OpSetTileMovable;
+typedef OpSetTileAttributePtr<bool, &TileData::is_rollable, &TilesetEditee::set_tile_rollable> OpSetTileRollable;
+typedef OpSetTileAttributePtr<bool, &TileData::is_sticky, &TilesetEditee::set_tile_sticky> OpSetTileSticky;
 
-protected:
-    const bool &get_value() const override;
-    void set_value(const bool &value) override;
-
-};
-
-class OpSetTileBlocking: public OpSetTileAttribute<bool>
-{
-public:
-    OpSetTileBlocking(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const bool &value);
-
-protected:
-    const bool &get_value() const override;
-    void set_value(const bool &value) override;
-
-};
-
-class OpSetTileDestructible: public OpSetTileAttribute<bool>
-{
-public:
-    OpSetTileDestructible(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const bool &value);
-
-protected:
-    const bool &get_value() const override;
-    void set_value(const bool &value) override;
-
-};
-
-class OpSetTileEdible: public OpSetTileAttribute<bool>
-{
-public:
-    OpSetTileEdible(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const bool &value);
-
-protected:
-    const bool &get_value() const override;
-    void set_value(const bool &value) override;
-
-};
-
-class OpSetTileGravityAffected: public OpSetTileAttribute<bool>
-{
-public:
-    OpSetTileGravityAffected(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const bool &value);
-
-protected:
-    const bool &get_value() const override;
-    void set_value(const bool &value) override;
-
-};
-
-class OpSetTileMovable: public OpSetTileAttribute<bool>
-{
-public:
-    OpSetTileMovable(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const bool &value);
-
-protected:
-    const bool &get_value() const override;
-    void set_value(const bool &value) override;
-
-};
-
-class OpSetTileRollable: public OpSetTileAttribute<bool>
-{
-public:
-    OpSetTileRollable(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const bool &value);
-
-protected:
-    const bool &get_value() const override;
-    void set_value(const bool &value) override;
-
-};
-
-class OpSetTileSticky: public OpSetTileAttribute<bool>
-{
-public:
-    OpSetTileSticky(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const bool &value);
-
-protected:
-    const bool &get_value() const override;
-    void set_value(const bool &value) override;
-
-};
-
-class OpSetTileRollRadius: public OpSetTileAttribute<float>
-{
-public:
-    OpSetTileRollRadius(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const float &value);
-
-protected:
-    const float &get_value() const override;
-    void set_value(const float &value) override;
-
-};
-
-class OpSetTileTempCoefficient: public OpSetTileAttribute<float>
-{
-public:
-    OpSetTileTempCoefficient(
-        TilesetEditee *tileset,
-        const SharedTile &tile,
-        const float &value);
-
-protected:
-    const float &get_value() const override;
-    void set_value(const float &value) override;
-
-};
-
+typedef OpSetTileAttributePtr<float, &TileData::roll_radius, &TilesetEditee::set_tile_roll_radius> OpSetTileRollRadius;
+typedef OpSetTileAttributePtr<float, &TileData::temp_coefficient, &TilesetEditee::set_tile_temp_coefficient> OpSetTileTempCoefficient;
 
 #endif

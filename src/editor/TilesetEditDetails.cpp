@@ -42,7 +42,6 @@ TilesetEditDetails::TilesetEditDetails(
     _builder->get_widget("tileset_details_description", _description);
     _builder->get_widget("tileset_details_display_name", _display_name);
     _builder->get_widget("tileset_details_license", _license);
-    _builder->get_widget("tileset_details_unique_name", _unique_name);
     _builder->get_widget("tileset_details_version", _version);
 
     signal_response().connect(
@@ -105,7 +104,6 @@ void TilesetEditDetails::edit_tileset(const SharedTileset &editee)
     _description->get_buffer()->set_text(editee->header.description);
     _display_name->set_text(editee->header.display_name);
     _license->set_text(editee->header.license);
-    _unique_name->set_text(editee->header.unique_name);
     _version->set_text(editee->header.version);
     run();
 }

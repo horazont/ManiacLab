@@ -165,36 +165,6 @@ void Level::cleanup_cell(LevelCell *cell)
     }
 }
 
-void Level::debug_test_heat_stamp(const double temperature)
-{
-    static const BoolCellStamp stamp_map = {
-        false, true, true, false,
-        true, true, true, true,
-        true, true, true, true,
-        false, true, true, false
-    };
-    static const Stamp stamp(stamp_map);
-    CoordPair coord = get_physics_coords(49.5, 35);
-    _physics.wait_for();
-    _physics.apply_temperature_stamp(coord.x, coord.y, stamp, temperature);
-}
-
-void Level::debug_test_heat_source()
-{
-    static const BoolCellStamp stamp_map = {
-        false, true, true, false,
-        true, true, true, true,
-        true, true, true, true,
-        false, true, true, false
-    };
-    static const Stamp stamp(stamp_map);
-    _physics.wait_for();
-    for (int i = 0; i < _width; i+=2) {
-        CoordPair coord = get_physics_coords(i, 40);
-        _physics.apply_temperature_stamp(coord.x, coord.y, stamp, 2.0);
-    }
-}
-
 TestObject *Level::debug_place_object(const CoordInt x, const CoordInt y)
 {
     LevelCell *cell = &_cells[y*_width + x];

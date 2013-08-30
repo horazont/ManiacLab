@@ -48,7 +48,7 @@ struct CellMetadata {
     const GameObject *obj;
 };
 
-typedef Cell CellStamp[cell_stamp_length];
+typedef Cell PhysicsCellStamp[cell_stamp_length];
 
 struct CellInfo {
     CoordPair offs;
@@ -137,7 +137,7 @@ public:
     void clear_cells(const CoordInt x, const CoordInt y,
         const Stamp *stamp);
 
-    void get_cell_stamp_at(const CoordInt left, const CoordInt top, CellStamp *stamp);
+    void get_cell_stamp_at(const CoordInt left, const CoordInt top, PhysicsCellStamp *stamp);
     CellMetadata inline *meta_at(CoordInt x, CoordInt y) { return &_metadata[x+_width*y]; };
 
     void move_stamp(

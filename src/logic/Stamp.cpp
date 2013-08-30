@@ -25,26 +25,83 @@ authors named in the AUTHORS file.
 #include "Stamp.hpp"
 
 #include <iostream>
+#include <stdexcept>
 
 #include <cstdlib>
 #include <cstring>
 
+/* CellStamp */
+
+CellStamp::CellStamp():
+    data()
+{
+    reset();
+}
+
+CellStamp::CellStamp(const CellStampRaw &ref):
+    data()
+{
+    memcpy(data, ref, sizeof(data));
+}
+
+CellStamp::CellStamp(const std::initializer_list<bool> &blocking_ref):
+    data()
+{
+    reset();
+    unsigned int offs = 0;
+    for (auto &value: blocking_ref) {
+        if (offs >= cell_stamp_length) {
+            throw std::out_of_range("Too many arguments in initializer_"
+                                    "list for CellStamp()");
+        }
+        if (value) {
+            data[offs].type = CELL_BLOCK;
+        }
+        offs++;
+    }
+}
+
+CellStamp::CellStamp(const CellStamp &ref):
+    data()
+{
+    memcpy(data, ref.data, sizeof(data));
+}
+
+CellStamp &CellStamp::operator=(const CellStamp &ref)
+{
+    memcpy(data, ref.data, sizeof(data));
+    return *this;
+}
+
+CellStamp::~CellStamp()
+{
+
+}
+
+void CellStamp::reset()
+{
+    memset(data, 0, sizeof(data));
+}
+
 /* Stamp */
 
-Stamp::Stamp(const BoolCellStamp stamp):
+Stamp::Stamp(const CellStamp &stamp):
     _map_coords(0),
     _border(0),
     _map_coords_len(0),
-    _border_len(0)
+    _border_len(0),
+    _map()
 {
-    memcpy(_map, stamp, sizeof(BoolCellStamp));
+    for (unsigned int i = 0; i < cell_stamp_length; i++) {
+        _map[i] = (stamp.data[i].type == CELL_BLOCK);
+    }
     generate_map_coords();
     find_border();
 }
 
 Stamp::Stamp(const Stamp &ref)
 {
-    memcpy(_map, ref._map, sizeof(BoolCellStamp));
+    memcpy(_map, ref._map, sizeof(_map));
 
     _map_coords_len = ref._map_coords_len;
     const uintptr_t map_coords_size = _map_coords_len * sizeof(CoordPair);

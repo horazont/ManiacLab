@@ -46,7 +46,6 @@ private:
     Gtk::TextView *_description;
     Gtk::Entry *_display_name;
     Gtk::Entry *_license;
-    Gtk::Entry *_unique_name;
     Gtk::Entry *_version;
 
 private:

@@ -25,6 +25,7 @@ authors named in the AUTHORS file.
 #include "RootWindow.hpp"
 
 #include <CEngine/IO/FileStream.hpp>
+#include <CEngine/VFS/Utils.hpp>
 
 #include "io/Data.hpp"
 
@@ -66,6 +67,7 @@ RootWindow::RootWindow(
     _current_editor(nullptr),
     _undo_stack(),
     _redo_stack(),
+    _vfs(),
     _builder(builder),
     _menu_level(nullptr),
     _menu_tileset(nullptr),
@@ -84,11 +86,16 @@ RootWindow::RootWindow(
     _tabs(nullptr),
     _action_save(),
     _action_save_as(),
-    _dlg_create_tileset(nullptr),
-    _dlg_open_file(nullptr),
-    _dlg_save_file(nullptr),
-    _dlg_tileset_details(nullptr)
+    _dlg_open_image(nullptr),
+    _dlg_tileset_details(nullptr),
+    _dlg_open_vfs_file(&_vfs, false),
+    _dlg_save_vfs_file(&_vfs, true)
 {
+    _vfs.mount(
+        "/data",
+        std::move(MountPtr(new MountDirectory("data", false))),
+        MountPriority::FileSystem);
+
     _builder->get_widget("menu_tileset", _menu_tileset);
     _menu_tileset->hide();
 
@@ -146,50 +153,17 @@ RootWindow::RootWindow(
     _tabs->signal_switch_page().connect(
         sigc::mem_fun(*this, &RootWindow::tabs_switch_page));
 
-    _builder->get_widget("dlg_open_file", _dlg_open_file);
-    _dlg_open_file->signal_file_activated().connect(
-        sigc::mem_fun(*this, &RootWindow::dlg_open_file_activate));
-    _dlg_open_file->signal_response().connect(
-        sigc::mem_fun(*this, &RootWindow::dlg_open_file_response));
-    _dlg_open_file->set_action(FILE_CHOOSER_ACTION_OPEN);
-
-    _builder->get_widget("dlg_save_file", _dlg_save_file);
-    _dlg_save_file->signal_file_activated().connect(
-        sigc::mem_fun(*this, &RootWindow::dlg_save_file_activate));
-    _dlg_save_file->signal_response().connect(
-        sigc::mem_fun(*this, &RootWindow::dlg_save_file_response));
-    _dlg_save_file->set_action(FILE_CHOOSER_ACTION_SAVE);
-    _dlg_save_file->set_do_overwrite_confirmation();
+    _builder->get_widget_derived("dlg_open_image", _dlg_open_image);
+    _dlg_open_image->set_action(FILE_CHOOSER_ACTION_OPEN);
 
     _builder->get_widget_derived("dlg_new_tile", _dlg_new_tile);
     _builder->get_widget_derived("dlg_duplicate_tile", _dlg_duplicate_tile);
     _builder->get_widget_derived("dlg_tileset_details", _dlg_tileset_details);
 
-    {
-        RefPtr<FileFilter> filter = FileFilter::create();
-        filter->set_name("ManiacLab files (*.tileset; *.level)");
-        filter->add_pattern("*.tileset");
-        filter->add_pattern("*.level");
-        _dlg_open_file->add_filter(filter);
-    }
-
-    {
-        RefPtr<FileFilter> filter = FileFilter::create();
-        filter->set_name("All files");
-        filter->add_pattern("*");
-        _dlg_open_file->add_filter(filter);
-    }
-
-    _builder->get_widget("dlg_create_tileset", _dlg_create_tileset);
-    _dlg_create_tileset->signal_response().connect(
-        sigc::mem_fun(*this, &RootWindow::dlg_create_tileset_response));
+    _dlg_open_vfs_file.set_title("Open VFS file…");
+    _dlg_save_vfs_file.set_title("Save VFS file…");
 
     _builder->get_widget("dlg_about", _dlg_about);
-
-    Entry *entry;
-    _builder->get_widget("create_tileset_unique_name", entry);
-    entry->signal_activate().connect(
-        sigc::mem_fun(*this, &RootWindow::dlg_create_tileset_activate));
 
     switch_editor(nullptr);
     update_undo_redo_sensitivity();
@@ -197,8 +171,8 @@ RootWindow::RootWindow(
 
 RootWindow::~RootWindow()
 {
-    for (auto item: _editors) {
-        delete item;
+    while (_editors.size() > 0) {
+        close_editor(_editors[_editors.size()-1]);
     }
     _editors.clear();
     _tileset_editors.clear();
@@ -210,16 +184,19 @@ RootWindow::~RootWindow()
 
 void RootWindow::action_file_new_tileset()
 {
-    Entry *entry;
-    _builder->get_widget("create_tileset_unique_name", entry);
-    entry->set_text("");
-    _dlg_create_tileset->show();
+    SharedTileset tileset(new TilesetData());
+    tileset->header.display_name = "unnamed";
+    get_tileset_editor(make_tileset_editable(tileset, ""));
 }
 
 void RootWindow::action_file_open()
 {
-    _dlg_open_file->unselect_all();
-    _dlg_open_file->run();
+    std::string path = _dlg_open_vfs_file.select_file(
+        "/data/tilesets");
+    if (path == "") {
+        return;
+    }
+    open_file(path);
 }
 
 void RootWindow::action_file_save()
@@ -231,15 +208,17 @@ void RootWindow::action_file_save()
     }
 
     save_file(_current_editor->get_filename());
-    RecentManager::get_default()->add_item(
-        // FIXME: this is most likely not portable
-        "file://"+_current_editor->get_filename());
 }
 
 void RootWindow::action_file_save_as()
 {
-    _dlg_save_file->unselect_all();
-    _dlg_save_file->run();
+    std::string path =
+        _dlg_save_vfs_file.select_file("/data/tilesets");
+
+    if (path == "") {
+        return;
+    }
+    save_file(path);
 }
 
 void RootWindow::action_file_quit()
@@ -280,120 +259,6 @@ void RootWindow::action_help_about()
     _dlg_about->run();
 }
 
-void RootWindow::dlg_create_tileset_activate()
-{
-    dlg_create_tileset_response(2);
-}
-
-void RootWindow::dlg_create_tileset_response(int response_id)
-{
-    switch (response_id) {
-    case 2:
-    {
-        std::string unique_name;
-        {
-            Entry *entry;
-            _builder->get_widget("create_tileset_unique_name", entry);
-            unique_name = entry->get_text();
-        }
-
-        if (unique_name == "") {
-            message_dlg(*this,
-                "Invalid unique name",
-                "The unique name must not be empty.",
-                MESSAGE_ERROR,
-                BUTTONS_OK);
-            return;
-        }
-
-        if (_tileset_by_name.find(unique_name) != _tileset_by_name.end()) {
-            message_dlg(*this,
-                "Conflict",
-                "The unique name “" + unique_name + "” is already in use.",
-                MESSAGE_ERROR,
-                BUTTONS_OK);
-            return;
-        }
-
-        _dlg_create_tileset->hide();
-
-        SharedTileset new_tileset(new TilesetData());
-        new_tileset->header.unique_name = unique_name;
-        new_tileset->header.display_name = unique_name;
-        get_tileset_editor(make_tileset_editable(new_tileset));
-        break;
-    }
-    case 1:
-    default:
-        _dlg_create_tileset->hide();
-        break;
-    };
-}
-
-void RootWindow::dlg_open_file_activate()
-{
-    _dlg_open_file->hide();
-    dlg_open_file_response(2);
-}
-
-void RootWindow::dlg_open_file_response(int response_id)
-{
-    switch (response_id) {
-    case 2:
-    {
-        const std::string &filename = _dlg_open_file->get_filename();
-        if (filename == "") {
-            message_dlg(*this,
-                "No file selected",
-                "You have to select a file to open a file.",
-                MESSAGE_ERROR,
-                BUTTONS_OK);
-            return;
-        }
-        _dlg_open_file->hide();
-        RecentManager::get_default()->add_item(_dlg_open_file->get_uri());
-        open_file(filename);
-        break;
-    }
-    case 1:
-    default:
-        _dlg_open_file->hide();
-        break;
-    };
-}
-
-void RootWindow::dlg_save_file_activate()
-{
-    _dlg_save_file->hide();
-    dlg_save_file_response(2);
-}
-
-void RootWindow::dlg_save_file_response(int response_id)
-{
-    switch (response_id) {
-    case 2:
-    {
-        const std::string &filename = _dlg_save_file->get_filename();
-        if (filename == "") {
-            message_dlg(*this,
-                "No file selected",
-                "You have to select a file to open a file.",
-                MESSAGE_ERROR,
-                BUTTONS_OK);
-            return;
-        }
-        _dlg_save_file->hide();
-        RecentManager::get_default()->add_item(_dlg_save_file->get_uri());
-        save_file(filename);
-        break;
-    }
-    case 1:
-    default:
-        _dlg_open_file->hide();
-        break;
-    };
-}
-
 void RootWindow::tabs_switch_page(Widget *page, guint page_num)
 {
     Editor *new_editor = _editors.at(page_num);
@@ -415,8 +280,8 @@ void RootWindow::open_file(const std::string &filename)
     ContainerHandle root;
     FileType filet;
 
-    std::tie(root, filet) = load_tree_from_stream(
-        StreamHandle(new FileStream(filename, OM_READ, WM_IGNORE, SM_ALLOW_READ)));
+    std::tie(root, filet) = load_tree_from_stream(_vfs.open(
+        filename, OM_READ));
 
     std::string error_msg;
     bool error = false;
@@ -448,7 +313,7 @@ void RootWindow::open_file(const std::string &filename)
         std::unique_ptr<TilesetData> tileset = load_tileset_from_tree(root);
         assert(tileset);
         editor = get_tileset_editor(make_tileset_editable(
-            SharedTileset(tileset.release())));
+            SharedTileset(tileset.release()), basename(filename)));
         break;
     }
     case FT_LEVEL:
@@ -477,11 +342,23 @@ void RootWindow::open_file(const std::string &filename)
     }
 }
 
+void RootWindow::process_args(int argc, char *argv[])
+{
+    for (int i = 1; i < argc; i++) {
+        open_file(argv[i]);
+    }
+}
+
 void RootWindow::save_file(const std::string &filename)
 {
     assert(_current_editor);
-    StreamHandle stream(new FileStream(filename, OM_WRITE, WM_OVERWRITE, SM_EXCLUSIVE));
+    StreamHandle stream = _vfs.open(filename, OM_WRITE, WM_OVERWRITE);
     _current_editor->file_save(stream);
+    _current_editor->set_filename(filename);
+    std::string new_name = basename(filename);
+    if (_current_editor->get_name() != new_name) {
+        rename_editor(_current_editor, new_name);
+    }
 }
 
 void RootWindow::switch_editor(Editor *new_editor)
@@ -556,6 +433,40 @@ void RootWindow::execute_operation(OperationPtr &&operation)
     update_undo_redo_sensitivity();
 }
 
+void RootWindow::close_editor(Editor *editor)
+{
+    assert(editor);
+    {
+        TilesetEditor *tileset_editor =
+            dynamic_cast<TilesetEditor*>(editor);
+        if (tileset_editor) {
+            close_tileset(tileset_editor->editee());
+            return;
+        }
+    }
+
+    throw std::invalid_argument("Cannot handle editor object. "
+                                "Unknown type.");
+
+}
+
+void RootWindow::close_tileset(TilesetEditee *editee)
+{
+    SharedTileset data = editee->editee();
+    auto it = _tileset_editors.find(data.get());
+    assert(it != _tileset_editors.end());
+    TilesetEditor *editor = (*it).second;
+    _tileset_editors.erase(it);
+
+    _tabs->remove_page(*editor->get_parent());
+    {
+        auto it = std::find(_editors.begin(), _editors.end(), editor);
+        assert(it != _editors.end());
+        _editors.erase(it);
+    }
+    delete editor;
+}
+
 TilesetEditor *RootWindow::get_tileset_editor(TilesetEditee *editee)
 {
     auto editee_it = _loaded_tilesets.find(editee->editee().get());
@@ -571,14 +482,15 @@ TilesetEditor *RootWindow::get_tileset_editor(TilesetEditee *editee)
     editor_box->set_vexpand(true);
     TilesetEditor *editor = new TilesetEditor(this, editor_box, editee);
     _editors.push_back(editor);
-    _tabs->append_page(*editor_box, editee->editee()->header.unique_name + " (Tileset)");
+    _tabs->append_page(*editor_box, editor->get_tab_name());
     editor_box->show();
     _tileset_editors[editee->editee().get()] = editor;
 
     return editor;
 }
 
-TilesetEditee *RootWindow::make_tileset_editable(const SharedTileset &data)
+TilesetEditee *RootWindow::make_tileset_editable(
+    const SharedTileset &data, const std::string &name)
 {
     {
         auto it = _loaded_tilesets.find(data.get());
@@ -588,14 +500,74 @@ TilesetEditee *RootWindow::make_tileset_editable(const SharedTileset &data)
     }
 
     {
-        auto it = _tileset_by_name.find(data->header.unique_name);
-        if (it != _tileset_by_name.end()) {
-            throw std::invalid_argument("Duplicate tileset unique_name: "+data->header.unique_name);
+        if (name != "") {
+            auto it = _tileset_by_name.find(name);
+            if (it != _tileset_by_name.end()) {
+                throw std::invalid_argument("Duplicate tileset editee name: "+name);
+            }
         }
     }
 
-    TilesetEditee *editee = new TilesetEditee(data);
+    TilesetEditee *editee = new TilesetEditee(data, name);
     _loaded_tilesets[data.get()] = editee;
-    _tileset_by_name[data->header.unique_name] = data;
+    _tileset_by_name[name] = data;
     return editee;
+}
+
+void RootWindow::rename_editor(
+    Editor *editor, const std::string &new_name)
+{
+    assert(editor);
+    {
+        TilesetEditor *tileset_editor =
+            dynamic_cast<TilesetEditor*>(editor);
+        if (tileset_editor) {
+            rename_tileset(tileset_editor->editee(), new_name);
+            return;
+        }
+    }
+
+    throw std::invalid_argument("Cannot handle editor object. "
+                                "Unknown type.");
+}
+
+void RootWindow::rename_tileset(
+    TilesetEditee *editee, const std::string &new_name)
+{
+    bool is_null_name = (new_name == "");
+
+    if (!is_null_name) {
+        // we first check if a tileset with that name exists
+        {
+            auto it = _tileset_by_name.find(new_name);
+            if (it != _tileset_by_name.end()) {
+                // it exists, we have to rename it
+                SharedTileset other_tileset = (*it).second;
+                rename_tileset(
+                    _loaded_tilesets[other_tileset.get()], "");
+            }
+        }
+    }
+
+    if (editee->get_name() != "") {
+        auto it = _tileset_by_name.find(editee->get_name());
+        assert(it != _tileset_by_name.end());
+        _tileset_by_name.erase(it);
+    }
+
+    editee->set_name(new_name);
+
+    if (!is_null_name) {
+        _tileset_by_name[new_name] = editee->editee();
+    }
+
+    TilesetEditor *editor = _tileset_editors[editee->editee().get()];
+    update_tab_name(editor);
+}
+
+void RootWindow::update_tab_name(Editor *editor)
+{
+    _tabs->set_tab_label_text(
+        *editor->get_parent(),
+        editor->get_tab_name());
 }

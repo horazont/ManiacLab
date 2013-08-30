@@ -30,6 +30,8 @@ authors named in the AUTHORS file.
 #include "io/TilesetData.hpp"
 
 #include "TilesetEditee.hpp"
+#include "TileEditor.hpp"
+#include "Operation.hpp"
 
 class TileListModelColumns: public Gtk::TreeModelColumnRecord
 {
@@ -53,7 +55,10 @@ private:
     sigc::connection _conn_duplicate_tile;
     sigc::connection _conn_edit_details;
     sigc::connection _conn_new_tile;
+    sigc::connection _conn_tile_changed;
+    sigc::connection _conn_import_visual;
 
+    bool _updating;
     Gtk::VBox _tile_props;
     Glib::RefPtr<Gtk::SizeGroup> _tile_size_group;
     Gtk::Switch _tile_actor,
@@ -72,6 +77,7 @@ private:
     TileListModelColumns _tile_columns;
     Glib::RefPtr<Gtk::ListStore> _tile_list;
     Gtk::TreeView _tile_list_view;
+    TileEditor _tile_editor;
 
 private:
     SharedTile _current_tile;
@@ -82,8 +88,16 @@ private:
     void bind_editing_done(Gtk::Switch &widget,
                            void (TilesetEditor::*handler)());
     void configure_entry(Gtk::Entry &widget);
-    void configure_spin_button(Gtk::SpinButton &widget);
-    void configure_switch(Gtk::Switch &widget);
+    void configure_entry(
+        Gtk::Entry &widget,
+        const std::function<void(const std::string&)> &updater);
+    void configure_spin_button(
+        Gtk::SpinButton &widget,
+        const std::function<void(float)> &updater);
+    void configure_switch(
+        Gtk::Switch &widget,
+        const std::function<void(bool)> &updater);
+    void execute_operation(OperationPtr &&operation);
     void frame_grid(Gtk::Grid &grid, Gtk::Box &parent,
                     const Glib::ustring &label_text);
     void initialize_contents();
@@ -103,6 +117,18 @@ protected:
     void flush_tile_props();
     SharedTile get_selected_tile();
     void select_tile(const SharedTile &tile);
+    template <typename value_t, typename operation_t,
+              typename std::remove_reference<typename std::remove_const<value_t>::type>::type TileData::*value_ptr>
+    void update_tile_prop(
+        value_t value)
+    {
+        TileData *tilep = _current_tile.get();
+        if (tilep->*value_ptr == value) {
+            return;
+        }
+        execute_operation(OperationPtr(new operation_t(
+            _editee, _current_tile, value)));
+    }
     void update_tile_props();
 
 protected:
@@ -110,6 +136,7 @@ protected:
     void action_duplicate_tile();
     void action_delete_tile();
     void action_edit_details();
+    void action_import_visual();
     void editee_tile_changed(
         TilesetEditee *editee,
         const SharedTile &tile);
@@ -119,6 +146,9 @@ protected:
     void editee_tile_deleted(
         TilesetEditee *editee,
         const SharedTile &tile);
+    void switch_button_button_press(
+        GdkEventButton *event,
+        Gtk::Switch *widget);
     void tile_list_view_row_activated(
         const Gtk::TreeModel::Path &path,
         Gtk::TreeViewColumn *column);
@@ -127,6 +157,11 @@ public:
     inline TilesetEditee *editee() {
         return _editee;
     };
+
+public:
+    const std::string &get_name() const override;
+    std::string get_tab_name() const override;
+    void set_name(const std::string &name) override;
 
 public:
     void disable() override;

@@ -27,16 +27,25 @@ authors named in the AUTHORS file.
 
 #include <gtkmm.h>
 
+#include "io/TilesetData.hpp"
+
 sigc::connection bind_action(
     const Glib::RefPtr<Gtk::Builder> &builder,
     const std::string &name,
     const Gtk::Action::SlotActivate &slot,
     Glib::RefPtr<Gtk::Action> *action_dest = nullptr);
 
-void message_dlg(Gtk::Window &parent,
-                 const std::string &primary_text,
-                 const std::string &secondary_text,
-                 Gtk::MessageType message_type,
-                 Gtk::ButtonsType buttons);
+int message_dlg(Gtk::Window &parent,
+                const std::string &primary_text,
+                const std::string &secondary_text,
+                Gtk::MessageType message_type,
+                Gtk::ButtonsType buttons);
+
+Glib::RefPtr<Gdk::Pixbuf> tile_image_data_to_pixbuf(ImageData *data);
+bool pixbuf_to_tile_image_data(
+    const Glib::RefPtr<Gdk::Pixbuf> &src, ImageData *data);
+Cairo::RefPtr<Cairo::Surface>
+    get_temporary_cairo_surface_for_tile_image_data(ImageData *data);
+
 
 #endif

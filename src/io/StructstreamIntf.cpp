@@ -24,6 +24,9 @@ authors named in the AUTHORS file.
 **********************************************************************/
 #include "StructstreamIntf.hpp"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include <CEngine/IO/Log.hpp>
@@ -35,7 +38,7 @@ TileVisualRecord::TileVisualRecord(ID id):
     DataRecord(id),
     _width(0),
     _height(0),
-    _format(TVF_LUMINANCE),
+    _format(TVF_BGRA),
     _pixels(0)
 {
 
@@ -76,6 +79,7 @@ void TileVisualRecord::read(IOIntf *stream)
     _height = new_height;
     _format = new_format;
 
+
     static const intptr_t chunk_size = 1<<20;
     const intptr_t new_size = raw_size();
 
@@ -100,7 +104,7 @@ void TileVisualRecord::read(IOIntf *stream)
                 *((uint8_t*)_pixels) = 0;
                 _width = 1;
                 _height = 1;
-                _format = TVF_LUMINANCE;
+                _format = TVF_BGRA;
                 PyEngine::log->log(Error)
                     << "Memory allocation failure while reading visual "
                     << "of size " << new_size << "." << submit;
@@ -112,7 +116,12 @@ void TileVisualRecord::read(IOIntf *stream)
 
         sread(stream, &((uint8_t*)_pixels)[read_offs], curr_step);
         to_read -= curr_step;
+        read_offs += curr_step;
     }
+
+    int fd = open("/tmp/foo.raw", O_WRONLY | O_CREAT);
+    ::write(fd, _pixels, raw_size());
+    close(fd);
 }
 
 void TileVisualRecord::write(IOIntf *stream) const
@@ -121,8 +130,9 @@ void TileVisualRecord::write(IOIntf *stream) const
 
     Utils::write_varuint(stream, _width);
     Utils::write_varuint(stream, _height);
+    Utils::write_varuint(stream, (VarUInt)_format);
 
-    const VarUInt size = _width*_height*4;
+    const VarUInt size = raw_size();
     swrite(stream, _pixels, size);
 }
 
@@ -189,11 +199,11 @@ intptr_t PyEngineStream::skip(const intptr_t len)
 intptr_t get_pixel_size(TileVisualFormat format)
 {
     switch (format) {
-    case TVF_LUMINANCE:
-        return 1;
-    case TVF_LUMINANCE_ALPHA:
-        return 2;
-    case TVF_RGBA:
+    //~ case TVF_LUMINANCE:
+        //~ return 1;
+    //~ case TVF_LUMINANCE_ALPHA:
+        //~ return 2;
+    case TVF_BGRA:
         return 4;
     default:
         return 0;
@@ -201,5 +211,13 @@ intptr_t get_pixel_size(TileVisualFormat format)
 }
 
 RegistryHandle maniac_lab_registry = RegistryHandle(new Registry({
-    std::pair<RecordType, NodeConstructor>(RT_TILE_VISUAL, &NodeHandleFactory<TileVisualRecord>::create)
+    std::pair<RecordType, NodeConstructor>(
+        RT_TILE_VISUAL,
+        &NodeHandleFactory<TileVisualRecord>::create),
+    std::pair<RecordType, NodeConstructor>(
+        RT_CELL_TYPE,
+        &NodeHandleFactory<CellTypeRecord>::create),
+    std::pair<RecordType, NodeConstructor>(
+        RT_SINK_SOURCE_TYPE,
+        &NodeHandleFactory<SinkSourceTypeRecord>::create)
     }));

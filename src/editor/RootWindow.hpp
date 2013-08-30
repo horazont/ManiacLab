@@ -31,11 +31,16 @@ authors named in the AUTHORS file.
 
 #include <gtkmm.h>
 
+#include <CEngine/VFS/FileSystem.hpp>
+#include <CEngine/VFS/Mount.hpp>
+
 #include "TilesetEditor.hpp"
 #include "TilesetEditDetails.hpp"
 #include "NewTile.hpp"
 #include "DuplicateTile.hpp"
 #include "Operation.hpp"
+#include "OpenImage.hpp"
+#include "VFSFileChooserDialog.hpp"
 
 class RootWindow: public Gtk::Window
 {
@@ -55,6 +60,8 @@ private:
     std::deque<std::unique_ptr<Operation>> _undo_stack;
     std::deque<std::unique_ptr<Operation>> _redo_stack;
 
+    PyEngine::FileSystem _vfs;
+
 private:
     Glib::RefPtr<Gtk::Builder> _builder;
     Gtk::MenuItem *_menu_level;
@@ -70,12 +77,12 @@ private:
     Glib::RefPtr<Gtk::Action> _action_save, _action_save_as;
 
     Gtk::AboutDialog *_dlg_about;
-    Gtk::Dialog *_dlg_create_tileset;
     DuplicateTile *_dlg_duplicate_tile;
     NewTile *_dlg_new_tile;
-    Gtk::FileChooserDialog *_dlg_open_file;
-    Gtk::FileChooserDialog *_dlg_save_file;
+    OpenImage *_dlg_open_image;
     TilesetEditDetails *_dlg_tileset_details;
+    VFSFileChooserDialog _dlg_open_vfs_file;
+    VFSFileChooserDialog _dlg_save_vfs_file;
 
 protected:
     void action_file_new_tileset();
@@ -86,12 +93,6 @@ protected:
     void action_edit_undo();
     void action_edit_redo();
     void action_help_about();
-    void dlg_create_tileset_activate();
-    void dlg_create_tileset_response(int response_id);
-    void dlg_open_file_activate();
-    void dlg_open_file_response(int response_id);
-    void dlg_save_file_activate();
-    void dlg_save_file_response(int response_id);
     void tabs_switch_page(Gtk::Widget *page, guint page_num);
 
 protected:
@@ -99,6 +100,7 @@ protected:
 
 public:
     void open_file(const std::string &filename);
+    void process_args(int argc, char *argv[]);
     void save_file(const std::string &filename);
     void switch_editor(Editor *new_editor);
 
@@ -123,6 +125,10 @@ public:
         return _dlg_new_tile;
     };
 
+    inline OpenImage *get_dlg_open_image() {
+        return _dlg_open_image;
+    };
+
     inline DuplicateTile *get_dlg_duplicate_tile() {
         return _dlg_duplicate_tile;
     };
@@ -137,6 +143,12 @@ public:
     void execute_operation(OperationPtr &&operation);
 
 public:
+    void close_editor(
+        Editor *editor);
+
+    void close_tileset(
+        TilesetEditee *editee);
+
     /**
      * Acquire a tileset editor for the given tileset editee. If there
      * is no editor for the given editee, a new one will be created.
@@ -147,12 +159,26 @@ public:
      * Load a tileset if it is not loaded already and return an editee
      * for the tileset.
      */
-    TilesetEditee *make_tileset_editable(const SharedTileset &data);
+    TilesetEditee *make_tileset_editable(
+        const SharedTileset &data,
+        const std::string &name);
+
+    void rename_editor(Editor *editor, const std::string &new_name);
+
+    /**
+     * Renames a tileset which is currently being edited. If the new
+     * name conflicts with the name of another tileset, the other
+     * tileset will be renamed to a null name.
+     */
+    void rename_tileset(
+        TilesetEditee *editee,
+        const std::string &new_name);
+
+    void update_tab_name(Editor *editor);
 
     TilesetEditor *get_tileset_editor_by_name(const std::string &unique_name);
     TilesetEditee *get_tileset_editee_by_name(const std::string &unique_name);
     const SharedTileset &get_tileset_by_name(const std::string &unique_name);
-
 };
 
 #endif

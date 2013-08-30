@@ -37,6 +37,8 @@ authors named in the AUTHORS file.
 
 #include "Common.hpp"
 
+#include "logic/Stamp.hpp"
+
 const StructStream::ID SSID_TILESET_HEADER = 0x4d4c5473;
 
 class TileVisualRecord;
@@ -97,7 +99,8 @@ struct TileData
     float roll_radius;
     float temp_coefficient;
 
-    /* TODO: ca stamp */
+    CellStamp stamp;
+
     VisualData default_visual;
     std::vector<TileVisualData> additional_visuals;
 };
@@ -105,7 +108,6 @@ struct TileData
 struct TilesetHeaderData
 {
     std::string display_name;
-    std::string unique_name;
     std::string description;
 
     std::string author;

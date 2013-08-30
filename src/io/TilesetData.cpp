@@ -118,26 +118,87 @@ const ID SSID_VISUAL_MATCH = 0x766d;
 const ID SSID_VISUAL_MATCH_RELEVANT = 0x40;
 const ID SSID_VISUAL_MATCH_UNIQUE_NAME = 0x41;
 
-const ID SSID_TILE_VISUAL = 0x7673;
+const ID SSID_TILE_VISUAL = 0x5476;
 const ID SSID_TILE_VISUAL_MATCH_TOP = 0x40;
 const ID SSID_TILE_VISUAL_MATCH_LEFT = 0x41;
 const ID SSID_TILE_VISUAL_MATCH_RIGHT = 0x42;
 const ID SSID_TILE_VISUAL_MATCH_BOTTOM = 0x43;
 const ID SSID_TILE_VISUAL_VISUAL = 0x44;
 
+const ID SSID_CELL_STAMP = 0x6373;
+const ID SSID_CELL_STAMP_TEMPLATES = 0x40;
+
+const ID SSID_CELL_TEMPLATE = 0x6374;
+const ID SSID_CELL_TEMPLATE_TYPE = 0x40;
+const ID SSID_CELL_TEMPLATE_AMPLITUDE = 0x41;
+const ID SSID_CELL_TEMPLATE_MATERIAL = 0x42;
+const ID SSID_CELL_TEMPLATE_FLOW_X = 0x43;
+const ID SSID_CELL_TEMPLATE_FLOW_Y = 0x44;
+
 typedef struct_decl<
     Container,
-    SSID_FRAME,
+    id_selector<SSID_CELL_TEMPLATE>,
+    struct_members<
+        member<
+            CellTypeRecord,
+            id_selector<SSID_CELL_TEMPLATE_TYPE>,
+            CellTemplate,
+            CellType,
+            &CellTemplate::type>,
+        member<
+            SinkSourceTypeRecord,
+            id_selector<SSID_CELL_TEMPLATE_MATERIAL>,
+            CellTemplate,
+            SinkSourceType,
+            &CellTemplate::sink_what>,
+        member<
+            Float32Record,
+            id_selector<SSID_CELL_TEMPLATE_AMPLITUDE>,
+            CellTemplate,
+            float,
+            &CellTemplate::amplitude>,
+        member<
+            Float32Record,
+            id_selector<SSID_CELL_TEMPLATE_FLOW_X>,
+            CellTemplate,
+            float,
+            &CellTemplate::flow_west>,
+        member<
+            Float32Record,
+            id_selector<SSID_CELL_TEMPLATE_FLOW_Y>,
+            CellTemplate,
+            float,
+            &CellTemplate::flow_north>
+        >
+    > CellTemplateDecl;
+
+typedef struct_decl<
+    Container,
+    id_selector<SSID_CELL_STAMP>,
+    struct_members<
+        member_struct<
+            CellStamp,
+            static_array<
+                CellTemplateDecl,
+                id_selector<SSID_CELL_STAMP_TEMPLATES>,
+                cell_stamp_length>,
+            &CellStamp::data>
+        >
+    > CellStampDecl;
+
+typedef struct_decl<
+    Container,
+    id_selector<SSID_FRAME>,
     struct_members<
         member_direct<
-            TileVisualRecord,
-            SSID_FRAME_IMAGE_DATA,
             FrameData,
+            id_selector<SSID_FRAME_IMAGE_DATA>,
+            TileVisualRecord,
             &FrameData::image_data_to_record,
             &FrameData::image_data_from_record>,
         member<
             Float32Record,
-            SSID_FRAME_DURATION,
+            id_selector<SSID_FRAME_DURATION>,
             FrameData,
             float,
             &FrameData::duration>
@@ -146,13 +207,13 @@ typedef struct_decl<
 
 typedef struct_decl<
     Container,
-    SSID_VISUAL,
+    id_selector<SSID_VISUAL>,
     struct_members<
         member_struct<
             VisualData,
             container<
                 FrameDecl,
-                SSID_VISUAL_FRAMES,
+                id_selector<SSID_VISUAL_FRAMES>,
                 std::back_insert_iterator<decltype(VisualData::frames)>
                 >,
             &VisualData::frames>
@@ -161,182 +222,200 @@ typedef struct_decl<
 
 typedef struct_decl<
     Container,
-    SSID_VISUAL_MATCH,
+    id_selector<SSID_VISUAL_MATCH>,
     struct_members<
         member<
             BoolRecord,
-            SSID_VISUAL_MATCH_RELEVANT,
+            id_selector<SSID_VISUAL_MATCH_RELEVANT>,
             TileVisualMatchData,
             bool,
             &TileVisualMatchData::relevant>,
-        member_string<
+        member<
             UTF8Record,
-            SSID_VISUAL_MATCH_UNIQUE_NAME,
+            id_selector<SSID_VISUAL_MATCH_UNIQUE_NAME>,
             TileVisualMatchData,
+            std::string,
             &TileVisualMatchData::unique_name>
         >
     > TileVisualMatchDecl;
 
 typedef struct_decl<
     Container,
-    SSID_TILE_VISUAL,
+    id_selector<SSID_TILE_VISUAL>,
     struct_members<
-        member_struct<
+        member_struct_wrap<
             TileVisualData,
             TileVisualMatchDecl,
-            &TileVisualData::top,
-            SSID_TILE_VISUAL_MATCH_TOP
+            id_selector<SSID_TILE_VISUAL_MATCH_TOP>,
+            &TileVisualData::top
             >,
-        member_struct<
+        member_struct_wrap<
             TileVisualData,
             TileVisualMatchDecl,
-            &TileVisualData::left,
-            SSID_TILE_VISUAL_MATCH_LEFT
+            id_selector<SSID_TILE_VISUAL_MATCH_LEFT>,
+            &TileVisualData::left
             >,
-        member_struct<
+        member_struct_wrap<
             TileVisualData,
             TileVisualMatchDecl,
-            &TileVisualData::right,
-            SSID_TILE_VISUAL_MATCH_RIGHT
+            id_selector<SSID_TILE_VISUAL_MATCH_RIGHT>,
+            &TileVisualData::right
             >,
-        member_struct<
+        member_struct_wrap<
             TileVisualData,
             TileVisualMatchDecl,
-            &TileVisualData::bottom,
-            SSID_TILE_VISUAL_MATCH_BOTTOM
+            id_selector<SSID_TILE_VISUAL_MATCH_BOTTOM>,
+            &TileVisualData::bottom
             >,
-        member_struct<
+        member_struct_wrap<
             TileVisualData,
             VisualDecl,
-            &TileVisualData::visual,
-            SSID_TILE_VISUAL_VISUAL>
+            id_selector<SSID_TILE_VISUAL_VISUAL>,
+            &TileVisualData::visual>
         >
     > TileVisualDecl;
 
 typedef struct_decl<
     Container,
-    SSID_TILE,
+    id_selector<SSID_TILE>,
     struct_members<
-        member_string<
+        member<
             UTF8Record,
-            SSID_TILE_DISPLAY_NAME,
+            id_selector<SSID_TILE_DISPLAY_NAME>,
             TileData,
+            std::string,
             &TileData::display_name>,
-        member_string<
+        member<
             UTF8Record,
-            SSID_TILE_UNIQUE_NAME,
+            id_selector<SSID_TILE_UNIQUE_NAME>,
             TileData,
+            std::string,
             &TileData::unique_name>,
         member<
             BoolRecord,
-            SSID_TILE_IS_ROLLABLE,
+            id_selector<SSID_TILE_IS_ACTOR>,
             TileData,
             bool,
-            &TileData::is_rollable>,
+            &TileData::is_actor>,
         member<
             BoolRecord,
-            SSID_TILE_IS_STICKY,
-            TileData,
-            bool,
-            &TileData::is_sticky>,
-        member<
-            BoolRecord,
-            SSID_TILE_IS_EDIBLE,
-            TileData,
-            bool,
-            &TileData::is_edible>,
-        member<
-            BoolRecord,
-            SSID_TILE_IS_GRAVITY_AFFECTED,
-            TileData,
-            bool,
-            &TileData::is_gravity_affected>,
-        member<
-            BoolRecord,
-            SSID_TILE_IS_BLOCKING,
+            id_selector<SSID_TILE_IS_BLOCKING>,
             TileData,
             bool,
             &TileData::is_blocking>,
         member<
             BoolRecord,
-            SSID_TILE_IS_DESTRUCTIBLE,
+            id_selector<SSID_TILE_IS_DESTRUCTIBLE>,
             TileData,
             bool,
             &TileData::is_destructible>,
         member<
+            BoolRecord,
+            id_selector<SSID_TILE_IS_EDIBLE>,
+            TileData,
+            bool,
+            &TileData::is_edible>,
+        member<
+            BoolRecord,
+            id_selector<SSID_TILE_IS_GRAVITY_AFFECTED>,
+            TileData,
+            bool,
+            &TileData::is_gravity_affected>,
+        member<
+            BoolRecord,
+            id_selector<SSID_TILE_IS_MOVABLE>,
+            TileData,
+            bool,
+            &TileData::is_movable>,
+        member<
+            BoolRecord,
+            id_selector<SSID_TILE_IS_ROLLABLE>,
+            TileData,
+            bool,
+            &TileData::is_rollable>,
+        member<
+            BoolRecord,
+            id_selector<SSID_TILE_IS_STICKY>,
+            TileData,
+            bool,
+            &TileData::is_sticky>,
+        member<
             Float32Record,
-            SSID_TILE_ROLL_RADIUS,
+            id_selector<SSID_TILE_ROLL_RADIUS>,
             TileData,
             float,
             &TileData::roll_radius>,
         member<
             Float32Record,
-            SSID_TILE_TEMP_COEFFICIENT,
+            id_selector<SSID_TILE_TEMP_COEFFICIENT>,
             TileData,
             float,
             &TileData::temp_coefficient>,
         member_struct<
             TileData,
             VisualDecl,
-            &TileData::default_visual,
-            SSID_TILE_DEFAULT_VISUAL>,
+            &TileData::default_visual>,
         member_struct<
             TileData,
             container<
                 TileVisualDecl,
-                SSID_TILE_ADDITIONAL_VISUALS,
+                id_selector<SSID_TILE_ADDITIONAL_VISUALS>,
                 std::back_insert_iterator<decltype(TileData::additional_visuals)>
                 >,
-            &TileData::additional_visuals>
+            &TileData::additional_visuals>,
+        member_struct<
+            TileData,
+            CellStampDecl,
+            &TileData::stamp>
         >
     > TileDecl;
 
 typedef struct_decl<
     Container,
-    SSID_TILESET_HEADER,
+    id_selector<SSID_TILESET_HEADER>,
     struct_members<
-        member_string<
+        member<
             UTF8Record,
-            SSID_TILESET_HEADER_DISPLAY_NAME,
+            id_selector<SSID_TILESET_HEADER_DISPLAY_NAME>,
             TilesetHeaderData,
+            std::string,
             &TilesetHeaderData::display_name>,
-        member_string<
+        member<
             UTF8Record,
-            SSID_TILESET_HEADER_UNIQUE_NAME,
+            id_selector<SSID_TILESET_HEADER_DESCRIPTION>,
             TilesetHeaderData,
-            &TilesetHeaderData::unique_name>,
-        member_string<
-            UTF8Record,
-            SSID_TILESET_HEADER_DESCRIPTION,
-            TilesetHeaderData,
+            std::string,
             &TilesetHeaderData::description>,
-        member_string<
+        member<
             UTF8Record,
-            SSID_TILESET_HEADER_AUTHOR,
+            id_selector<SSID_TILESET_HEADER_AUTHOR>,
             TilesetHeaderData,
+            std::string,
             &TilesetHeaderData::author>,
-        member_string<
+        member<
             UTF8Record,
-            SSID_TILESET_HEADER_LICENSE,
+            id_selector<SSID_TILESET_HEADER_LICENSE>,
             TilesetHeaderData,
+            std::string,
             &TilesetHeaderData::license>,
-        member_string<
+        member<
             UTF8Record,
-            SSID_TILESET_HEADER_VERSION,
+            id_selector<SSID_TILESET_HEADER_VERSION>,
             TilesetHeaderData,
+            std::string,
             &TilesetHeaderData::version>
         >
     > TilesetHeaderDecl;
 
 typedef struct_decl<
     Container,
-    SSID_TILESET,
+    id_selector<SSID_TILESET>,
     struct_members<
         member_struct<
             TilesetBodyData,
             container<
-                heap_value<TileDecl, std::shared_ptr<TileData>>,
-                SSID_TILESET_TILES,
+                TileDecl,
+                id_selector<SSID_TILESET_TILES>,
                 std::back_insert_iterator<decltype(TilesetBodyData::tiles)>
                 >,
             &TilesetBodyData::tiles>

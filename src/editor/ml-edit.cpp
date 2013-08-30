@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
     builder->get_widget_derived("root", window);
     assert(window);
 
+    window->process_args(argc, argv);
     app.run(*window);
     delete window;
     return 0;

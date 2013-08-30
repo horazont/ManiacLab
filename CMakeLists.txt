@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.6)
 #~ set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_CXX_FLAGS "-g -Wall -Werror -std=c++11")
+set(CMAKE_CXX_FLAGS "-g -Wall -Wextra -Werror -std=c++11 -Wno-mismatched-tags -Wno-unused-parameter")
 add_subdirectory(structstream EXCLUDE_FROM_ALL)
 add_subdirectory(PyEngine)
-set(CMAKE_CXX_FLAGS "-g -Wall -Werror -std=c++11 -pedantic -msse -msse2 -msse3 -mmmx -O2")
+set(CMAKE_CXX_FLAGS "-g -Wall -Wextra -Werror -std=c++11 -pedantic -msse -msse2 -msse3 -mmmx -Wno-mismatched-tags -Wno-unused-parameter -Wno-unused-private-field")
 
 get_property(PYENGINE_DEPENDENCIES DIRECTORY PyEngine PROPERTY PYENGINE_DEPENDENCIES)
 get_property(PYENGINE_LINK_TARGETS DIRECTORY PyEngine PROPERTY PYENGINE_LINK_TARGETS)
@@ -39,12 +39,16 @@ set(EDITOR_SOURCES
     "src/editor/Operation.cpp"
     "src/editor/Editor.cpp"
     "src/editor/TilesetEditee.cpp"
+    "src/editor/TileOperations.cpp"
+    "src/editor/TileEditor.cpp"
     "src/editor/TilesetOperations.cpp"
     "src/editor/TilesetEditor.cpp"
     "src/editor/TilesetEditDetails.cpp"
     "src/editor/UniqueNameDialog.cpp"
+    "src/editor/VFSFileChooserDialog.cpp"
     "src/editor/NewTile.cpp"
     "src/editor/DuplicateTile.cpp"
+    "src/editor/OpenImage.cpp"
     "src/editor/RootWindow.cpp"
 )
 

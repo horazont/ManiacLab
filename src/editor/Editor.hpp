@@ -63,6 +63,11 @@ public:
     void unset_filename();
 
 public:
+    virtual const std::string &get_name() const = 0;
+    virtual std::string get_tab_name() const = 0;
+    virtual void set_name(const std::string &name) = 0;
+
+public:
     virtual void disable();
     virtual void enable();
 

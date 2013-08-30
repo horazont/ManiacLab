@@ -64,8 +64,6 @@ protected:
     CoordPair get_physics_coords(const double x, const double y);
 public:
     void cleanup_cell(LevelCell *cell);
-    void debug_test_heat_stamp(const double temperature);
-    void debug_test_heat_source();
     void debug_test_object();
     TestObject *debug_place_object(const CoordInt x, const CoordInt y);
     void debug_test_stamp(const double x, const double y);

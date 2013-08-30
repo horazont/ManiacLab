@@ -75,6 +75,7 @@ TilesetEditor::TilesetEditor(
     _conn_duplicate_tile(),
     _conn_edit_details(),
     _conn_new_tile(),
+    _updating(false),
     _tile_props(),
     _tile_size_group(SizeGroup::create(SIZE_GROUP_HORIZONTAL)),
     _tile_actor(),
@@ -91,9 +92,10 @@ TilesetEditor::TilesetEditor(
     _tile_columns(),
     _tile_list(ListStore::create(_tile_columns)),
     _tile_list_view(_tile_list),
+    _tile_editor(root, editee),
     _current_tile(nullptr)
 {
-    editee->signal_tile_changed().connect(
+    _conn_tile_changed = editee->signal_tile_changed().connect(
         sigc::mem_fun(*this, &TilesetEditor::editee_tile_changed));
     editee->signal_tile_created().connect(
         sigc::mem_fun(*this, &TilesetEditor::editee_tile_created));
@@ -105,24 +107,101 @@ TilesetEditor::TilesetEditor(
     _tile_unique_name.set_icon_activatable(false);
     _tile_unique_name.set_sensitive(false);
 
-    configure_switch(_tile_actor);
-    configure_switch(_tile_blocking);
-    configure_switch(_tile_destructible);
-    configure_switch(_tile_edible);
-    configure_switch(_tile_gravity_affected);
-    configure_switch(_tile_movable);
-    configure_switch(_tile_rollable);
-    configure_switch(_tile_sticky);
+    configure_switch(
+        _tile_actor,
+        std::bind(
+            &TilesetEditor::update_tile_prop<bool,
+                                             OpSetTileActor,
+                                             &TileData::is_actor>,
+            this,
+            std::placeholders::_1));
+    configure_switch(
+        _tile_blocking,
+        std::bind(
+            &TilesetEditor::update_tile_prop<bool,
+                                             OpSetTileBlocking,
+                                             &TileData::is_blocking>,
+            this,
+            std::placeholders::_1));
+    configure_switch(
+        _tile_destructible,
+        std::bind(
+            &TilesetEditor::update_tile_prop<bool,
+                                             OpSetTileDestructible,
+                                             &TileData::is_destructible>,
+            this,
+            std::placeholders::_1));
+    configure_switch(
+        _tile_edible,
+        std::bind(
+            &TilesetEditor::update_tile_prop<bool,
+                                             OpSetTileEdible,
+                                             &TileData::is_edible>,
+            this,
+            std::placeholders::_1));
+    configure_switch(
+        _tile_gravity_affected,
+        std::bind(
+            &TilesetEditor::update_tile_prop<bool,
+                                             OpSetTileGravityAffected,
+                                             &TileData::is_gravity_affected>,
+            this,
+            std::placeholders::_1));
+    configure_switch(
+        _tile_movable,
+        std::bind(
+            &TilesetEditor::update_tile_prop<bool,
+                                             OpSetTileMovable,
+                                             &TileData::is_movable>,
+            this,
+            std::placeholders::_1));
+    configure_switch(
+        _tile_rollable,
+        std::bind(
+            &TilesetEditor::update_tile_prop<bool,
+                                             OpSetTileRollable,
+                                             &TileData::is_rollable>,
+            this,
+            std::placeholders::_1));
+    configure_switch(
+        _tile_sticky,
+        std::bind(
+            &TilesetEditor::update_tile_prop<bool,
+                                             OpSetTileSticky,
+                                             &TileData::is_sticky>,
+            this,
+            std::placeholders::_1));
 
-    configure_spin_button(_tile_roll_radius);
+    configure_spin_button(
+        _tile_roll_radius,
+        std::bind(
+            &TilesetEditor::update_tile_prop<float,
+                                             OpSetTileRollRadius,
+                                             &TileData::roll_radius>,
+            this,
+            std::placeholders::_1));
     _tile_roll_radius.set_increments(0.01, 0.1);
     _tile_roll_radius.set_range(0, 1);
 
-    configure_spin_button(_tile_temp_coefficient);
+    configure_spin_button(
+        _tile_temp_coefficient,
+        std::bind(
+            &TilesetEditor::update_tile_prop<float,
+                                             OpSetTileTempCoefficient,
+                                             &TileData::temp_coefficient>,
+            this,
+            std::placeholders::_1));
     _tile_temp_coefficient.set_increments(0.01, 0.1);
     _tile_temp_coefficient.set_range(1e-2, 1e3);
 
-    configure_entry(_tile_display_name);
+    configure_entry(
+        _tile_display_name,
+        std::bind(
+            &TilesetEditor::update_tile_prop<const std::string&,
+                                             OpSetTileDisplayName,
+                                             &TileData::display_name>,
+            this,
+            std::placeholders::_1));
     configure_entry(_tile_unique_name);
 
     Gtk::Grid *tile_props_generic = manage(new Grid());
@@ -167,10 +246,13 @@ TilesetEditor::TilesetEditor(
     left_panel->pack2(*tile_prop_scroll, false, true);
     left_panel->set_position(300);
 
+    _tile_editor.set_valign(ALIGN_CENTER);
+    _tile_editor.set_halign(ALIGN_CENTER);
+
     HPaned *main_panel = manage(new HPaned());
     main_panel->set_hexpand(true);
     main_panel->add(*left_panel);
-    add_label("foo", main_panel);
+    main_panel->add(_tile_editor);
     main_panel->set_position(200);
 
     parent->add(*main_panel);
@@ -207,16 +289,66 @@ void TilesetEditor::configure_entry(Entry &widget)
     widget.set_width_chars(12);
 }
 
-void TilesetEditor::configure_spin_button(SpinButton &widget)
+void TilesetEditor::configure_entry(
+    Entry &widget,
+    const std::function<void(const std::string&)> &updater)
+{
+    configure_entry(widget);
+    Entry *widget_ptr = &widget;
+    widget.signal_focus_out_event().connect(
+        [this, widget_ptr, updater](GdkEventFocus *event) {
+            if (_updating) {
+                return false;
+            }
+            updater(widget_ptr->get_text());
+            return false;
+        });
+}
+
+void TilesetEditor::configure_spin_button(
+    SpinButton &widget,
+    const std::function<void(float)> &updater)
 {
     widget.set_hexpand(true);
     widget.set_halign(ALIGN_FILL);
+    SpinButton *widget_ptr = &widget;
+    widget.signal_focus_out_event().connect(
+        [this, widget_ptr, updater](GdkEventFocus *event) {
+            if (_updating) {
+                return false;
+            }
+            updater(widget_ptr->get_value());
+            return false;
+        });
 }
 
-void TilesetEditor::configure_switch(Switch &widget)
+void TilesetEditor::configure_switch(
+    Switch &widget,
+    const std::function<void(bool)> &updater)
 {
     widget.set_hexpand(false);
     widget.set_halign(ALIGN_START);
+    widget.set_can_focus(true);
+    Switch *widget_ptr = &widget;
+    widget.signal_event_after().connect(
+        [this, widget_ptr](GdkEvent *event) mutable {
+            if (event->type != GDK_BUTTON_PRESS) {
+                return;
+            }
+            this->switch_button_button_press(&event->button, widget_ptr);
+        });
+    widget.property_active().signal_changed().connect(
+        [this, widget_ptr, updater]() mutable {
+            if (_updating) {
+                return;
+            }
+            updater(widget_ptr->get_active());
+        });
+}
+
+void TilesetEditor::execute_operation(OperationPtr &&operation)
+{
+    _root->execute_operation(std::move(operation));
 }
 
 void TilesetEditor::frame_grid(Gtk::Grid &grid, Gtk::Box &parent,
@@ -423,9 +555,10 @@ SharedTile TilesetEditor::get_selected_tile()
 void TilesetEditor::select_tile(const SharedTile &tile)
 {
     if (_current_tile) {
-        flush_tile_props();
+
     }
     _current_tile = tile;
+    _tile_editor.switch_tile(_current_tile);
     if (_current_tile) {
         _tile_props.set_sensitive(true);
 
@@ -437,16 +570,22 @@ void TilesetEditor::select_tile(const SharedTile &tile)
 
 void TilesetEditor::update_tile_props()
 {
+    _updating = true;
+    _conn_tile_changed.block();
     _tile_unique_name.set_text(_current_tile->unique_name);
     _tile_display_name.set_text(_current_tile->display_name);
+    _tile_actor.set_active(_current_tile->is_actor);
     _tile_blocking.set_active(_current_tile->is_blocking);
     _tile_destructible.set_active(_current_tile->is_destructible);
     _tile_edible.set_active(_current_tile->is_edible);
     _tile_gravity_affected.set_active(_current_tile->is_gravity_affected);
+    _tile_movable.set_active(_current_tile->is_movable);
     _tile_rollable.set_active(_current_tile->is_rollable);
     _tile_sticky.set_active(_current_tile->is_sticky);
     _tile_roll_radius.set_value(_current_tile->roll_radius);
     _tile_temp_coefficient.set_value(_current_tile->temp_coefficient);
+    _conn_tile_changed.unblock();
+    _updating = false;
 }
 
 void TilesetEditor::action_edit_details()
@@ -506,6 +645,30 @@ void TilesetEditor::action_delete_tile()
         OperationPtr(new OpDeleteTile(_editee, tile)));
 }
 
+void TilesetEditor::action_import_visual()
+{
+    if (!_current_tile) {
+        return;
+    }
+
+    RefPtr<Gdk::Pixbuf> pixbuf = _root->get_dlg_open_image()->select_image();
+    std::vector<FrameData> &frames = _current_tile->default_visual.frames;
+    if (frames.empty()) {
+        frames.push_back(FrameData());
+    }
+    if (!pixbuf_to_tile_image_data(pixbuf, &frames[0].image)) {
+        message_dlg(*_root,
+            "Could not open visual",
+            "The visual has an incompatible format or is larger than "
+            "65535 pixels on one axis.",
+            MESSAGE_ERROR,
+            BUTTONS_OK);
+
+    } else {
+        _editee->tile_changed(_current_tile);
+    }
+}
+
 void TilesetEditor::editee_tile_changed(
         TilesetEditee *editee,
         const SharedTile &tile)
@@ -516,6 +679,7 @@ void TilesetEditor::editee_tile_changed(
     row[_tile_columns.col_display_name] = tile->display_name;
     if (tile == _current_tile) {
         update_tile_props();
+        _tile_editor.update_cell_stamp();
     }
 }
 
@@ -544,6 +708,15 @@ void TilesetEditor::editee_tile_deleted(
     }
 }
 
+void TilesetEditor::switch_button_button_press(
+    GdkEventButton *event,
+    Switch *button)
+{
+    if (event->button <= 3) {
+        button->grab_focus();
+    }
+}
+
 void TilesetEditor::tile_list_view_row_activated(
         const TreeModel::Path &path,
         TreeViewColumn *column)
@@ -555,6 +728,25 @@ void TilesetEditor::tile_list_view_row_activated(
     select_tile(tile);
 }
 
+const std::string &TilesetEditor::get_name() const
+{
+    return _editee->get_name();
+}
+
+std::string TilesetEditor::get_tab_name() const
+{
+    std::string name = get_name();
+    if (name == "") {
+        name = "[unnamed]";
+    }
+    return "🀰 "+name;
+}
+
+void TilesetEditor::set_name(const std::string &name)
+{
+    _editee->set_name(name);
+}
+
 void TilesetEditor::disable()
 {
     _root->disable_tileset_controls();
@@ -562,6 +754,7 @@ void TilesetEditor::disable()
     _conn_duplicate_tile.disconnect();
     _conn_edit_details.disconnect();
     _conn_new_tile.disconnect();
+    _conn_import_visual.disconnect();
 }
 
 void TilesetEditor::enable()
@@ -586,6 +779,11 @@ void TilesetEditor::enable()
         bind_action(
             _root->get_builder(), "action_tileset_new_tile",
             sigc::mem_fun(*this, &TilesetEditor::action_new_tile));
+
+    _conn_import_visual =
+        bind_action(
+            _root->get_builder(), "action_tileset_import_visual",
+            sigc::mem_fun(*this, &TilesetEditor::action_import_visual));
 
 }
 

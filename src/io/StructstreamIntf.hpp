@@ -30,10 +30,13 @@ authors named in the AUTHORS file.
 #include <structstream/structstream.hpp>
 
 #include "Common.hpp"
+#include "logic/Stamp.hpp"
 
 namespace SS = StructStream;
 
 static const SS::RecordType RT_TILE_VISUAL = SS::RT_APP_NOSIZE_MIN;
+static const SS::RecordType RT_CELL_TYPE = RT_TILE_VISUAL+1;
+static const SS::RecordType RT_SINK_SOURCE_TYPE = RT_CELL_TYPE+1;
 
 class TileVisualRecord: public SS::DataRecord
 {
@@ -87,6 +90,18 @@ public:
              TileVisualFormat format,
              uint8_t const*pixels);
 };
+
+typedef SS::EnumRecordTpl<
+    CellType,
+    RT_CELL_TYPE,
+    SS::VarUIntRecord
+    > CellTypeRecord;
+
+typedef SS::EnumRecordTpl<
+    SinkSourceType,
+    RT_SINK_SOURCE_TYPE,
+    SS::VarUIntRecord
+    > SinkSourceTypeRecord;
 
 typedef std::shared_ptr<TileVisualRecord> TileVisualRecordHandle;
 
