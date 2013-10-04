@@ -74,7 +74,8 @@ private:
     Glib::RefPtr<Gtk::Action> _action_redo;
     Gtk::Notebook *_tabs;
 
-    Glib::RefPtr<Gtk::Action> _action_save, _action_save_as;
+    Glib::RefPtr<Gtk::Action> _action_file_save;
+    Glib::RefPtr<Gtk::Action> _action_file_save_as;
 
     Gtk::AboutDialog *_dlg_about;
     DuplicateTile *_dlg_duplicate_tile;

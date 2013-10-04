@@ -84,8 +84,8 @@ RootWindow::RootWindow(
     _action_redo(_action_redo.cast_dynamic(
         builder->get_object("action_edit_redo"))),
     _tabs(nullptr),
-    _action_save(),
-    _action_save_as(),
+    _action_file_save(),
+    _action_file_save_as(),
     _dlg_open_image(nullptr),
     _dlg_tileset_details(nullptr),
     _dlg_open_vfs_file(&_vfs, false),
@@ -124,12 +124,12 @@ RootWindow::RootWindow(
     bind_action(
         _builder, "action_file_save",
         sigc::mem_fun(*this, &RootWindow::action_file_save),
-        &_action_save);
+        &_action_file_save);
 
     bind_action(
         _builder, "action_file_save_as",
         sigc::mem_fun(*this, &RootWindow::action_file_save_as),
-        &_action_save_as);
+        &_action_file_save_as);
 
     bind_action(
         _builder, "action_file_quit",
@@ -370,11 +370,11 @@ void RootWindow::switch_editor(Editor *new_editor)
     if (_current_editor) {
         _current_editor->enable();
 
-        _action_save->set_sensitive(true);
-        _action_save_as->set_sensitive(true);
+        _action_file_save->set_sensitive(true);
+        _action_file_save_as->set_sensitive(true);
     } else {
-        _action_save->set_sensitive(false);
-        _action_save_as->set_sensitive(false);
+        _action_file_save->set_sensitive(false);
+        _action_file_save_as->set_sensitive(false);
     }
 }
 
