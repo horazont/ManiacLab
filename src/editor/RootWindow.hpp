@@ -65,8 +65,10 @@ private:
 private:
     Glib::RefPtr<Gtk::Builder> _builder;
     Gtk::MenuItem *_menu_level;
+    Gtk::MenuItem *_menu_level_collection;
     Gtk::MenuItem *_menu_tileset;
     Glib::RefPtr<Gtk::ActionGroup> _actions_level;
+    Glib::RefPtr<Gtk::ActionGroup> _actions_level_collection;
     Glib::RefPtr<Gtk::ActionGroup> _actions_tileset;
     Glib::RefPtr<Gtk::AccelGroup> _accel_level;
     Glib::RefPtr<Gtk::AccelGroup> _accel_tileset;

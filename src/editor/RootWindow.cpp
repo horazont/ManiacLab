@@ -73,6 +73,8 @@ RootWindow::RootWindow(
     _menu_tileset(nullptr),
     _actions_level(_actions_level.cast_dynamic(
         builder->get_object("actions_level"))),
+    _actions_level_collection(_actions_level_collection.cast_dynamic(
+        builder->get_object("actions_level_collection"))),
     _actions_tileset(_actions_tileset.cast_dynamic(
         builder->get_object("actions_tileset"))),
     _accel_level(_accel_level.cast_dynamic(
@@ -97,11 +99,15 @@ RootWindow::RootWindow(
         std::move(MountPtr(new MountDirectory("data", false))),
         MountPriority::FileSystem);
 
+
     _builder->get_widget("menu_tileset", _menu_tileset);
     _menu_tileset->hide();
 
     _builder->get_widget("menu_level", _menu_level);
     _menu_level->hide();
+
+    _builder->get_widget("menu_level_collection", _menu_level_collection);
+    _menu_level_collection->hide();
 
     add_accel_group(RefPtr<AccelGroup>::cast_dynamic(
         builder->get_object("accel_common")));
@@ -427,7 +433,9 @@ void RootWindow::disable_level_controls()
 {
     remove_accel_group(_accel_level);
     _actions_level->set_sensitive(false);
+    _actions_level_collection->set_sensitive(false);
     _menu_level->set_visible(false);
+    _menu_level_collection->set_sensitive(false);
 }
 
 void RootWindow::disable_tileset_controls()
@@ -440,7 +448,9 @@ void RootWindow::disable_tileset_controls()
 void RootWindow::enable_level_controls()
 {
     _menu_level->set_visible(true);
+    _menu_level_collection->set_visible(true);
     _actions_level->set_sensitive(true);
+    _actions_level_collection->set_sensitive(true);
     add_accel_group(_accel_level);
 }
 

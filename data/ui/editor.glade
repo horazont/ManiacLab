@@ -145,6 +145,17 @@
       <accelerator key="p" modifiers="GDK_CONTROL_MASK | GDK_MOD1_MASK"/>
     </child>
   </object>
+  <object class="GtkActionGroup" id="actions_level_collection">
+    <property name="accel_group">accel_level</property>
+    <child>
+      <object class="GtkAction" id="action_level_collection_edit_details">
+        <property name="label" translatable="yes">Edit details…</property>
+        <property name="tooltip" translatable="yes">Edit the details of the currently active level collection</property>
+        <property name="stock_id">gtk-edit</property>
+      </object>
+      <accelerator key="p" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK"/>
+    </child>
+  </object>
   <object class="GtkActionGroup" id="actions_tileset">
     <property name="sensitive">False</property>
     <property name="accel_group">accel_tileset</property>
@@ -1358,6 +1369,28 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="menu_level_collection">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">_Collection</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="menu8">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="menuitem1">
+                        <property name="related_action">action_level_collection_edit_details</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
                         <property name="use_stock">True</property>
                       </object>
                     </child>
