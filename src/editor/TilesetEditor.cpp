@@ -656,6 +656,10 @@ void TilesetEditor::action_import_visual()
     }
 
     RefPtr<Gdk::Pixbuf> pixbuf = _root->get_dlg_open_image()->select_image();
+    if (!pixbuf) {
+        return;
+    }
+
     std::vector<FrameData> &frames = _current_tile->default_visual.frames;
     if (frames.empty()) {
         frames.push_back(FrameData());
