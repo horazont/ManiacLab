@@ -185,7 +185,11 @@ void VFSFileChooserDialog::add_files_from_folder(
     const std::string &from_folder)
 {
     std::vector<std::string> names;
-    _vfs->listdir(from_folder, names);
+    try {
+        _vfs->listdir(from_folder, names);
+    } catch (PyEngine::VFSFileNotFoundError &err) {
+        // ignore that error
+    }
 
     for (auto &name: names)
     {
@@ -318,6 +322,27 @@ std::string VFSFileChooserDialog::select_file(
     _folder = from_folder;
     clear();
     add_files_from_folder(from_folder);
+    run();
+    if (_response_ok) {
+        return _response_file_name;
+    } else {
+        return "";
+    }
+}
+
+std::string VFSFileChooserDialog::select_file_multisource(
+    const std::initializer_list<std::string> &sources)
+{
+    _response_ok = false;
+    _folder = "ThisWasAnInvalidOperation";
+    if (_open_for_writing) {
+        throw std::logic_error("Cannot do multisource when opening for writing.");
+    }
+
+    clear();
+    for (auto &source: sources) {
+        add_files_from_folder(source);
+    }
     run();
     if (_response_ok) {
         return _response_file_name;

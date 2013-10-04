@@ -203,8 +203,10 @@ void RootWindow::action_file_new_tileset()
 
 void RootWindow::action_file_open()
 {
-    std::string path = _dlg_open_vfs_file.select_file(
-        "/data/tilesets");
+    std::string path = _dlg_open_vfs_file.select_file_multisource({
+        "/data/tilesets",
+        "/data/levels"
+        });
     if (path == "") {
         return;
     }

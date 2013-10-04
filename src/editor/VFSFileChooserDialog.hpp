@@ -57,6 +57,8 @@ protected:
 
 public:
     std::string select_file(const std::string &from_folder);
+    std::string select_file_multisource(
+        const std::initializer_list<std::string> &sources);
 
 };
 
