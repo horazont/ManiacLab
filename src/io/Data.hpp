@@ -37,6 +37,7 @@ enum FileType {
     FT_TILESET
 };
 
+FileType get_type_from_stream(const PyEngine::StreamHandle &stream);
 FileType get_type_from_tree(const StructStream::ContainerHandle &root);
 
 std::pair<StructStream::ContainerHandle, FileType>

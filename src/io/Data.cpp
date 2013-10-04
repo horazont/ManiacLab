@@ -35,6 +35,11 @@ using namespace PyEngine;
 
 /* free functions */
 
+FileType get_type_from_stream(const StreamHandle &stream)
+{
+    return load_header_from_stream(stream).second;
+}
+
 FileType get_type_from_tree(const ContainerHandle &root)
 {
     if (root->children_begin() == root->children_end()) {

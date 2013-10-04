@@ -8,6 +8,8 @@
 
 #include "GTKUtils.hpp"
 
+#include "io/Data.hpp"
+
 using namespace Glib;
 using namespace Gtk;
 using namespace PyEngine;
@@ -40,11 +42,13 @@ FileListModelColumns::FileListModelColumns():
     col_full_path(),
     col_file_name(),
     col_size_str(),
+    col_type_str(),
     col_last_modified()
 {
     add(col_full_path);
     add(col_file_name);
     add(col_size_str);
+    add(col_type_str);
     add(col_last_modified);
 }
 
@@ -87,6 +91,8 @@ VFSFileChooserDialog::VFSFileChooserDialog(
         "File name", _file_list_columns.col_file_name);
     _file_list_view.append_column(
         "Size", _file_list_columns.col_size_str);
+    _file_list_view.append_column(
+        "Type", _file_list_columns.col_type_str);
     _file_list_view.append_column(
         "Last modified", _file_list_columns.col_last_modified);
     _file_list_view.signal_row_activated().connect(
@@ -143,6 +149,23 @@ void VFSFileChooserDialog::add_file(
         return;
     }
 
+    std::string type_name;
+
+    switch (get_type_from_stream(_vfs->open(full_path, OM_READ))) {
+    case FT_LEVEL_COLLECTION:
+    {
+        type_name = "levels";
+        break;
+    }
+    case FT_TILESET:
+    {
+        type_name = "tileset";
+        break;
+    }
+    default:
+        return;
+    }
+
     ListStore::iterator iter = _file_list->append();
     ListStore::Row row = *iter;
 
@@ -150,6 +173,7 @@ void VFSFileChooserDialog::add_file(
     row[_file_list_columns.col_file_name] = file_name;
     row[_file_list_columns.col_size_str] = format_file_size(
         stat.size);
+    row[_file_list_columns.col_type_str] = type_name;
 
     time_t t = std::chrono::system_clock::to_time_t(stat.mtime);
     static char datestr[128];

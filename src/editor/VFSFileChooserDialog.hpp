@@ -13,6 +13,7 @@ public:
     Gtk::TreeModelColumn<std::string> col_full_path;
     Gtk::TreeModelColumn<Glib::ustring> col_file_name;
     Gtk::TreeModelColumn<Glib::ustring> col_size_str;
+    Gtk::TreeModelColumn<Glib::ustring> col_type_str;
     Gtk::TreeModelColumn<Glib::ustring> col_last_modified;
 };
 
