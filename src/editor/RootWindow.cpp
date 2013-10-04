@@ -277,11 +277,11 @@ void RootWindow::update_undo_redo_sensitivity()
 
 void RootWindow::open_file(const std::string &filename)
 {
-    ContainerHandle root;
+    ContainerHandle header_root;
     FileType filet;
+    StreamHandle stream = _vfs.open(filename, OM_READ);
 
-    std::tie(root, filet) = load_tree_from_stream(_vfs.open(
-        filename, OM_READ));
+    std::tie(header_root, filet) = load_header_from_stream(stream);
 
     std::string error_msg;
     bool error = false;
@@ -309,16 +309,16 @@ void RootWindow::open_file(const std::string &filename)
     }
     case FT_TILESET:
     {
-        assert(root);
-        std::unique_ptr<TilesetData> tileset = load_tileset_from_tree(root);
+        assert(header_root);
+        std::unique_ptr<TilesetData> tileset = complete_tileset_from_stream(header_root, stream);
         assert(tileset);
         editor = get_tileset_editor(make_tileset_editable(
             SharedTileset(tileset.release()), basename(filename)));
         break;
     }
-    case FT_LEVEL:
+    case FT_LEVEL_COLLECTION:
     {
-        assert(root);
+        assert(header_root);
         error_msg = "Cannot load levels (yet :)).";
         error = true;
         break;

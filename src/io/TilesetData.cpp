@@ -88,8 +88,8 @@ const ID SSID_TILESET_HEADER_AUTHOR = 0x43;
 const ID SSID_TILESET_HEADER_LICENSE = 0x44;
 const ID SSID_TILESET_HEADER_VERSION = 0x45;
 
-const ID SSID_TILESET = 0x4d4c547364;
-const ID SSID_TILESET_TILES = 0x40;
+const ID SSID_TILESET_BODY = 0x4d4c54732e62;
+const ID SSID_TILESET_BODY_TILES = 0x40;
 
 const ID SSID_TILE = 0x746c;
 const ID SSID_TILE_DISPLAY_NAME = 0x40;
@@ -409,13 +409,13 @@ typedef struct_decl<
 
 typedef struct_decl<
     Container,
-    id_selector<SSID_TILESET>,
+    id_selector<SSID_TILESET_BODY>,
     struct_members<
         member_struct<
             TilesetBodyData,
             container<
                 TileDecl,
-                id_selector<SSID_TILESET_TILES>,
+                id_selector<SSID_TILESET_BODY_TILES>,
                 std::back_insert_iterator<decltype(TilesetBodyData::tiles)>
                 >,
             &TilesetBodyData::tiles>
@@ -424,7 +424,7 @@ typedef struct_decl<
 
 /* free functions */
 
-std::pair<StreamSink, std::unique_ptr<TilesetData>>
+/*std::pair<StreamSink, std::unique_ptr<TilesetData>>
     create_tileset_sink()
 {
     std::unique_ptr<TilesetData> result(new TilesetData());
@@ -500,6 +500,38 @@ std::unique_ptr<TilesetHeaderData> load_tileset_header_from_stream(const StreamH
     }
 
     return result;
+}*/
+
+std::unique_ptr<TilesetData> complete_tileset_from_stream(
+    const ContainerHandle &header_container,
+    const StreamHandle &stream)
+{
+    std::unique_ptr<TilesetData> result(new TilesetData());
+
+    try {
+        FromTree(
+            deserialize<only<TilesetHeaderDecl, true, true>>(result->header),
+            header_container);
+
+    } catch (const std::runtime_error &err) {
+        PyEngine::log->log(Error)
+            << "While loading tileset header: " << err.what() << submit;
+        return nullptr;
+    }
+
+    IOIntfHandle io(new PyEngineStream(stream));
+    try {
+        FromBitstream(
+            io, maniac_lab_registry,
+            deserialize<only<TilesetBodyDecl, true, true>>(result->body)
+            ).read_all();
+    } catch (const std::runtime_error &err) {
+        PyEngine::log->log(Error)
+            << "While loading tileset body: " << err.what() << submit;
+        return nullptr;
+    }
+
+    return result;
 }
 
 void save_tileset_to_stream(
@@ -507,8 +539,12 @@ void save_tileset_to_stream(
     const PyEngine::StreamHandle &stream)
 {
     IOIntfHandle io(new PyEngineStream(stream));
+
     StreamSink sink(new ToBitstream(io));
     serialize_to_sink<TilesetHeaderDecl>(tileset.header, sink);
+    sink->end_of_stream();
+
+    sink = StreamSink(new ToBitstream(io));
     serialize_to_sink<TilesetBodyDecl>(tileset.body, sink);
     sink->end_of_stream();
 }

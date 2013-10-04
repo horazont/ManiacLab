@@ -29,7 +29,7 @@ authors named in the AUTHORS file.
 
 #include <cmath>
 
-typedef int CoordInt;
+typedef int32_t CoordInt;
 
 struct CoordPair {
     CoordPair(): x(-1), y(-1) {};

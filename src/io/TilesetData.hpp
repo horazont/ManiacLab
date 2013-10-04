@@ -39,7 +39,7 @@ authors named in the AUTHORS file.
 
 #include "logic/Stamp.hpp"
 
-const StructStream::ID SSID_TILESET_HEADER = 0x4d4c5473;
+const StructStream::ID SSID_TILESET_HEADER = 0x4d4c54732e68;
 
 class TileVisualRecord;
 typedef std::shared_ptr<TileVisualRecord> TileVisualRecordHandle;
@@ -105,6 +105,8 @@ struct TileData
     std::vector<TileVisualData> additional_visuals;
 };
 
+typedef std::shared_ptr<TileData> SharedTile;
+
 struct TilesetHeaderData
 {
     std::string display_name;
@@ -117,7 +119,7 @@ struct TilesetHeaderData
 
 struct TilesetBodyData
 {
-    std::vector<std::shared_ptr<TileData>> tiles;
+    std::vector<SharedTile> tiles;
 };
 
 struct TilesetData
@@ -127,20 +129,10 @@ struct TilesetData
 };
 
 typedef std::shared_ptr<TilesetData> SharedTileset;
-typedef std::shared_ptr<TileData> SharedTile;
 
-std::pair<StructStream::StreamSink, std::unique_ptr<TilesetData>>
-    create_tileset_sink();
-
-std::unique_ptr<TilesetData> load_tileset_from_tree(
-    const StructStream::ContainerHandle &root);
-
-std::unique_ptr<TilesetData> load_tileset_from_stream(
+std::unique_ptr<TilesetData> complete_tileset_from_stream(
+    const StructStream::ContainerHandle &header_container,
     const PyEngine::StreamHandle &stream);
-
-std::unique_ptr<TilesetHeaderData> load_tileset_header_from_stream(
-    const PyEngine::StreamHandle &stream);
-
 
 void save_tileset_to_stream(
     const TilesetData &tileset,

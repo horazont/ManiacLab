@@ -37,6 +37,8 @@ namespace SS = StructStream;
 static const SS::RecordType RT_TILE_VISUAL = SS::RT_APP_NOSIZE_MIN;
 static const SS::RecordType RT_CELL_TYPE = RT_TILE_VISUAL+1;
 static const SS::RecordType RT_SINK_SOURCE_TYPE = RT_CELL_TYPE+1;
+static const SS::RecordType RT_PHYSICS_INITIAL_ATTRIBUTE = RT_SINK_SOURCE_TYPE+1;
+static const SS::RecordType RT_TILE_LAYER = RT_PHYSICS_INITIAL_ATTRIBUTE+1;
 
 class TileVisualRecord: public SS::DataRecord
 {
@@ -94,14 +96,22 @@ public:
 typedef SS::EnumRecordTpl<
     CellType,
     RT_CELL_TYPE,
-    SS::VarUIntRecord
-    > CellTypeRecord;
+    SS::VarUIntRecord> CellTypeRecord;
 
 typedef SS::EnumRecordTpl<
     SinkSourceType,
     RT_SINK_SOURCE_TYPE,
-    SS::VarUIntRecord
-    > SinkSourceTypeRecord;
+    SS::VarUIntRecord> SinkSourceTypeRecord;
+
+typedef SS::EnumRecordTpl<
+    PhysicsInitialAttribute,
+    RT_PHYSICS_INITIAL_ATTRIBUTE,
+    SS::VarUIntRecord> PhysicsInitialAttributeRecord;
+
+typedef SS::EnumRecordTpl<
+    TileLayer,
+    RT_TILE_LAYER,
+    SS::VarIntRecord> TileLayerRecord;
 
 typedef std::shared_ptr<TileVisualRecord> TileVisualRecordHandle;
 

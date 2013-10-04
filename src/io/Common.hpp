@@ -29,4 +29,15 @@ enum TileVisualFormat {
     TVF_BGRA
 };
 
+enum PhysicsInitialAttribute {
+    PHYATTR_AIR_PRESSURE = 0,
+    PHYATTR_TEMPERATURE = 1,
+    PHYATTR_FOG_DENSITY = 2
+};
+
+enum TileLayer {
+    TILELAYER_AFFECTOR = -1,
+    TILELAYER_DEFAULT = 0
+};
+
 #endif

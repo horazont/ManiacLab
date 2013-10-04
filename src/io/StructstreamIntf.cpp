@@ -219,5 +219,11 @@ RegistryHandle maniac_lab_registry = RegistryHandle(new Registry({
         &NodeHandleFactory<CellTypeRecord>::create),
     std::pair<RecordType, NodeConstructor>(
         RT_SINK_SOURCE_TYPE,
-        &NodeHandleFactory<SinkSourceTypeRecord>::create)
+        &NodeHandleFactory<SinkSourceTypeRecord>::create),
+    std::pair<RecordType, NodeConstructor>(
+        RT_PHYSICS_INITIAL_ATTRIBUTE,
+        &NodeHandleFactory<PhysicsInitialAttributeRecord>::create),
+    std::pair<RecordType, NodeConstructor>(
+        RT_TILE_LAYER,
+        &NodeHandleFactory<TileLayerRecord>::create)
     }));

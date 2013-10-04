@@ -33,13 +33,14 @@ enum FileType {
     FT_EMPTY,
     FT_UNSUPPORTED,
     FT_NO_MANIACLAB,
-    FT_LEVEL,
+    FT_LEVEL_COLLECTION,
     FT_TILESET
 };
 
 FileType get_type_from_tree(const StructStream::ContainerHandle &root);
 
-std::pair<StructStream::ContainerHandle, FileType> load_tree_from_stream(
-    const PyEngine::StreamHandle &stream);
+std::pair<StructStream::ContainerHandle, FileType>
+    load_header_from_stream(const PyEngine::StreamHandle &stream);
+
 
 #endif

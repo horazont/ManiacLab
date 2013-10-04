@@ -50,14 +50,14 @@ FileType get_type_from_tree(const ContainerHandle &root)
     switch (first_child->id()) {
     case SSID_TILESET_HEADER:
         return FT_TILESET;
-    case SSID_LEVEL_HEADER:
-        return FT_LEVEL;
+    case SSID_LEVEL_COLLECTION_HEADER:
+        return FT_LEVEL_COLLECTION;
     default:
         return FT_NO_MANIACLAB;
     };
 }
 
-std::pair<ContainerHandle, FileType> load_tree_from_stream(
+std::pair<ContainerHandle, FileType> load_header_from_stream(
     const StreamHandle &stream)
 {
     IOIntfHandle io(new PyEngineStream(stream));
@@ -65,7 +65,8 @@ std::pair<ContainerHandle, FileType> load_tree_from_stream(
     try {
         root = bitstream_to_tree(
             io, maniac_lab_registry,
-            FromBitstream::UnknownHashFunction);
+            FromBitstream::UnknownHashFunction
+            );
     } catch (const UnsupportedInput &err) {
         PyEngine::log->getChannel("io")->log(Error)
             << "Input file uses unsuppored features: " << err.what() << submit;

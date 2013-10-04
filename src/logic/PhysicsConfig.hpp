@@ -31,6 +31,8 @@ const CoordInt subdivision_count = 5;
 const CoordInt half_offset = 2;
 const CoordInt cell_stamp_length = subdivision_count*subdivision_count;
 const double airtempcoeff_per_pressure = 1.0;
+const CoordInt level_width = 50;
+const CoordInt level_height = 50;
 
 struct SimulationConfig {
     double flow_friction;
