@@ -28,7 +28,7 @@ std::string format_file_size(uint64_t size)
         (int)floor(log2(size) / 10),
         array_length-1), 0);
 
-    int rounded_size = round((double)size / (exp2(magnitude)));
+    int rounded_size = round((double)size / (exp2(magnitude*10)));
 
     return std::to_string(rounded_size) + " " + magnitude_prefixes[magnitude] + "B";
 }
