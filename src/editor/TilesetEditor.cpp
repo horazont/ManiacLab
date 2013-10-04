@@ -603,6 +603,10 @@ void TilesetEditor::action_new_tile()
     std::string unique_name = dlg->get_unique_name();
     conn.disconnect();
 
+    if (unique_name == "") {
+        return;
+    }
+
     _root->execute_operation(
         OperationPtr(new OpNewTile(_editee, unique_name)));
 }
