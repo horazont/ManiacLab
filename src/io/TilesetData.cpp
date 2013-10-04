@@ -65,10 +65,12 @@ TileVisualRecordHandle FrameData::image_data_to_record(ID id) const
 TileData::TileData():
     unique_name(),
     display_name(),
+    is_actor(false),
     is_blocking(false),
     is_destructible(false),
     is_edible(false),
     is_gravity_affected(false),
+    is_movable(false),
     is_rollable(false),
     is_sticky(false),
     roll_radius(1),
