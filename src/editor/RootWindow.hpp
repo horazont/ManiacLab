@@ -76,6 +76,7 @@ private:
 
     Glib::RefPtr<Gtk::Action> _action_file_save;
     Glib::RefPtr<Gtk::Action> _action_file_save_as;
+    Glib::RefPtr<Gtk::Action> _action_file_close;
 
     Gtk::AboutDialog *_dlg_about;
     DuplicateTile *_dlg_duplicate_tile;
@@ -90,6 +91,7 @@ protected:
     void action_file_open();
     void action_file_save();
     void action_file_save_as();
+    void action_file_close();
     void action_file_quit();
     void action_edit_undo();
     void action_edit_redo();
@@ -97,6 +99,7 @@ protected:
     void tabs_switch_page(Gtk::Widget *page, guint page_num);
 
 protected:
+    void delete_editor(Editor *editor);
     void update_undo_redo_sensitivity();
 
 public:

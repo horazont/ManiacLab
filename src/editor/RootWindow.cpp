@@ -86,6 +86,7 @@ RootWindow::RootWindow(
     _tabs(nullptr),
     _action_file_save(),
     _action_file_save_as(),
+    _action_file_close(),
     _dlg_open_image(nullptr),
     _dlg_tileset_details(nullptr),
     _dlg_open_vfs_file(&_vfs, false),
@@ -130,6 +131,11 @@ RootWindow::RootWindow(
         _builder, "action_file_save_as",
         sigc::mem_fun(*this, &RootWindow::action_file_save_as),
         &_action_file_save_as);
+
+    bind_action(
+        _builder, "action_file_close",
+        sigc::mem_fun(*this, &RootWindow::action_file_close),
+        &_action_file_close);
 
     bind_action(
         _builder, "action_file_quit",
@@ -221,6 +227,12 @@ void RootWindow::action_file_save_as()
     save_file(path);
 }
 
+void RootWindow::action_file_close()
+{
+    assert(_current_editor);
+    close_editor(_current_editor);
+}
+
 void RootWindow::action_file_quit()
 {
     hide();
@@ -267,6 +279,22 @@ void RootWindow::tabs_switch_page(Widget *page, guint page_num)
     }
 
     switch_editor(new_editor);
+}
+
+void RootWindow::delete_editor(Editor *editor)
+{
+    // we must switch away to avoid segfault; we don't know the new
+    // editor yet (if one exists at all), so we switch to nullptr.
+    switch_editor(nullptr);
+
+    {
+        auto it = std::find(_editors.begin(), _editors.end(), editor);
+        assert(it != _editors.end());
+        _editors.erase(it);
+    }
+
+    _tabs->remove_page(*editor->get_parent());
+    delete editor;
 }
 
 void RootWindow::update_undo_redo_sensitivity()
@@ -372,9 +400,11 @@ void RootWindow::switch_editor(Editor *new_editor)
 
         _action_file_save->set_sensitive(true);
         _action_file_save_as->set_sensitive(true);
+        _action_file_close->set_sensitive(true);
     } else {
         _action_file_save->set_sensitive(false);
         _action_file_save_as->set_sensitive(false);
+        _action_file_close->set_sensitive(false);
     }
 }
 
@@ -458,13 +488,13 @@ void RootWindow::close_tileset(TilesetEditee *editee)
     TilesetEditor *editor = (*it).second;
     _tileset_editors.erase(it);
 
-    _tabs->remove_page(*editor->get_parent());
-    {
-        auto it = std::find(_editors.begin(), _editors.end(), editor);
-        assert(it != _editors.end());
-        _editors.erase(it);
+    if (editee->get_name() != "") {
+        auto it = _tileset_by_name.find(editee->get_name());
+        assert(it != _tileset_by_name.end());
+        _tileset_by_name.erase(it);
     }
-    delete editor;
+
+    delete_editor(editor);
 }
 
 TilesetEditor *RootWindow::get_tileset_editor(TilesetEditee *editee)
