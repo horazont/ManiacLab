@@ -25,6 +25,8 @@ authors named in the AUTHORS file.
 #ifndef _ML_IO_COMMON_H
 #define _ML_IO_COMMON_H
 
+#include <stdexcept>
+
 enum TileVisualFormat {
     TVF_BGRA
 };
@@ -38,6 +40,24 @@ enum PhysicsInitialAttribute {
 enum TileLayer {
     TILELAYER_AFFECTOR = -1,
     TILELAYER_DEFAULT = 0
+};
+
+enum IOQuality {
+    /* No errors or warnings occurred while loading the data. */
+    IOQ_PERFECT = 0,
+
+    /* Some data was ignored (e.g. out-of-bounds values) */
+    IOQ_DEGRADED = 1,
+
+    /* An error occured and the import failed fatally */
+    IOQ_ERRORNOUS = 2
+};
+
+class LevelIOError: public std::runtime_error {
+public:
+    LevelIOError(const std::string &what);
+    LevelIOError(const char *what);
+
 };
 
 #endif

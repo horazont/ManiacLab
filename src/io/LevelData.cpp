@@ -494,7 +494,7 @@ const LevelData::TileLayerData &LevelData::get_tile_layer(
     }
 }
 
-LevelData::IOQuality LevelData::load_from_raw(
+IOQuality LevelData::load_from_raw(
     const RawLevelHeaderData *header,
     const RawLevelBodyData *body,
     const LevelData::TileLookup &tile_lookup)
@@ -700,20 +700,19 @@ void LevelCollection::clear()
     _version = "";
 }
 
-LevelData::IOQuality LevelCollection::load_from_raw(
+IOQuality LevelCollection::load_from_raw(
     const RawLevelCollectionData *header,
     const PyEngine::StreamHandle &stream,
     const LevelData::TileLookup &tile_lookup)
 {
-    LevelData::IOQuality result = LevelData::IOQ_PERFECT;
+    IOQuality result = IOQ_PERFECT;
 
     if (header->level_headers.size() > 0) {
         uint64_t offs = header->level_headers[0].body_stream_offset;
         /* sanity check of addresses. it is required that levels are
          * stored sequentially in the file */
         if (offs != 0) {
-            throw std::runtime_error("First data block isn't at offset "
-                                     "0.");
+            throw LevelIOError("First data block isn't at offset 0.");
         }
 
         auto it = header->level_headers.cbegin();
@@ -721,8 +720,7 @@ LevelData::IOQuality LevelCollection::load_from_raw(
         for (; it != header->level_headers.cend(); ++it) {
             const RawLevelHeaderData &data = *it;
             if (data.body_stream_offset <= offs) {
-                throw std::runtime_error("Overlapping / misordered data"
-                                         " blocks.");
+                throw LevelIOError("Overlapping / misordered data blocks.");
             }
             offs = data.body_stream_offset;
         }

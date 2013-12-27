@@ -118,17 +118,6 @@ public:
     static constexpr CoordInt game_cell_count = level_width*level_height;
     static constexpr CoordInt physics_cell_count = game_cell_count*subdivision_count*subdivision_count;
 
-    enum IOQuality {
-        /* No errors or warnings occurred while loading the data. */
-        IOQ_PERFECT = 0,
-
-        /* Some data was ignored (e.g. out-of-bounds values) */
-        IOQ_DEGRADED = 1,
-
-        /* An error occured and the import failed fatally */
-        IOQ_ERRORNOUS = 2
-    };
-
     typedef std::array<PhysicsInitialLayerValue, physics_cell_count> PhysicsLayerData;
     typedef std::array<TileBinding, game_cell_count> TileLayerData;
 
@@ -207,7 +196,7 @@ private:
 
 public:
     void clear();
-    LevelData::IOQuality load_from_raw(
+    IOQuality load_from_raw(
         const RawLevelCollectionData *header,
         const PyEngine::StreamHandle &stream,
         const LevelData::TileLookup &tile_lookup);

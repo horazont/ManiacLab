@@ -15,6 +15,7 @@ pkg_check_modules(GTKMM gtkmm-3.0)
 
 
 set(LIB_SOURCES
+    "src/io/Common.cpp"
     "src/io/StructstreamIntf.cpp"
     "src/io/LevelData.cpp"
     "src/io/TilesetData.cpp"
