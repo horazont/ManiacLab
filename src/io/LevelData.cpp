@@ -467,7 +467,6 @@ void LevelData::clear_tile_layer(TileLayer layer)
 
 const LevelData::PhysicsLayerData &LevelData::get_phy_layer(
     PhysicsInitialAttribute attr) const
-
 {
     switch (attr) {
     case PHYATTR_AIR_PRESSURE:
