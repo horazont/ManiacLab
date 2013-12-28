@@ -675,12 +675,12 @@ void LevelData::update_block_map()
 /* LevelCollection */
 
 LevelCollection::LevelCollection():
-    _display_name(),
-    _description(),
-    _author(),
-    _license(),
-    _version(),
-    _levels()
+    display_name(),
+    description(),
+    author(),
+    license(),
+    version(),
+    levels()
 {
 
 }
@@ -692,12 +692,12 @@ LevelCollection::~LevelCollection()
 
 void LevelCollection::clear()
 {
-    _levels.clear();
-    _display_name = "";
-    _description = "";
-    _author = "";
-    _license = "";
-    _version = "";
+    levels.clear();
+    display_name = "";
+    description = "";
+    author = "";
+    license = "";
+    version = "";
 }
 
 IOQuality LevelCollection::load_from_raw(
@@ -706,6 +706,8 @@ IOQuality LevelCollection::load_from_raw(
     const LevelData::TileLookup &tile_lookup)
 {
     IOQuality result = IOQ_PERFECT;
+
+    clear();
 
     if (header->level_headers.size() > 0) {
         uint64_t offs = header->level_headers[0].body_stream_offset;
@@ -726,11 +728,11 @@ IOQuality LevelCollection::load_from_raw(
         }
     }
 
-    _display_name = header->display_name;
-    _description = header->description;
-    _author = header->author;
-    _license = header->license;
-    _version = header->version;
+    display_name = header->display_name;
+    description = header->description;
+    author = header->author;
+    license = header->license;
+    version = header->version;
 
     /* we assume that the stream is positioned right after the header
      * data */
@@ -746,7 +748,7 @@ IOQuality LevelCollection::load_from_raw(
                 level_body.get(),
                 tile_lookup));
 
-        _levels.push_back(new_level);
+        levels.push_back(new_level);
     }
 
     return result;
@@ -757,17 +759,17 @@ void LevelCollection::save_to_stream(
     const LevelData::TilesetReverseLookup &tileset_revlookup)
 {
     RawLevelCollectionData header;
-    header.display_name = _display_name;
-    header.description = _description;
-    header.author = _author;
-    header.license = _license;
-    header.version = _version;
+    header.display_name = display_name;
+    header.description = description;
+    header.author = author;
+    header.license = license;
+    header.version = version;
 
     std::vector<std::pair<uint8_t*, intptr_t>> level_bodies;
 
     uint64_t offset = 0;
 
-    for (auto &level: _levels) {
+    for (auto &level: levels) {
         RawLevelHeaderData level_header;
         RawLevelBodyData level_body;
         level->save_to_raw(&level_header, &level_body, tileset_revlookup);

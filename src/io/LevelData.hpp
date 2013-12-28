@@ -185,14 +185,14 @@ public:
     LevelCollection();
     ~LevelCollection();
 
-private:
-    std::string _display_name;
-    std::string _description;
-    std::string _author;
-    std::string _license;
-    std::string _version;
+public:
+    std::string display_name;
+    std::string description;
+    std::string author;
+    std::string license;
+    std::string version;
 
-    std::vector<std::shared_ptr<LevelData>> _levels;
+    std::vector<SharedLevel> levels;
 
 public:
     void clear();
@@ -205,6 +205,8 @@ public:
         const LevelData::TilesetReverseLookup &tileset_revlookup);
 
 };
+
+typedef std::shared_ptr<LevelCollection> SharedLevelCollection;
 
 std::unique_ptr<RawLevelBodyData> load_level_body(const PyEngine::StreamHandle &stream);
 
