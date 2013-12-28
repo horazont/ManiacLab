@@ -34,6 +34,7 @@ authors named in the AUTHORS file.
 #include <CEngine/VFS/FileSystem.hpp>
 #include <CEngine/VFS/Mount.hpp>
 
+#include "io/LevelData.hpp"
 #include "TilesetEditor.hpp"
 #include "TilesetEditDetails.hpp"
 #include "NewTile.hpp"
@@ -162,6 +163,26 @@ public:
     TilesetEditor *get_tileset_editor(TilesetEditee *editee);
 
     /**
+     * Lookup a tile from a tileset and returns shared pointers to
+     * both the tileset and the tile. If the tileset is not loaded
+     * yet, it will be loaded into background (no tabs will be
+     * created). If the tileset does not exist, nullptr is returned
+     * for both pointers. If the tileset does exist, but the tile is
+     * not in the tileset, nullptr is returned for the second pointer,
+     * but the first points to the tileset. Otherwise, valid pointers
+     * are contained in both fields.
+     *
+     * @param tileset_name unique name of the tileset
+     * @param tile_name unique name of the tile to look up
+     * @return two pointers, one for the tileset and one for the tile
+     * which was returned by the lookup (see above for details of the
+     * error cases).
+     */
+    LevelData::TileBinding lookup_tile(
+        const std::string &tileset_name,
+        const std::string &tile_name);
+
+    /**
      * Load a tileset if it is not loaded already and return an editee
      * for the tileset.
      */
@@ -179,6 +200,9 @@ public:
     void rename_tileset(
         TilesetEditee *editee,
         const std::string &new_name);
+
+    SharedTileset require_tileset(
+        const std::string &tileset_name);
 
     void update_tab_name(Editor *editor);
 
