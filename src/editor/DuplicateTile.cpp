@@ -34,10 +34,8 @@ using namespace Gtk;
 DuplicateTile::DuplicateTile(
         BaseObjectType *cobject,
         const RefPtr<Builder> &builder):
-    UniqueNameDialog(
-        cobject,
-        builder,
-        get_entry(builder, "duplicate_tile_unique_name")),
+    Dialog(cobject),
+    _builder(builder),
     _rewrite_to_new(nullptr),
     _response(false)
 {
@@ -45,6 +43,25 @@ DuplicateTile::DuplicateTile(
                          _rewrite_to_new);
 
     show_all_children();
+}
+
+void DuplicateTile::on_response(int response_id)
+{
+    switch (response_id) {
+    case 2:
+    {
+        response_ok();
+
+        hide();
+        break;
+    }
+    case 1:
+    default:
+        response_abort();
+
+        hide();
+        return;
+    };
 }
 
 void DuplicateTile::response_abort()
@@ -58,14 +75,11 @@ void DuplicateTile::response_ok()
 }
 
 bool DuplicateTile::get_duplicate_settings(
-        std::string &new_name,
         bool &rewrite_references_to_self)
 {
     _response = false;
-    _unique_name->set_text(new_name);
     _rewrite_to_new->set_active(rewrite_references_to_self);
     run();
-    new_name = _unique_name->get_text();
     rewrite_references_to_self = _rewrite_to_new->get_active();
     return _response;
 }

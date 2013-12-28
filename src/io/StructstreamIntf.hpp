@@ -26,6 +26,7 @@ authors named in the AUTHORS file.
 #define _ML_STRUCTSTREAM_H
 
 #include <CEngine/IO/Stream.hpp>
+#include <CEngine/Misc/UUID.hpp>
 
 #include <structstream/structstream.hpp>
 
@@ -39,6 +40,35 @@ static const SS::RecordType RT_CELL_TYPE = RT_TILE_VISUAL+1;
 static const SS::RecordType RT_SINK_SOURCE_TYPE = RT_CELL_TYPE+1;
 static const SS::RecordType RT_PHYSICS_INITIAL_ATTRIBUTE = RT_SINK_SOURCE_TYPE+1;
 static const SS::RecordType RT_TILE_LAYER = RT_PHYSICS_INITIAL_ATTRIBUTE+1;
+
+namespace StructStream {
+
+template<>
+struct value_helper<Raw128Record, PyEngine::UUID>
+{
+    typedef value_helper<Raw128Record, Raw128Record::array_t> inherited;
+    typedef typename inherited::record_t record_t;
+    typedef typename inherited::array_t array_t;
+
+
+    static inline void from_record(
+        record_t *src, PyEngine::UUID &dest)
+    {
+        src->raw_get(&dest.octets()[0]);
+    }
+
+    static inline std::shared_ptr<record_t> to_record(
+        const PyEngine::UUID &src,
+        const ID record_id)
+    {
+        std::shared_ptr<record_t> result =
+            NodeHandleFactory<record_t>::create(record_id);
+        result->raw_set(src.octets());
+        return result;
+    }
+};
+
+}
 
 class TileVisualRecord: public SS::DataRecord
 {

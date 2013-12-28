@@ -25,25 +25,26 @@ authors named in the AUTHORS file.
 #ifndef _ML_DUPLICATE_TILE_H
 #define _ML_DUPLICATE_TILE_H
 
-#include "UniqueNameDialog.hpp"
+#include <gtkmm.h>
 
-class DuplicateTile: public UniqueNameDialog
+class DuplicateTile: public Gtk::Dialog
 {
 public:
     DuplicateTile(BaseObjectType *cobject,
                   const Glib::RefPtr<Gtk::Builder> &builder);
 
 protected:
+    Glib::RefPtr<Gtk::Builder> _builder;
     Gtk::CheckButton *_rewrite_to_new;
     bool _response;
 
 protected:
-    void response_abort() override;
-    void response_ok() override;
+    void on_response(int response_id) override;
+    void response_abort();
+    void response_ok();
 
 public:
     bool get_duplicate_settings(
-        std::string &new_name,
         bool &rewrite_references_to_self);
 
 };

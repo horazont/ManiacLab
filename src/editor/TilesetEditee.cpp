@@ -37,7 +37,7 @@ TilesetEditee::TilesetEditee(
     _tile_deleted()
 {
     for (auto& tile: tiles()) {
-        _tile_map[tile->unique_name] = tile;
+        _tile_map[tile->uuid] = tile;
     }
 }
 
@@ -46,11 +46,12 @@ void TilesetEditee::changed()
     _changed(this);
 }
 
-void TilesetEditee::require_unique_tile_name(
-        const std::string &unique_name)
+void TilesetEditee::require_valid_tile_uuid(
+    const PyEngine::UUID &uuid)
 {
-    if (!check_unique_name(unique_name)) {
-        throw std::invalid_argument("Cannot create two tiles with same unique name.");
+    if (!check_uuid(uuid)) {
+        throw std::invalid_argument(
+            "Tile UUID conflict (or nil UUID): "+uuid.to_string());
     }
 }
 
@@ -68,17 +69,20 @@ void TilesetEditee::tile_deleted(const SharedTile &tile)
 
 SharedTile TilesetEditee::add_tile(const SharedTile &tile)
 {
-    require_unique_tile_name(tile->unique_name);
+    require_valid_tile_uuid(tile->uuid);
 
     _editee->body.tiles.push_back(tile);
-    _tile_map[tile->unique_name] = tile;
+    _tile_map[tile->uuid] = tile;
     tile_created(tile);
     return tile;
 }
 
-bool TilesetEditee::check_unique_name(const std::string &unique_name)
+bool TilesetEditee::check_uuid(const PyEngine::UUID &uuid)
 {
-    return (_tile_map.find(unique_name) == _tile_map.end());
+    if (uuid.is_nil()) {
+        return false;
+    }
+    return (_tile_map.find(uuid) == _tile_map.end());
 }
 
 void TilesetEditee::delete_tile(const SharedTile &tile)
@@ -88,30 +92,32 @@ void TilesetEditee::delete_tile(const SharedTile &tile)
     if (it != tiles.end()) {
         tile_deleted(tile);
         tiles.erase(it);
-        _tile_map.erase(tile->unique_name);
+        _tile_map.erase(tile->uuid);
     } else {
         throw std::logic_error("Attempt to delete foreign tile.");
     }
 }
 
 SharedTile TilesetEditee::duplicate_tile(
-        const SharedTile &src,
-        const std::string &unique_name,
-        bool rewrite_references_to_self)
+    const SharedTile &src,
+    const PyEngine::UUID &uuid,
+    bool rewrite_references_to_self)
 {
+    require_valid_tile_uuid(uuid);
     assert(src);
     TileData *new_tile = new TileData();
     *new_tile = *src;
-    new_tile->unique_name = unique_name;
+    new_tile->uuid = uuid;
     // FIXME: apply rewrite_references_to_self
     return add_tile(std::shared_ptr<TileData>(new_tile));
 }
 
-SharedTile TilesetEditee::new_tile(const std::string &unique_name)
+SharedTile TilesetEditee::new_tile(const PyEngine::UUID &uuid)
 {
+    require_valid_tile_uuid(uuid);
     TileData *new_tile = new TileData();
-    new_tile->unique_name = unique_name;
-    new_tile->display_name = unique_name;
+    new_tile->uuid = uuid;
+    new_tile->display_name = uuid.to_string();
     return add_tile(std::shared_ptr<TileData>(new_tile));
 }
 

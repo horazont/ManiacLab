@@ -227,11 +227,11 @@ typedef struct_decl<
             std::string,
             &RawLevelTileMapEntry::tileset_name>,
         member<
-            UTF8Record,
+            Raw128Record,
             id_selector<SSID_TILE_MAP_ENTRY_TILE_NAME>,
             RawLevelTileMapEntry,
-            std::string,
-            &RawLevelTileMapEntry::tile_name>,
+            PyEngine::UUID,
+            &RawLevelTileMapEntry::tile_uuid>,
         member<
             VarUIntRecord,
             id_selector<SSID_TILE_MAP_ENTRY_MAPPED_ID>,
@@ -511,7 +511,7 @@ IOQuality LevelData::load_from_raw(
     for (auto &map_entry: body->tile_mapping) {
         TileBinding binding = tile_lookup(
             map_entry.tileset_name,
-            map_entry.tile_name);
+            map_entry.tile_uuid);
 
         if (!binding.first)
         {
@@ -521,7 +521,7 @@ IOQuality LevelData::load_from_raw(
         }
         if (!binding.second) {
             throw std::runtime_error(
-                "Failed to find tile `"+map_entry.tile_name+"' in ti"
+                "Failed to find tile `"+map_entry.tile_uuid.to_string()+"' in ti"
                 "leset `"+map_entry.tileset_name+"'.");
         }
 
@@ -639,7 +639,7 @@ void LevelData::save_to_raw(
         const TileBinding &binding = mapping.first;
         RawLevelTileMapEntry entry;
         entry.tileset_name = tileset_revlookup(binding.first);
-        entry.tile_name = binding.second->unique_name;
+        entry.tile_uuid = binding.second->uuid;
         entry.mapped_id = mapping.second;
     }
 

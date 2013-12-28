@@ -51,7 +51,7 @@ public:
 private:
     std::string _name;
     SharedTileset _editee;
-    std::unordered_map<std::string, SharedTile> _tile_map;
+    std::unordered_map<PyEngine::UUID, SharedTile> _tile_map;
     TilesetNotifyEvent _changed;
     TilesetTileEvent _tile_changed;
     TilesetTileEvent _tile_created;
@@ -59,7 +59,7 @@ private:
 
 protected:
     void changed();
-    void require_unique_tile_name(const std::string &unique_name);
+    void require_valid_tile_uuid(const PyEngine::UUID &uuid);
     void tile_deleted(const SharedTile &tile);
     void tile_created(const SharedTile &tile);
 
@@ -78,12 +78,12 @@ public:
 
 public:
     SharedTile add_tile(const SharedTile &tile);
-    bool check_unique_name(const std::string &name);
+    bool check_uuid(const PyEngine::UUID &name);
     void delete_tile(const SharedTile &tile);
     SharedTile duplicate_tile(const SharedTile &src,
-                              const std::string &unique_name,
+                              const PyEngine::UUID &uuid,
                               bool rewrite_references_to_self);
-    SharedTile new_tile(const std::string &unique_name);
+    SharedTile new_tile(const PyEngine::UUID &uuid);
 
 public:
     void set_name(const std::string &name);

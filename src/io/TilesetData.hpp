@@ -31,6 +31,7 @@ authors named in the AUTHORS file.
 #include <memory>
 
 #include <CEngine/IO/Stream.hpp>
+#include <CEngine/Misc/UUID.hpp>
 
 #include <structstream/static.hpp>
 #include <structstream/streaming_base.hpp>
@@ -84,7 +85,7 @@ struct TileData
 {
     TileData();
 
-    std::string unique_name;
+    PyEngine::UUID uuid;
     std::string display_name;
 
     bool is_actor;

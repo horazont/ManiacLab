@@ -572,7 +572,7 @@ void TilesetEditor::update_tile_props()
 {
     _updating = true;
     _conn_tile_changed.block();
-    _tile_unique_name.set_text(_current_tile->unique_name);
+    _tile_unique_name.set_text(_current_tile->uuid.to_string());
     _tile_display_name.set_text(_current_tile->display_name);
     _tile_actor.set_active(_current_tile->is_actor);
     _tile_blocking.set_active(_current_tile->is_blocking);
@@ -596,19 +596,8 @@ void TilesetEditor::action_edit_details()
 
 void TilesetEditor::action_new_tile()
 {
-    NewTile *dlg = _root->get_dlg_new_tile();
-
-    sigc::connection conn = dlg->signal_check_name().connect(
-        sigc::mem_fun(*_editee, &TilesetEditee::check_unique_name));
-    std::string unique_name = dlg->get_unique_name();
-    conn.disconnect();
-
-    if (unique_name == "") {
-        return;
-    }
-
     _root->execute_operation(
-        OperationPtr(new OpNewTile(_editee, unique_name)));
+        OperationPtr(new OpNewTile(_editee)));
 }
 
 void TilesetEditor::action_duplicate_tile()
@@ -620,21 +609,15 @@ void TilesetEditor::action_duplicate_tile()
         return;
     }
 
-    std::string unique_name = tile->unique_name + "_clone";
     bool rewrite_references_to_self = true;
 
-    sigc::connection conn = dlg->signal_check_name().connect(
-        sigc::mem_fun(*_editee, &TilesetEditee::check_unique_name));
     dlg->get_duplicate_settings(
-        unique_name,
         rewrite_references_to_self);
-    conn.disconnect();
 
     _root->execute_operation(
         OperationPtr(new OpDuplicateTile(
             _editee,
             tile,
-            unique_name,
             rewrite_references_to_self)));
 }
 

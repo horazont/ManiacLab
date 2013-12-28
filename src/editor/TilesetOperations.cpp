@@ -35,10 +35,8 @@ TilesetOperation::TilesetOperation(TilesetEditee *tileset):
 
 /* OpNewTile */
 
-OpNewTile::OpNewTile(TilesetEditee *tileset,
-                     const std::string &unique_name):
+OpNewTile::OpNewTile(TilesetEditee *tileset):
     TilesetOperation(tileset),
-    _unique_name(unique_name),
     _tile(nullptr)
 {
 
@@ -49,7 +47,8 @@ void OpNewTile::execute()
     if (_tile) {
         _tile = _tileset->add_tile(_tile);
     } else {
-        _tile = _tileset->new_tile(_unique_name);
+        _tile = _tileset->new_tile(
+            PyEngine::UUID::with_generator<PyEngine::uuid_random>());
     }
 }
 
@@ -63,11 +62,9 @@ void OpNewTile::undo()
 OpDuplicateTile::OpDuplicateTile(
         TilesetEditee *tileset,
         const SharedTile &src,
-        const std::string &unique_name,
         bool rewrite_references_to_self):
     TilesetOperation(tileset),
     _src(src),
-    _unique_name(unique_name),
     _rewrite_references_to_self(rewrite_references_to_self),
     _tile(nullptr)
 {
@@ -81,7 +78,7 @@ void OpDuplicateTile::execute()
     } else {
         _tile = _tileset->duplicate_tile(
             _src,
-            _unique_name,
+            PyEngine::UUID::with_generator<PyEngine::uuid_random>(),
             _rewrite_references_to_self);
     }
 }

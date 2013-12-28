@@ -63,7 +63,7 @@ TileVisualRecordHandle FrameData::image_data_to_record(ID id) const
 /* TileData */
 
 TileData::TileData():
-    unique_name(),
+    uuid(),
     display_name(),
     is_actor(false),
     is_blocking(false),
@@ -288,11 +288,11 @@ typedef struct_decl<
             std::string,
             &TileData::display_name>,
         member<
-            UTF8Record,
+            Raw128Record,
             id_selector<SSID_TILE_UNIQUE_NAME>,
             TileData,
-            std::string,
-            &TileData::unique_name>,
+            UUID,
+            &TileData::uuid>,
         member<
             BoolRecord,
             id_selector<SSID_TILE_IS_ACTOR>,

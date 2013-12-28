@@ -31,6 +31,8 @@ authors named in the AUTHORS file.
 
 #include <structstream/static.hpp>
 
+#include <CEngine/Misc/UUID.hpp>
+
 #include "logic/PhysicsConfig.hpp"
 
 #include "Common.hpp"
@@ -65,7 +67,7 @@ struct RawLevelCollectionData {
 
 struct RawLevelTileMapEntry {
     std::string tileset_name;
-    std::string tile_name;
+    PyEngine::UUID tile_uuid;
     uint64_t mapped_id;
 };
 
@@ -112,7 +114,7 @@ class LevelData
 public:
     typedef std::pair<SharedTileset, SharedTile> TileBinding;
     typedef std::function<
-        TileBinding(const std::string&, const std::string&)> TileLookup;
+        TileBinding(const std::string&, const PyEngine::UUID&)> TileLookup;
     typedef std::function<
         std::string(const SharedTileset&)> TilesetReverseLookup;
     static constexpr CoordInt game_cell_count = level_width*level_height;

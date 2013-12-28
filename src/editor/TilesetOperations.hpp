@@ -42,11 +42,9 @@ protected:
 class OpNewTile: public TilesetOperation
 {
 public:
-    OpNewTile(TilesetEditee *tileset,
-              const std::string &unique_name);
+    OpNewTile(TilesetEditee *tileset);
 
 private:
-    const std::string _unique_name;
     SharedTile _tile;
 
 public:
@@ -61,12 +59,10 @@ public:
     OpDuplicateTile(
         TilesetEditee *tileset,
         const SharedTile &src,
-        const std::string &unique_name,
         bool rewrite_references_to_self);
 
 private:
     const SharedTile _src;
-    const std::string _unique_name;
     const bool _rewrite_references_to_self;
     SharedTile _tile;
 
