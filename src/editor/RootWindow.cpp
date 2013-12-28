@@ -361,7 +361,7 @@ void RootWindow::open_file(const std::string &filename)
     }
     default:
     {
-        error_msg = "Unexpected file type value.";
+        error_msg = "Unexpected file type value (this is an internal error; please report it to the developer!).";
         error = true;
         break;
     }
