@@ -199,7 +199,7 @@ bool pixbuf_to_tile_image_data(
     data->height = height;
     data->format = TVF_BGRA;
 
-    data->data.reserve(width * height * get_pixel_size(data->format));
+    data->data.resize(width * height * get_pixel_size(data->format));
 
     uint8_t *dst_buf = &data->data.front();
 
