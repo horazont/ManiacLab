@@ -543,6 +543,10 @@ SharedTile TilesetEditor::get_selected_tile()
     TreeViewColumn *dummy;
     _tile_list_view.get_cursor(path, dummy);
 
+    if (path.size() == 0) {
+        return nullptr;
+    }
+
     ListStore::iterator iter = _tile_list->get_iter(path);
     if (iter == _tile_list->children().end()) {
         return nullptr;
