@@ -608,7 +608,10 @@ void TilesetEditor::action_duplicate_tile()
 {
     DuplicateTile *dlg = _root->get_dlg_duplicate_tile();
 
-    SharedTile tile = get_selected_tile();
+    SharedTile tile = _current_tile;
+    if (!tile) {
+        tile = get_selected_tile();
+    }
     if (!tile) {
         return;
     }
