@@ -52,7 +52,6 @@ struct ImageData
     uint16_t width, height;
     TileVisualFormat format;
     std::basic_string<uint8_t> data;
-    float duration;
 };
 
 struct FrameData
