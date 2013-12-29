@@ -733,6 +733,11 @@ std::string TilesetEditor::get_tab_name() const
     return "🀰 "+name;
 }
 
+std::string TilesetEditor::get_vfs_dirname() const
+{
+    return "/data/tilesets";
+}
+
 void TilesetEditor::set_name(const std::string &name)
 {
     _editee->set_name(name);

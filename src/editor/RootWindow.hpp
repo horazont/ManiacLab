@@ -34,7 +34,6 @@ authors named in the AUTHORS file.
 #include <CEngine/VFS/FileSystem.hpp>
 #include <CEngine/VFS/Mount.hpp>
 
-#include "io/LevelData.hpp"
 #include "TilesetEditor.hpp"
 #include "TilesetEditDetails.hpp"
 #include "NewTile.hpp"
@@ -42,6 +41,8 @@ authors named in the AUTHORS file.
 #include "Operation.hpp"
 #include "OpenImage.hpp"
 #include "VFSFileChooserDialog.hpp"
+#include "LevelCollectionEditor.hpp"
+#include "LevelCollectionEditee.hpp"
 
 class RootWindow: public Gtk::Window
 {
@@ -54,6 +55,9 @@ private:
     std::unordered_map<std::string, SharedTileset> _tileset_by_name;
     std::unordered_map<TilesetData*, TilesetEditee*> _loaded_tilesets;
     std::unordered_map<TilesetData*, TilesetEditor*> _tileset_editors;
+    std::unordered_map<std::string, SharedLevelCollection> _level_collection_by_name;
+    std::unordered_map<LevelCollection*, LevelCollectionEditee*> _loaded_level_collections;
+    std::unordered_map<LevelCollection*, LevelCollectionEditor*> _level_collection_editors;
     std::vector<Editor*> _editors;
 
     Editor *_current_editor;
@@ -91,6 +95,7 @@ private:
 
 protected:
     void action_file_new_tileset();
+    void action_file_new_level();
     void action_file_open();
     void action_file_save();
     void action_file_save_as();
@@ -103,6 +108,7 @@ protected:
 
 protected:
     void delete_editor(Editor *editor);
+    static Gtk::Box *new_editor_box();
     void update_undo_redo_sensitivity();
 
 public:
@@ -153,14 +159,25 @@ public:
     void close_editor(
         Editor *editor);
 
+    void close_level_collection(
+        LevelCollectionEditee *editee);
+
     void close_tileset(
         TilesetEditee *editee);
+
+    LevelCollectionEditor *get_level_collection_editor(
+        LevelCollectionEditee *editee);
 
     /**
      * Acquire a tileset editor for the given tileset editee. If there
      * is no editor for the given editee, a new one will be created.
      */
     TilesetEditor *get_tileset_editor(TilesetEditee *editee);
+
+    std::string get_tileset_name(const SharedTileset &tileset);
+
+    TilesetEditee *load_tileset_by_name(
+        const std::string &name);
 
     /**
      * Lookup a tile from a tileset and returns shared pointers to
@@ -173,14 +190,18 @@ public:
      * are contained in both fields.
      *
      * @param tileset_name unique name of the tileset
-     * @param tile_name unique name of the tile to look up
+     * @param uuid UUID of the tile to find
      * @return two pointers, one for the tileset and one for the tile
      * which was returned by the lookup (see above for details of the
      * error cases).
      */
     LevelData::TileBinding lookup_tile(
         const std::string &tileset_name,
-        const std::string &tile_name);
+        const PyEngine::UUID &uuid);
+
+    LevelCollectionEditee *make_level_collection_editable(
+        const SharedLevelCollection &data,
+        const std::string &name);
 
     /**
      * Load a tileset if it is not loaded already and return an editee
@@ -191,6 +212,10 @@ public:
         const std::string &name);
 
     void rename_editor(Editor *editor, const std::string &new_name);
+
+    void rename_level_collection(
+        LevelCollectionEditee *editee,
+        const std::string &new_name);
 
     /**
      * Renames a tileset which is currently being edited. If the new

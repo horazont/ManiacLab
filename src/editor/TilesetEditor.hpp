@@ -161,6 +161,7 @@ public:
 public:
     const std::string &get_name() const override;
     std::string get_tab_name() const override;
+    std::string get_vfs_dirname() const override;
     void set_name(const std::string &name) override;
 
 public:

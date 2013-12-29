@@ -25,7 +25,9 @@ authors named in the AUTHORS file.
 #include "RootWindow.hpp"
 
 #include <CEngine/IO/FileStream.hpp>
+#include <CEngine/IO/Log.hpp>
 #include <CEngine/VFS/Utils.hpp>
+#include <CEngine/VFS/Errors.hpp>
 
 #include "io/Data.hpp"
 
@@ -63,6 +65,9 @@ RootWindow::RootWindow(
     _tileset_by_name(),
     _loaded_tilesets(),
     _tileset_editors(),
+    _level_collection_by_name(),
+    _loaded_level_collections(),
+    _level_collection_editors(),
     _editors(),
     _current_editor(nullptr),
     _undo_stack(),
@@ -123,6 +128,10 @@ RootWindow::RootWindow(
     bind_action(
         _builder, "action_file_new_tileset",
         sigc::mem_fun(*this, &RootWindow::action_file_new_tileset));
+
+    bind_action(
+        _builder, "action_file_new_level",
+        sigc::mem_fun(*this, &RootWindow::action_file_new_level));
 
     bind_action(
         _builder, "action_file_open",
@@ -201,6 +210,14 @@ void RootWindow::action_file_new_tileset()
     get_tileset_editor(make_tileset_editable(tileset, ""));
 }
 
+void RootWindow::action_file_new_level()
+{
+    SharedLevelCollection collection(new LevelCollection());
+    collection->display_name = "unnamed";
+    get_level_collection_editor(
+        make_level_collection_editable(collection, ""));
+}
+
 void RootWindow::action_file_open()
 {
     std::string path = _dlg_open_vfs_file.select_file_multisource({
@@ -226,8 +243,8 @@ void RootWindow::action_file_save()
 
 void RootWindow::action_file_save_as()
 {
-    std::string path =
-        _dlg_save_vfs_file.select_file("/data/tilesets");
+    std::string path = _dlg_save_vfs_file.select_file(
+        _current_editor->get_vfs_dirname());
 
     if (path == "") {
         return;
@@ -305,6 +322,14 @@ void RootWindow::delete_editor(Editor *editor)
     delete editor;
 }
 
+Gtk::Box *RootWindow::new_editor_box()
+{
+    Gtk::Box *editor_box = manage(new Box());
+    editor_box->set_hexpand(true);
+    editor_box->set_vexpand(true);
+    return editor_box;
+}
+
 void RootWindow::update_undo_redo_sensitivity()
 {
     _action_undo->set_sensitive(!_undo_stack.empty());
@@ -345,18 +370,79 @@ void RootWindow::open_file(const std::string &filename)
     }
     case FT_TILESET:
     {
+        const std::string name = basename(filename);
+        {
+            auto it = _tileset_by_name.find(name);
+            if (it != _tileset_by_name.end())
+            {
+                SharedTileset tileset = (*it).second;
+                auto editor_it = _tileset_editors.find(tileset.get());
+                if (editor_it != _tileset_editors.end())
+                {
+                    error_msg = "Tileset already open.";
+                    error = true;
+                    break;
+                }
+                get_tileset_editor(_loaded_tilesets[tileset.get()]);
+                break;
+            }
+        }
         assert(header_root);
         std::unique_ptr<TilesetData> tileset = complete_tileset_from_stream(header_root, stream);
         assert(tileset);
-        editor = get_tileset_editor(make_tileset_editable(
-            SharedTileset(tileset.release()), basename(filename)));
+        try {
+            editor = get_tileset_editor(
+                make_tileset_editable(
+                    SharedTileset(tileset.release()),
+                    name));
+        } catch (const std::exception &err) {
+            error_msg = err.what();
+            error = true;
+        }
         break;
     }
     case FT_LEVEL_COLLECTION:
     {
+        const std::string name = basename(filename);
+        {
+            auto it = _level_collection_by_name.find(name);
+            if (it != _level_collection_by_name.end())
+            {
+                SharedLevelCollection collection = (*it).second;
+                auto editor_it = _level_collection_editors.find(collection.get());
+                if (editor_it != _level_collection_editors.end())
+                {
+                    error_msg = "Level collection already open.";
+                    error = true;
+                    break;
+                }
+                get_level_collection_editor(
+                    _loaded_level_collections[collection.get()]);
+                break;
+            }
+        }
         assert(header_root);
-        error_msg = "Cannot load levels (yet :)).";
-        error = true;
+        std::unique_ptr<LevelCollection> collection;
+        IOQuality quality;
+        std::tie(collection, quality) =
+            complete_level_collection_from_stream(
+                header_root,
+                stream,
+                std::bind(
+                    &RootWindow::lookup_tile,
+                    this,
+                    std::placeholders::_1,
+                    std::placeholders::_2));
+        assert(collection);
+        try {
+            editor = get_level_collection_editor(
+                make_level_collection_editable(
+                    SharedLevelCollection(collection.release()),
+                    basename(filename)));
+        } catch (const std::exception &err) {
+            error_msg = err.what();
+            error = true;
+        }
         break;
     }
     default:
@@ -486,10 +572,35 @@ void RootWindow::close_editor(Editor *editor)
             return;
         }
     }
+    {
+        LevelCollectionEditor *collection_editor =
+            dynamic_cast<LevelCollectionEditor*>(editor);
+        if (collection_editor) {
+            close_level_collection(collection_editor->editee());
+            return;
+        }
+    }
 
     throw std::invalid_argument("Cannot handle editor object. "
                                 "Unknown type.");
 
+}
+
+void RootWindow::close_level_collection(LevelCollectionEditee *editee)
+{
+    SharedLevelCollection data = editee->editee();
+    auto it = _level_collection_editors.find(data.get());
+    assert(it != _level_collection_editors.end());
+    LevelCollectionEditor *editor = (*it).second;
+    _level_collection_editors.erase(it);
+
+    if (editee->get_name() != "") {
+        auto it = _level_collection_by_name.find(editee->get_name());
+        assert(it != _level_collection_by_name.end());
+        _level_collection_by_name.erase(it);
+    }
+
+    delete_editor(editor);
 }
 
 void RootWindow::close_tileset(TilesetEditee *editee)
@@ -509,6 +620,32 @@ void RootWindow::close_tileset(TilesetEditee *editee)
     delete_editor(editor);
 }
 
+LevelCollectionEditor *RootWindow::get_level_collection_editor(
+    LevelCollectionEditee *editee)
+{
+    {
+        auto editee_it = _loaded_level_collections.find(editee->editee().get());
+        assert(editee_it != _loaded_level_collections.end());
+    }
+
+    {
+        auto it = _level_collection_editors.find(editee->editee().get());
+        if (it != _level_collection_editors.end()) {
+            return (*it).second;
+        }
+    }
+
+    Gtk::Box *editor_box = new_editor_box();
+    LevelCollectionEditor *editor = new LevelCollectionEditor(
+        this, editor_box, editee);
+    _editors.push_back(editor);
+    _tabs->append_page(*editor_box, editor->get_tab_name());
+    editor_box->show();
+    _level_collection_editors[editee->editee().get()] = editor;
+
+    return editor;
+}
+
 TilesetEditor *RootWindow::get_tileset_editor(TilesetEditee *editee)
 {
     auto editee_it = _loaded_tilesets.find(editee->editee().get());
@@ -519,9 +656,7 @@ TilesetEditor *RootWindow::get_tileset_editor(TilesetEditee *editee)
         return (*it).second;
     }
 
-    Gtk::Box *editor_box = manage(new Box());
-    editor_box->set_hexpand(true);
-    editor_box->set_vexpand(true);
+    Gtk::Box *editor_box = new_editor_box();
     TilesetEditor *editor = new TilesetEditor(this, editor_box, editee);
     _editors.push_back(editor);
     _tabs->append_page(*editor_box, editor->get_tab_name());
@@ -529,6 +664,107 @@ TilesetEditor *RootWindow::get_tileset_editor(TilesetEditee *editee)
     _tileset_editors[editee->editee().get()] = editor;
 
     return editor;
+}
+
+std::string RootWindow::get_tileset_name(const SharedTileset &tileset)
+{
+    TilesetEditee *editee = _loaded_tilesets[tileset.get()];
+    if (!editee) {
+        throw std::invalid_argument(
+            "SharedTileset instance is not loaded anymore.");
+    }
+
+    if (editee->get_name() == "") {
+        throw std::runtime_error("Tileset is unnamed");
+    }
+
+    return editee->get_name();
+}
+
+TilesetEditee *RootWindow::load_tileset_by_name(
+    const std::string &name)
+{
+    {
+        auto it = _tileset_by_name.find(name);
+        if (it != _tileset_by_name.end()) {
+            return _loaded_tilesets[(*it).second.get()];
+        }
+    }
+
+    const std::string fullpath = "/data/tilesets/"+name;
+    if (!_vfs.file_readable(fullpath)) {
+        PyEngine::log->log(Information)
+            << "load_tileset_by_name: vfs claims we cannot read " << fullpath
+            << submit;
+        return nullptr;
+    }
+
+    ContainerHandle header;
+    FileType type;
+    StreamHandle stream;
+    try {
+        stream = _vfs.open(fullpath, OM_READ);
+    } catch (const VFSIOError &err) {
+        PyEngine::log->log(Warning)
+            << "load_tileset_by_name: opening of `" << fullpath << "' failed: "
+            << err.what() << submit;
+        return nullptr;
+    }
+
+    std::tie(header, type) =
+        load_header_from_stream(stream);
+
+    if (type != FT_TILESET) {
+        PyEngine::log->log(Information)
+            << "load_tileset_by_name: `" << fullpath << "' is not a tileset."
+            << submit;
+        return nullptr;
+    }
+
+    assert(header);
+    std::unique_ptr<TilesetData> tileset =
+        complete_tileset_from_stream(header, stream);
+    assert(tileset);
+    return make_tileset_editable(SharedTileset(tileset.release()), name);
+}
+
+LevelData::TileBinding RootWindow::lookup_tile(
+    const std::string &tileset_name,
+    const PyEngine::UUID &uuid)
+{
+    TilesetEditee *editee = load_tileset_by_name(tileset_name);
+    if (!editee) {
+        return std::make_pair(nullptr, nullptr);
+    }
+
+    SharedTile tile = editee->find_tile(uuid);
+    return std::make_pair(editee->editee(), tile);
+}
+
+LevelCollectionEditee *RootWindow::make_level_collection_editable(
+    const SharedLevelCollection &data, const std::string &name)
+{
+    {
+        auto it = _loaded_level_collections.find(data.get());
+        if (it != _loaded_level_collections.end()) {
+            return (*it).second;
+        }
+    }
+
+    {
+        if (name != "") {
+            auto it = _level_collection_by_name.find(name);
+            if (it != _level_collection_by_name.end()) {
+                throw std::invalid_argument(
+                    "Duplicate level collection editee name: "+name);
+            }
+        }
+    }
+
+    LevelCollectionEditee *editee = new LevelCollectionEditee(data, name);
+    _loaded_level_collections[data.get()] = editee;
+    _level_collection_by_name[name] = data;
+    return editee;
 }
 
 TilesetEditee *RootWindow::make_tileset_editable(
@@ -568,9 +804,52 @@ void RootWindow::rename_editor(
             return;
         }
     }
+    {
+        LevelCollectionEditor *collection_editor =
+            dynamic_cast<LevelCollectionEditor*>(editor);
+        if (collection_editor) {
+            rename_level_collection(collection_editor->editee(), new_name);
+            return;
+        }
+    }
 
     throw std::invalid_argument("Cannot handle editor object. "
                                 "Unknown type.");
+}
+
+void RootWindow::rename_level_collection(
+    LevelCollectionEditee *editee, const std::string &new_name)
+{
+    bool is_null_name = (new_name == "");
+
+    if (!is_null_name) {
+        // we first check if a tileset with that name exists
+        {
+            auto it = _level_collection_by_name.find(new_name);
+            if (it != _level_collection_by_name.end()) {
+                // it exists, we have to rename it
+                SharedLevelCollection other_collection = (*it).second;
+                rename_level_collection(
+                    _loaded_level_collections[other_collection.get()], "");
+            }
+        }
+    }
+
+    if (editee->get_name() != "") {
+        auto it = _level_collection_by_name.find(editee->get_name());
+        assert(it != _level_collection_by_name.end());
+        _level_collection_by_name.erase(it);
+    }
+
+    editee->set_name(new_name);
+
+    if (!is_null_name) {
+        _level_collection_by_name[new_name] = editee->editee();
+    }
+
+    LevelCollectionEditor *editor =
+        _level_collection_editors[editee->editee().get()];
+    update_tab_name(editor);
 }
 
 void RootWindow::rename_tileset(

@@ -112,6 +112,16 @@ SharedTile TilesetEditee::duplicate_tile(
     return add_tile(std::shared_ptr<TileData>(new_tile));
 }
 
+SharedTile TilesetEditee::find_tile(const PyEngine::UUID &uuid) const
+{
+    auto it = _tile_map.find(uuid);
+    if (it == _tile_map.end()) {
+        return nullptr;
+    } else {
+        return (*it).second;
+    }
+}
+
 SharedTile TilesetEditee::new_tile(const PyEngine::UUID &uuid)
 {
     require_valid_tile_uuid(uuid);

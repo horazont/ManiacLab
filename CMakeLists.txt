@@ -50,6 +50,9 @@ set(EDITOR_SOURCES
     "src/editor/NewTile.cpp"
     "src/editor/DuplicateTile.cpp"
     "src/editor/OpenImage.cpp"
+    "src/editor/LevelEditor.cpp"
+    "src/editor/LevelCollectionEditor.cpp"
+    "src/editor/LevelCollectionEditee.cpp"
     "src/editor/RootWindow.cpp"
 )
 

@@ -49,6 +49,7 @@ const StructStream::ID SSID_LEVEL_COLLECTION_HEADER = 0x4d4c4c632e68;
  */
 
 struct RawLevelHeaderData {
+    PyEngine::UUID uuid;
     std::string display_name;
 
     uint64_t body_stream_offset;
@@ -128,6 +129,7 @@ public:
     ~LevelData();
 
 private:
+    PyEngine::UUID _uuid;
     std::string _display_name;
 
     /* pil stands for physics initial layer */
@@ -157,6 +159,12 @@ protected:
     TileLayerData *get_tile_layer(TileLayer layer);
 
 public:
+    static bool range_check_game_coord(CoordInt x, CoordInt y);
+    static bool range_check_physics_coord(CoordInt x, CoordInt y);
+    static CoordInt game_coord_to_array(CoordInt x, CoordInt y);
+    static CoordInt physics_coord_to_array(CoordInt x, CoordInt y);
+
+public:
     void clear();
     void clear_phy_layer(PhysicsInitialAttribute attr);
     void clear_tile_layer(TileLayer layer);
@@ -173,10 +181,26 @@ public:
     void update_block_map();
 
 public:
-    static bool range_check_physics_coord(CoordInt x, CoordInt y);
-    static bool range_check_game_coord(CoordInt x, CoordInt y);
-    static CoordInt physics_coord_to_array(CoordInt x, CoordInt y);
-    static CoordInt game_coord_to_array(CoordInt x, CoordInt y);
+    inline const std::string &get_display_name() const
+    {
+        return _display_name;
+    }
+
+    inline const PyEngine::UUID &get_uuid() const
+    {
+        return _uuid;
+    }
+
+    inline void set_display_name(const std::string &value)
+    {
+        _display_name = value;
+    }
+
+    inline void set_uuid(const PyEngine::UUID &value)
+    {
+        _uuid = value;
+    }
+
 };
 
 typedef std::shared_ptr<LevelData> SharedLevel;
@@ -210,6 +234,10 @@ public:
 
 typedef std::shared_ptr<LevelCollection> SharedLevelCollection;
 
-std::unique_ptr<RawLevelBodyData> load_level_body(const PyEngine::StreamHandle &stream);
+std::pair<std::unique_ptr<LevelCollection>, IOQuality>
+complete_level_collection_from_stream(
+    const StructStream::ContainerHandle &header_root,
+    const PyEngine::StreamHandle &stream,
+    const LevelData::TileLookup &tile_lookup);
 
 #endif

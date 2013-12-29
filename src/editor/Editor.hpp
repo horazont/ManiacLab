@@ -65,6 +65,7 @@ public:
 public:
     virtual const std::string &get_name() const = 0;
     virtual std::string get_tab_name() const = 0;
+    virtual std::string get_vfs_dirname() const = 0;
     virtual void set_name(const std::string &name) = 0;
 
 public:

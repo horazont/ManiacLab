@@ -36,6 +36,7 @@ authors named in the AUTHORS file.
 #include "StructstreamIntf.hpp"
 
 using namespace StructStream;
+using namespace PyEngine;
 
 namespace std {
 
@@ -93,6 +94,7 @@ const ID SSID_LEVEL_COLLECTION_LEVEL_HEADERS = 0x45;
 const ID SSID_LEVEL_HEADER = 0x4c7668;
 const ID SSID_LEVEL_HEADER_DISPLAY_NAME = 0x40;
 const ID SSID_LEVEL_HEADER_OFFSET = 0x41;
+const ID SSID_LEVEL_HEADER_UUID = 0x42;
 
 const ID SSID_LEVEL_BODY = 0x4d4c4c762e62;
 const ID SSID_LEVEL_BODY_TILE_MAPPING = 0x40;
@@ -283,6 +285,12 @@ typedef struct_decl<
     Container,
     id_selector<SSID_LEVEL_HEADER>,
     struct_members<
+        member<
+            Raw128Record,
+            id_selector<SSID_LEVEL_HEADER_UUID>,
+            RawLevelHeaderData,
+            PyEngine::UUID,
+            &RawLevelHeaderData::uuid>,
         member<
             UTF8Record,
             id_selector<SSID_LEVEL_HEADER_DISPLAY_NAME>,
@@ -493,6 +501,30 @@ const LevelData::TileLayerData &LevelData::get_tile_layer(
     }
 }
 
+inline bool LevelData::range_check_game_coord(CoordInt x, CoordInt y)
+{
+    return
+        (0 <= x) && (x < level_width) &&
+        (0 <= y) && (y < level_height);
+}
+
+inline bool LevelData::range_check_physics_coord(CoordInt x, CoordInt y)
+{
+    return
+        (0 <= x) && (x < level_width*subdivision_count) &&
+        (0 <= y) && (y < level_height*subdivision_count);
+}
+
+inline CoordInt LevelData::game_coord_to_array(CoordInt x, CoordInt y)
+{
+    return (x + y*level_width);
+}
+
+inline CoordInt LevelData::physics_coord_to_array(CoordInt x, CoordInt y)
+{
+    return (x + y*level_width*subdivision_count);
+}
+
 IOQuality LevelData::load_from_raw(
     const RawLevelHeaderData *header,
     const RawLevelBodyData *body,
@@ -533,10 +565,10 @@ IOQuality LevelData::load_from_raw(
 
     for (auto &ovrride: body->physics_initial_layer) {
         if (!range_check_physics_coord(ovrride.x, ovrride.y)) {
-            PyEngine::log->log(PyEngine::Warning)
+            PyEngine::log->log(Warning)
                 << "Out of range coordinates for physics layer values: "
                 << "x=" << ovrride.x << "; y=" << ovrride.y
-                << PyEngine::submit;
+                << submit;
             result = std::max(IOQ_DEGRADED, result);
             continue;
         }
@@ -546,9 +578,9 @@ IOQuality LevelData::load_from_raw(
 
         PhysicsLayerData *layer = get_phy_layer(ovrride.attr);
         if (!layer) {
-            PyEngine::log->log(PyEngine::Warning)
+            PyEngine::log->log(Warning)
                 << "Unexpected attribute layer: " << ovrride.attr
-                << PyEngine::submit;
+                << submit;
             result = std::max(IOQ_DEGRADED, result);
             continue;
         }
@@ -560,10 +592,10 @@ IOQuality LevelData::load_from_raw(
 
     for (auto &placement: body->tile_placements) {
         if (!range_check_game_coord(placement.x, placement.y)) {
-            PyEngine::log->log(PyEngine::Warning)
+            PyEngine::log->log(Warning)
                 << "Out of range coordinates for game object placement:"
                 << " x=" << placement.x << "; y=" << placement.y
-                << PyEngine::submit;
+                << submit;
             result = std::max(IOQ_DEGRADED, result);
             continue;
         }
@@ -573,9 +605,9 @@ IOQuality LevelData::load_from_raw(
 
         auto it = tile_reverse_map.find(placement.mapped_id);
         if (it == tile_reverse_map.end()) {
-            PyEngine::log->log(PyEngine::Error)
+            PyEngine::log->log(Error)
                 << "mapped_id " << placement.mapped_id << "not in "
-                << "reverse map" << PyEngine::submit;
+                << "reverse map" << submit;
             result = std::max(IOQ_ERRORNOUS, result);
             continue;
         }
@@ -584,9 +616,9 @@ IOQuality LevelData::load_from_raw(
 
         TileLayerData *layer = get_tile_layer(placement.layer);
         if (!layer) {
-            PyEngine::log->log(PyEngine::Warning)
+            PyEngine::log->log(Warning)
                 << "Unexpected game object layer: " << placement.layer
-                << PyEngine::submit;
+                << submit;
             result = std::max(IOQ_DEGRADED, result);
             continue;
         }
@@ -701,7 +733,7 @@ void LevelCollection::clear()
 
 IOQuality LevelCollection::load_from_raw(
     const RawLevelCollectionData *header,
-    const PyEngine::StreamHandle &stream,
+    const StreamHandle &stream,
     const LevelData::TileLookup &tile_lookup)
 {
     IOQuality result = IOQ_PERFECT;
@@ -737,8 +769,20 @@ IOQuality LevelCollection::load_from_raw(
      * data */
 
     for (auto &level_header: header->level_headers) {
-        std::unique_ptr<RawLevelBodyData> level_body = load_level_body(
-            stream);
+        std::unique_ptr<RawLevelBodyData> level_body;
+
+        try {
+            FromBitstream(
+                IOIntfHandle(new PyEngineStream(stream)),
+                maniac_lab_registry,
+                deserialize<only<RawLevelBodyDecl, true, true>>(*level_body)
+                ).read_all();
+        } catch (const std::runtime_error &err) {
+            PyEngine::log->log(Error)
+                << "While loading level body: " << err.what() << submit;
+            throw LevelIOError(
+                std::string("Failed to load level body: ")+err.what());
+        }
 
         std::shared_ptr<LevelData> new_level(new LevelData());
         result = std::max(result,
@@ -754,7 +798,7 @@ IOQuality LevelCollection::load_from_raw(
 }
 
 void LevelCollection::save_to_stream(
-    const PyEngine::StreamHandle &stream,
+    const StreamHandle &stream,
     const LevelData::TilesetReverseLookup &tileset_revlookup)
 {
     RawLevelCollectionData header;
@@ -798,4 +842,32 @@ void LevelCollection::save_to_stream(
         io->write(item.first, item.second);
         delete item.first;
     }
+}
+
+/* free functions */
+
+std::pair<std::unique_ptr<LevelCollection>, IOQuality>
+complete_level_collection_from_stream(
+    const ContainerHandle &header_root,
+    const PyEngine::StreamHandle &stream,
+    const LevelData::TileLookup &tile_lookup)
+{
+    RawLevelCollectionData header;
+    try {
+        FromTree(
+            deserialize<only<RawLevelCollectionDecl, true, true>>(header),
+            header_root);
+    } catch (const std::runtime_error &err) {
+        PyEngine::log->log(PyEngine::Error)
+            << "While loading level collection header: " << err.what()
+            << PyEngine::submit;
+        return std::make_pair(nullptr, IOQ_ERRORNOUS);
+    }
+
+    std::unique_ptr<LevelCollection> result(new LevelCollection());
+    IOQuality quality = result->load_from_raw(
+        &header,
+        stream,
+        tile_lookup);
+    return std::make_pair(std::move(result), quality);
 }

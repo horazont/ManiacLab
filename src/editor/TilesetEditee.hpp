@@ -29,10 +29,6 @@ authors named in the AUTHORS file.
 
 #include <sigc++/sigc++.h>
 
-namespace sigc {
-SIGC_FUNCTORS_DEDUCE_RESULT_TYPE_WITH_DECLTYPE
-}
-
 #include "io/TilesetData.hpp"
 #include "logic/Stamp.hpp"
 
@@ -83,6 +79,7 @@ public:
     SharedTile duplicate_tile(const SharedTile &src,
                               const PyEngine::UUID &uuid,
                               bool rewrite_references_to_self);
+    SharedTile find_tile(const PyEngine::UUID &uuid) const;
     SharedTile new_tile(const PyEngine::UUID &uuid);
 
 public:

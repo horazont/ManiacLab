@@ -154,7 +154,7 @@ void VFSFileChooserDialog::add_file(
     switch (get_type_from_stream(_vfs->open(full_path, OM_READ))) {
     case FT_LEVEL_COLLECTION:
     {
-        type_name = "levels";
+        type_name = "level collection";
         break;
     }
     case FT_TILESET:
