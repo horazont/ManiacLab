@@ -70,7 +70,7 @@ class ManiacLab(Engine.Application.Application):
 
     def frameUnsynced(self, timeDelta):
         self.visualization.bind()
-        self.level.physicsToGLTexture(self.show_thread_regions)
+        self.level.physics_to_gl_texture(self.show_thread_regions)
         window = self._screens[0][0]
         window.switchTo()
 
@@ -103,9 +103,9 @@ class ManiacLab(Engine.Application.Application):
         elif symbol == key.F1:
             self.show_thread_regions = not self.show_thread_regions
         elif symbol == 111:     # o
-            self.level.debug_testObject()
+            self.level.debug_test_object()
         elif symbol == 115:     # s
-            self.level.debug_testStamp(44, 24)
+            self.level.debug_test_stamp(44, 24)
 
     def handleMouseDown(self, x, y, button, modifiers):
         x = x / 800 * 50
