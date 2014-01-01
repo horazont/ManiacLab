@@ -48,6 +48,7 @@ public:
 private:
     std::string _name;
     SharedLevelCollection _editee;
+    std::unordered_map<PyEngine::UUID, SharedLevel> _level_map;
     LevelCollectionNotifyEvent _changed;
     LevelCollectionLevelEvent _level_changed;
     LevelCollectionLevelEvent _level_created;
@@ -55,6 +56,7 @@ private:
 
 protected:
     void changed();
+    void require_valid_level_uuid(const PyEngine::UUID &uuid);
     void level_created(const SharedLevel &level);
     void level_deleted(const SharedLevel &level);
 
@@ -72,7 +74,7 @@ public:
 public:
     SharedLevel add_level(const SharedLevel &level);
     void delete_level(const SharedLevel &level);
-    SharedLevel new_level(const std::string &unique_name);
+    SharedLevel new_level(const PyEngine::UUID &uuid);
 
 public:
     void set_name(const std::string &name);

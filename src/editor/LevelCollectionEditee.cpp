@@ -31,12 +31,15 @@ LevelCollectionEditee::LevelCollectionEditee(
         const std::string &name):
     _name(name),
     _editee(editee),
+    _level_map(),
     _changed(),
     _level_changed(),
     _level_created(),
     _level_deleted()
 {
-
+    for (auto &level: editee->levels) {
+        _level_map[level->get_uuid()] = level;
+    }
 }
 
 void LevelCollectionEditee::changed()
@@ -62,9 +65,52 @@ void LevelCollectionEditee::level_deleted(const SharedLevel &level)
     changed();
 }
 
+void LevelCollectionEditee::require_valid_level_uuid(
+    const PyEngine::UUID &uuid)
+{
+    auto it = _level_map.find(uuid);
+    if (it != _level_map.end()) {
+        throw std::invalid_argument(
+            "Duplicate level uuid: "+uuid.to_string());
+    }
+}
+
 std::vector<SharedLevel> &LevelCollectionEditee::levels()
 {
     return _editee->levels;
+}
+
+SharedLevel LevelCollectionEditee::add_level(const SharedLevel &level)
+{
+    require_valid_level_uuid(level->get_uuid());
+
+    _editee->levels.push_back(level);
+    _level_map[level->get_uuid()] = level;
+    level_created(level);
+
+    return level;
+}
+
+void LevelCollectionEditee::delete_level(const SharedLevel &level)
+{
+    std::vector<SharedLevel> &levels = _editee->levels;
+    auto it = std::find(levels.begin(), levels.end(), level);
+    if (it != levels.end()) {
+        level_deleted(level);
+        levels.erase(it);
+        _level_map.erase(level->get_uuid());
+    } else {
+        throw std::logic_error("Attempt to delete foreign level.");
+    }
+}
+
+SharedLevel LevelCollectionEditee::new_level(const PyEngine::UUID &uuid)
+{
+    require_valid_level_uuid(uuid);
+    LevelData *new_level = new LevelData();
+    new_level->set_uuid(uuid);
+    new_level->set_display_name(uuid.to_string());
+    return add_level(SharedLevel(new_level));
 }
 
 void LevelCollectionEditee::set_name(const std::string &name)

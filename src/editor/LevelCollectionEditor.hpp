@@ -31,6 +31,28 @@ authors named in the AUTHORS file.
 
 class LevelCollectionEditor: public Editor
 {
+protected:
+    class LevelListModelColumns: public Gtk::TreeModelColumnRecord
+    {
+    public:
+        LevelListModelColumns();
+
+        Gtk::TreeModelColumn<SharedLevel> col_level;
+        Gtk::TreeModelColumn<Glib::ustring> col_uuid;
+        Gtk::TreeModelColumn<Glib::ustring> col_display_name;
+
+    };
+
+    class TileListModelColumns: public Gtk::TreeModelColumnRecord
+    {
+    public:
+        TileListModelColumns();
+
+        Gtk::TreeModelColumn<SharedTile> col_tile;
+        Gtk::TreeModelColumn<Glib::ustring> col_display_name;
+
+    };
+
 public:
     LevelCollectionEditor(
         RootWindow *root,
@@ -39,6 +61,24 @@ public:
 
 private:
     LevelCollectionEditee *_editee;
+    sigc::connection _conn_delete_level;
+    sigc::connection _conn_move_level_down;
+    sigc::connection _conn_move_level_up;
+    sigc::connection _conn_new_level;
+
+    LevelListModelColumns _level_columns;
+    Glib::RefPtr<Gtk::ListStore> _level_list;
+    Gtk::TreeView _level_list_view;
+
+    TileListModelColumns _tile_columns;
+    Glib::RefPtr<Gtk::ListStore> _tile_list;
+    Gtk::TreeView _tile_list_view;
+
+protected:
+    Gtk::TreeNodeChildren::iterator find_level_row(
+        const SharedLevel &level);
+    SharedLevel get_selected_level();
+    void select_level(const SharedLevel &level);
 
 public:
     const std::string &get_name() const override;
@@ -50,6 +90,18 @@ public:
     inline LevelCollectionEditee *editee() const {
         return _editee;
     };
+
+public:
+    void action_delete_level();
+    void action_move_level_down();
+    void action_move_level_up();
+    void action_new_level();
+    void editee_level_created(
+        LevelCollectionEditee *editee,
+        const SharedLevel &level);
+    void editee_level_deleted(
+        LevelCollectionEditee *editee,
+        const SharedLevel &level);
 
 public:
     void disable() override;

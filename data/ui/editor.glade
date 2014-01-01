@@ -74,7 +74,7 @@
     </child>
     <child>
       <object class="GtkAction" id="action_file_new_level">
-        <property name="label" translatable="yes">New level</property>
+        <property name="label" translatable="yes">New level collection</property>
         <property name="tooltip" translatable="yes">Create and edit a new level</property>
       </object>
     </child>
@@ -154,6 +154,35 @@
         <property name="stock_id">gtk-edit</property>
       </object>
       <accelerator key="p" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK"/>
+    </child>
+    <child>
+      <object class="GtkAction" id="action_level_collection_new_level">
+        <property name="label" translatable="yes">_New level</property>
+        <property name="tooltip" translatable="yes">Add a new level</property>
+        <property name="stock_id">gtk-add</property>
+      </object>
+      <accelerator key="n" modifiers="GDK_CONTROL_MASK | GDK_MOD1_MASK"/>
+    </child>
+    <child>
+      <object class="GtkAction" id="action_level_collection_delete_level">
+        <property name="label" translatable="yes">_Delete level</property>
+        <property name="tooltip" translatable="yes">Delete the selected level</property>
+        <property name="stock_id">gtk-delete</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkAction" id="action_level_collection_move_level_up">
+        <property name="label" translatable="yes">Move _up</property>
+        <property name="tooltip" translatable="yes">Move the level up in collection order</property>
+        <property name="stock_id">gtk-go-up</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkAction" id="action_level_collection_move_level_down">
+        <property name="label" translatable="yes">_Move down</property>
+        <property name="tooltip" translatable="yes">Move the level down in collection order</property>
+        <property name="stock_id">gtk-go-down</property>
+      </object>
     </child>
   </object>
   <object class="GtkActionGroup" id="actions_tileset">
@@ -1209,6 +1238,22 @@
                   <object class="GtkMenu" id="menu8">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="imagemenuitem12">
+                        <property name="related_action">action_level_collection_new_level</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="imagemenuitem13">
+                        <property name="related_action">action_level_collection_delete_level</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
                     <child>
                       <object class="GtkImageMenuItem" id="menuitem1">
                         <property name="related_action">action_level_collection_edit_details</property>
