@@ -46,7 +46,6 @@ set(EDITOR_SOURCES
     "src/editor/TilesetEditDetails.cpp"
     "src/editor/UniqueNameDialog.cpp"
     "src/editor/VFSFileChooserDialog.cpp"
-    "src/editor/NewTile.cpp"
     "src/editor/DuplicateTile.cpp"
     "src/editor/OpenImage.cpp"
     "src/editor/LevelCollectionEditor.cpp"

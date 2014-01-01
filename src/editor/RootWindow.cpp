@@ -177,7 +177,6 @@ RootWindow::RootWindow(
     _builder->get_widget_derived("dlg_open_image", _dlg_open_image);
     _dlg_open_image->set_action(FILE_CHOOSER_ACTION_OPEN);
 
-    _builder->get_widget_derived("dlg_new_tile", _dlg_new_tile);
     _builder->get_widget_derived("dlg_duplicate_tile", _dlg_duplicate_tile);
     _builder->get_widget_derived("dlg_tileset_details", _dlg_tileset_details);
 

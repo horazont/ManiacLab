@@ -36,7 +36,6 @@ authors named in the AUTHORS file.
 
 #include "TilesetEditor.hpp"
 #include "TilesetEditDetails.hpp"
-#include "NewTile.hpp"
 #include "DuplicateTile.hpp"
 #include "Operation.hpp"
 #include "OpenImage.hpp"
@@ -87,7 +86,6 @@ private:
 
     Gtk::AboutDialog *_dlg_about;
     DuplicateTile *_dlg_duplicate_tile;
-    NewTile *_dlg_new_tile;
     OpenImage *_dlg_open_image;
     TilesetEditDetails *_dlg_tileset_details;
     VFSFileChooserDialog _dlg_open_vfs_file;
@@ -132,10 +130,6 @@ public:
 
     inline TilesetEditDetails *get_dlg_tileset_details() {
         return _dlg_tileset_details;
-    };
-
-    inline NewTile *get_dlg_new_tile() {
-        return _dlg_new_tile;
     };
 
     inline OpenImage *get_dlg_open_image() {
