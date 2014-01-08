@@ -94,6 +94,7 @@ class ManiacLab(Engine.Application.Application):
         glVertex2f(500, 0)
         glEnd()
 
+        glFlush()
         window.flip()
 
     def handleKeyDown(self, symbol, modifiers):
