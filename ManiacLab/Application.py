@@ -66,7 +66,6 @@ class ManiacLab(Engine.Application.Application):
     def frameSynced(self):
         if self.running:
             self.level.update()
-            self.level.update()
 
     def frameUnsynced(self, timeDelta):
         self.visualization.bind()
@@ -95,6 +94,7 @@ class ManiacLab(Engine.Application.Application):
         glVertex2f(500, 0)
         glEnd()
 
+        glFlush()
         window.flip()
 
     def handleKeyDown(self, symbol, modifiers):
