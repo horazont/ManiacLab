@@ -56,6 +56,19 @@ inline std::string get_textview_text(
     return entry->get_buffer()->get_text();
 }
 
+/* TileTreeModelColumns */
+
+TileTreeModelColumns::TileTreeModelColumns():
+    TreeModelColumnRecord(),
+    col_tileset(),
+    col_tile(),
+    col_display_name()
+{
+    add(col_tileset);
+    add(col_tile);
+    add(col_display_name);
+}
+
 /* RootWindow */
 
 RootWindow::RootWindow(
@@ -97,7 +110,9 @@ RootWindow::RootWindow(
     _dlg_open_image(nullptr),
     _dlg_tileset_details(nullptr),
     _dlg_open_vfs_file(&_vfs, false),
-    _dlg_save_vfs_file(&_vfs, true)
+    _dlg_save_vfs_file(&_vfs, true),
+    _tile_columns(),
+    _tile_tree(Gtk::TreeStore::create(_tile_columns))
 {
     _vfs.mount(
         "/data",
@@ -305,6 +320,51 @@ void RootWindow::tabs_switch_page(Widget *page, guint page_num)
     switch_editor(new_editor);
 }
 
+void RootWindow::add_tile_node(const Gtk::TreeNodeChildren::iterator &parent,
+                               const SharedTileset &tileset,
+                               const SharedTile &tile)
+{
+    Gtk::TreeNodeChildren::iterator new_node = _tile_tree->append(
+        (*parent).children());
+    Gtk::TreeRow row = *new_node;
+    row[_tile_columns.col_tileset] = tileset;
+    row[_tile_columns.col_tile] = tile;
+    row[_tile_columns.col_display_name] = tile->display_name;
+    std::cout << tile->display_name << std::endl;
+}
+
+void RootWindow::any_tile_changed(
+    TilesetEditee *editee,
+    const SharedTile &tile)
+{
+    Gtk::TreeNodeChildren::iterator row_iter = find_tile_row(tile);
+    if (row_iter == _tile_tree->children().end()) {
+        return;
+    }
+
+    Gtk::TreeRow row = *row_iter;
+    row[_tile_columns.col_display_name] = tile->display_name;
+}
+
+void RootWindow::any_tile_created(
+    TilesetEditee *editee,
+    const SharedTile &tile)
+{
+    add_tile_node(find_tileset_row(editee->editee()), editee->editee(), tile);
+}
+
+void RootWindow::any_tile_deleted(
+    TilesetEditee *editee,
+    const SharedTile &tile)
+{
+    Gtk::TreeNodeChildren::iterator row_iter = find_tile_row(tile);
+    if (row_iter == _tile_tree->children().end()) {
+        return;
+    }
+
+    _tile_tree->erase(row_iter);
+}
+
 void RootWindow::delete_editor(Editor *editor)
 {
     // we must switch away to avoid segfault; we don't know the new
@@ -319,6 +379,38 @@ void RootWindow::delete_editor(Editor *editor)
 
     _tabs->remove_page(*editor->get_parent());
     delete editor;
+}
+
+Gtk::TreeNodeChildren::iterator RootWindow::find_tile_row(
+    const SharedTile &tile)
+{
+    for (auto &tileset_row: _tile_tree->children()) {
+        const Gtk::TreeNodeChildren &items = tileset_row->children();
+        Gtk::TreeNodeChildren::iterator it = items.begin();
+        while (it != items.end()) {
+            if (SharedTile((*it)[_tile_columns.col_tile]) == tile)
+            {
+                return *it;
+            }
+            it++;
+        }
+    }
+    return _tile_tree->children().end();
+}
+
+Gtk::TreeNodeChildren::iterator RootWindow::find_tileset_row(
+    const SharedTileset &tileset)
+{
+    Gtk::TreeNodeChildren items = _tile_tree->children();
+    Gtk::TreeNodeChildren::iterator it = items.begin();
+    while (it != items.end()) {
+        if (SharedTileset((*it)[_tile_columns.col_tileset]) == tileset)
+        {
+            break;
+        }
+        it++;
+    }
+    return *it;
 }
 
 Gtk::Box *RootWindow::new_editor_box()
@@ -616,7 +708,46 @@ void RootWindow::close_tileset(TilesetEditee *editee)
         _tileset_by_name.erase(it);
     }
 
+    Gtk::TreeNodeChildren::iterator ts_row = find_tileset_row(
+        data);
+    assert(ts_row != _tile_tree->children().end());
+    _tile_tree->erase(ts_row);
+
     delete_editor(editor);
+}
+
+void RootWindow::flush_picture_cache()
+{
+    _tile_pictures.clear();
+}
+
+void RootWindow::flush_picture_cache(const SharedTile &tile)
+{
+    auto it = _tile_pictures.find(tile.get());
+    if (it == _tile_pictures.end()) {
+        return;
+    }
+
+    _tile_pictures.erase(it);
+}
+
+Cairo::RefPtr<Cairo::ImageSurface> RootWindow::get_tile_picture(const SharedTile &tile)
+{
+    auto it = _tile_pictures.find(tile.get());
+    if (it != _tile_pictures.end()) {
+        return it->second;
+    }
+
+    if (!tile->default_visual.frames.empty()) {
+        Cairo::RefPtr<Cairo::ImageSurface> tile_pic =
+            get_temporary_cairo_surface_for_tile_image_data(
+                &tile->default_visual.frames[0].image);
+        _tile_pictures[tile.get()] = tile_pic;
+        return tile_pic;
+    } else {
+        return Cairo::RefPtr<Cairo::ImageSurface>();
+    }
+
 }
 
 LevelCollectionEditor *RootWindow::get_level_collection_editor(
@@ -788,6 +919,28 @@ TilesetEditee *RootWindow::make_tileset_editable(
     TilesetEditee *editee = new TilesetEditee(data, name);
     _loaded_tilesets[data.get()] = editee;
     _tileset_by_name[name] = data;
+
+    Gtk::TreeNodeChildren::iterator new_node = _tile_tree->append();
+    Gtk::TreeRow row = *new_node;
+    row[_tile_columns.col_tileset] = data;
+    row[_tile_columns.col_display_name] = data->header.display_name;
+    for (auto &tile: data->body.tiles) {
+        add_tile_node(new_node, data, tile);
+    }
+
+    editee->signal_tile_changed().connect(
+        sigc::mem_fun(
+            *this,
+            &RootWindow::any_tile_changed));
+    editee->signal_tile_created().connect(
+        sigc::mem_fun(
+            *this,
+            &RootWindow::any_tile_created));
+    editee->signal_tile_deleted().connect(
+        sigc::mem_fun(
+            *this,
+            &RootWindow::any_tile_deleted));
+
     return editee;
 }
 

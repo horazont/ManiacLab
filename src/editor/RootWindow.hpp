@@ -43,6 +43,16 @@ authors named in the AUTHORS file.
 #include "LevelCollectionEditor.hpp"
 #include "LevelCollectionEditee.hpp"
 
+class TileTreeModelColumns: public Gtk::TreeModelColumnRecord
+{
+public:
+    TileTreeModelColumns();
+
+    Gtk::TreeModelColumn<SharedTileset> col_tileset;
+    Gtk::TreeModelColumn<SharedTile> col_tile;
+    Gtk::TreeModelColumn<Glib::ustring> col_display_name;
+};
+
 class RootWindow: public Gtk::Window
 {
 public:
@@ -57,6 +67,8 @@ private:
     std::unordered_map<std::string, SharedLevelCollection> _level_collection_by_name;
     std::unordered_map<LevelCollection*, LevelCollectionEditee*> _loaded_level_collections;
     std::unordered_map<LevelCollection*, LevelCollectionEditor*> _level_collection_editors;
+    std::unordered_map<TileData*,
+                       Cairo::RefPtr<Cairo::ImageSurface>> _tile_pictures;
     std::vector<Editor*> _editors;
 
     Editor *_current_editor;
@@ -91,6 +103,9 @@ private:
     VFSFileChooserDialog _dlg_open_vfs_file;
     VFSFileChooserDialog _dlg_save_vfs_file;
 
+    TileTreeModelColumns _tile_columns;
+    Glib::RefPtr<Gtk::TreeStore> _tile_tree;
+
 protected:
     void action_file_new_tileset();
     void action_file_new_level();
@@ -105,7 +120,20 @@ protected:
     void tabs_switch_page(Gtk::Widget *page, guint page_num);
 
 protected:
+    void add_tile_node(const Gtk::TreeNodeChildren::iterator &parent,
+                       const SharedTileset &tileset,
+                       const SharedTile &tile);
+    void any_tile_changed(TilesetEditee *editee,
+                          const SharedTile &tile);
+    void any_tile_created(TilesetEditee *editee,
+                          const SharedTile &tile);
+    void any_tile_deleted(TilesetEditee *editee,
+                          const SharedTile &tile);
     void delete_editor(Editor *editor);
+    Gtk::TreeNodeChildren::iterator find_tile_row(
+        const SharedTile &tile);
+    Gtk::TreeNodeChildren::iterator find_tileset_row(
+        const SharedTileset &tileset);
     static Gtk::Box *new_editor_box();
     void update_undo_redo_sensitivity();
 
@@ -140,6 +168,14 @@ public:
         return _dlg_duplicate_tile;
     };
 
+    inline TileTreeModelColumns &get_tile_columns() {
+        return _tile_columns;
+    };
+
+    inline Glib::RefPtr<Gtk::TreeStore> get_tile_tree() {
+        return _tile_tree;
+    };
+
 public:
     void disable_level_controls();
     void disable_tileset_controls();
@@ -159,8 +195,13 @@ public:
     void close_tileset(
         TilesetEditee *editee);
 
+    void flush_picture_cache();
+    void flush_picture_cache(const SharedTile &tile);
+
     LevelCollectionEditor *get_level_collection_editor(
         LevelCollectionEditee *editee);
+
+    Cairo::RefPtr<Cairo::ImageSurface> get_tile_picture(const SharedTile &tile);
 
     /**
      * Acquire a tileset editor for the given tileset editee. If there
@@ -174,7 +215,7 @@ public:
         const std::string &name);
 
     /**
-     * Lookup a tile from a tileset and returns shared pointers to
+     * Lookup a tile from a tileset and return shared pointers to
      * both the tileset and the tile. If the tileset is not loaded
      * yet, it will be loaded into background (no tabs will be
      * created). If the tileset does not exist, nullptr is returned

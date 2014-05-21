@@ -48,6 +48,7 @@ set(EDITOR_SOURCES
     "src/editor/VFSFileChooserDialog.cpp"
     "src/editor/DuplicateTile.cpp"
     "src/editor/OpenImage.cpp"
+    "src/editor/LevelEditor.cpp"
     "src/editor/LevelCollectionEditee.cpp"
     "src/editor/LevelCollectionOperations.cpp"
     "src/editor/LevelCollectionEditor.cpp"

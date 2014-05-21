@@ -237,10 +237,10 @@ bool pixbuf_to_tile_image_data(
     return true;
 }
 
-Cairo::RefPtr<Cairo::Surface>
+Cairo::RefPtr<Cairo::ImageSurface>
     get_temporary_cairo_surface_for_tile_image_data(ImageData *data)
 {
-    Cairo::RefPtr<Cairo::Surface> result =
+    Cairo::RefPtr<Cairo::ImageSurface> result =
         Cairo::ImageSurface::create(
             &data->data.front(),
             Cairo::FORMAT_ARGB32,

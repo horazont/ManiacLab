@@ -28,6 +28,7 @@ authors named in the AUTHORS file.
 #include "Editor.hpp"
 
 #include "LevelCollectionEditee.hpp"
+#include "LevelEditor.hpp"
 
 class LevelCollectionEditor: public Editor
 {
@@ -43,21 +44,12 @@ protected:
 
     };
 
-    class TileListModelColumns: public Gtk::TreeModelColumnRecord
-    {
-    public:
-        TileListModelColumns();
-
-        Gtk::TreeModelColumn<SharedTile> col_tile;
-        Gtk::TreeModelColumn<Glib::ustring> col_display_name;
-
-    };
-
 public:
     LevelCollectionEditor(
         RootWindow *root,
         Gtk::Container *parent,
         LevelCollectionEditee *editee);
+    virtual ~LevelCollectionEditor();
 
 private:
     LevelCollectionEditee *_editee;
@@ -66,13 +58,15 @@ private:
     sigc::connection _conn_move_level_up;
     sigc::connection _conn_new_level;
 
+    LevelEditor _level_editor;
+
     LevelListModelColumns _level_columns;
     Glib::RefPtr<Gtk::ListStore> _level_list;
     Gtk::TreeView _level_list_view;
 
-    TileListModelColumns _tile_columns;
-    Glib::RefPtr<Gtk::ListStore> _tile_list;
-    Gtk::TreeView _tile_list_view;
+    Gtk::TreeView _tile_tree_view;
+
+    SharedLevel _current_level;
 
 protected:
     Gtk::TreeNodeChildren::iterator find_level_row(
@@ -102,6 +96,12 @@ public:
     void editee_level_deleted(
         LevelCollectionEditee *editee,
         const SharedLevel &level);
+    void level_list_view_row_activated(
+        const Gtk::TreeModel::Path &path,
+        Gtk::TreeViewColumn *column);
+    void tile_tree_view_row_activated(
+        const Gtk::TreeModel::Path &path,
+        Gtk::TreeViewColumn *column);
 
 public:
     void disable() override;

@@ -154,10 +154,6 @@ private:
         const PhysicsLayerData &layer,
         PhysicsInitialAttribute attr);
 
-protected:
-    PhysicsLayerData *get_phy_layer(PhysicsInitialAttribute attr);
-    TileLayerData *get_tile_layer(TileLayer layer);
-
 public:
     static bool range_check_game_coord(CoordInt x, CoordInt y);
     static bool range_check_physics_coord(CoordInt x, CoordInt y);
@@ -170,6 +166,8 @@ public:
     void clear_tile_layer(TileLayer layer);
     const PhysicsLayerData &get_phy_layer(PhysicsInitialAttribute attr) const;
     const TileLayerData &get_tile_layer(TileLayer layer) const;
+    PhysicsLayerData *get_phy_layer(PhysicsInitialAttribute attr);
+    TileLayerData *get_tile_layer(TileLayer layer);
     IOQuality load_from_raw(
         const RawLevelHeaderData *header,
         const RawLevelBodyData *body,

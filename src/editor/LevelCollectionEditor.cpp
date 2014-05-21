@@ -44,17 +44,6 @@ LevelCollectionEditor::LevelListModelColumns::LevelListModelColumns():
     add(col_display_name);
 }
 
-/* TileListModelColumns */
-
-LevelCollectionEditor::TileListModelColumns::TileListModelColumns():
-    TreeModelColumnRecord(),
-    col_tile(),
-    col_display_name()
-{
-    add(col_tile);
-    add(col_display_name);
-}
-
 /* utility functions */
 
 inline void add_action_tool_button(
@@ -81,12 +70,12 @@ LevelCollectionEditor::LevelCollectionEditor(
     _conn_move_level_down(),
     _conn_move_level_up(),
     _conn_new_level(),
+    _level_editor(root, editee),
     _level_columns(),
     _level_list(ListStore::create(_level_columns)),
     _level_list_view(_level_list),
-    _tile_columns(),
-    _tile_list(ListStore::create(_tile_columns)),
-    _tile_list_view(_tile_list)
+    _tile_tree_view(root->get_tile_tree()),
+    _current_level(nullptr)
 {
     editee->signal_level_created().connect(
         sigc::mem_fun(*this, &LevelCollectionEditor::editee_level_created));
@@ -94,6 +83,9 @@ LevelCollectionEditor::LevelCollectionEditor(
         sigc::mem_fun(*this, &LevelCollectionEditor::editee_level_deleted));
 
     ScrolledWindow *level_editor_scroll = manage(new ScrolledWindow());
+    level_editor_scroll->add(_level_editor);
+    _level_editor.set_valign(ALIGN_CENTER);
+    _level_editor.set_halign(ALIGN_CENTER);
 
     VPaned *right_split = manage(new VPaned());
     {
@@ -133,8 +125,16 @@ LevelCollectionEditor::LevelCollectionEditor(
     }
     {
         ScrolledWindow *tile_list_scroll = manage(new ScrolledWindow());
-        tile_list_scroll->add(_tile_list_view);
+        tile_list_scroll->add(_tile_tree_view);
         right_split->pack2(*tile_list_scroll);
+
+        _tile_tree_view.set_vexpand(false);
+        _tile_tree_view.set_model(root->get_tile_tree());
+        _tile_tree_view.append_column(
+            "Tile name",
+            root->get_tile_columns().col_display_name);
+        _tile_tree_view.expand_all();
+        _tile_tree_view.set_activate_on_single_click(true);
     }
 
     HPaned *main_split = manage(new HPaned());
@@ -145,6 +145,13 @@ LevelCollectionEditor::LevelCollectionEditor(
     parent->add(*main_split);
     parent->show_all_children();
 
+    _level_list_view.signal_row_activated().connect(
+        sigc::mem_fun(*this,
+                      &LevelCollectionEditor::level_list_view_row_activated));
+
+    _tile_tree_view.signal_row_activated().connect(
+        sigc::mem_fun(*this,
+                      &LevelCollectionEditor::tile_tree_view_row_activated));
 
     /*
       +---------------------------------+------+
@@ -162,6 +169,11 @@ LevelCollectionEditor::LevelCollectionEditor(
       |                                 |      |
       +---------------------------------+------+
      */
+
+}
+
+LevelCollectionEditor::~LevelCollectionEditor()
+{
 
 }
 
@@ -201,7 +213,8 @@ SharedLevel LevelCollectionEditor::get_selected_level()
 
 void LevelCollectionEditor::select_level(const SharedLevel &level)
 {
-
+    _current_level = level;
+    _level_editor.switch_level(_current_level);
 }
 
 const std::string &LevelCollectionEditor::get_name() const
@@ -271,6 +284,36 @@ void LevelCollectionEditor::editee_level_deleted(
     TreeNodeChildren::iterator row_iter = find_level_row(level);
     assert(row_iter != _level_list->children().end());
     _level_list->erase(row_iter);
+}
+
+void LevelCollectionEditor::level_list_view_row_activated(
+    const TreeModel::Path &path,
+    TreeViewColumn *column)
+{
+    ListStore::iterator iter = _level_list->get_iter(path);
+    assert(iter != _level_list->children().end());
+
+    SharedLevel level = SharedLevel((*iter)[_level_columns.col_level]);
+    select_level(level);
+}
+
+void LevelCollectionEditor::tile_tree_view_row_activated(
+    const TreeModel::Path &path,
+    TreeViewColumn *column)
+{
+    Glib::RefPtr<Gtk::TreeStore> model = _root->get_tile_tree();
+    TileTreeModelColumns &columns = _root->get_tile_columns();
+    TreeStore::iterator iter = model->get_iter(path);
+    assert(iter != model->children().end());
+
+    SharedTileset tileset = SharedTileset((*iter)[columns.col_tileset]);
+    SharedTile tile = SharedTile((*iter)[columns.col_tile]);
+    std::cout << "tree view row activated" << std::endl;
+    if (tile && tileset) {
+        std::cout << tile << tileset << std::endl;
+        _level_editor.set_primary_brush(std::make_pair(
+                                            tileset, tile));
+    }
 }
 
 void LevelCollectionEditor::disable()

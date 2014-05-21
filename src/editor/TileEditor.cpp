@@ -40,7 +40,8 @@ TileEditor::TileEditor(RootWindow *root, TilesetEditee *tileset):
     _cell_colour(Gdk::RGBA("black")),
     _cell_colour_block(Gdk::RGBA("red")),
     _border_colour(Gdk::RGBA("white")),
-    _tile_pixbuf()
+    _tile_pixbuf(),
+    _painting(false)
 {
     set_has_window(true);
     set_sensitive(false);
@@ -204,16 +205,17 @@ void TileEditor::on_unrealize()
 
 bool TileEditor::on_draw(const Cairo::RefPtr<Cairo::Context> &cr)
 {
-    if (is_sensitive() && !_tile->default_visual.frames.empty()) {
-        ImageData &image = _tile->default_visual.frames[0].image;
+    Cairo::RefPtr<Cairo::ImageSurface> pic;
+    if (is_sensitive() && ((pic = _root->get_tile_picture(_tile))))
+    {
         cr->set_source(
-            get_temporary_cairo_surface_for_tile_image_data(&image),
+            pic,
             0, 0);
 
         Cairo::RefPtr<Cairo::Pattern> patt = cr->get_source();
         Cairo::Matrix mat = patt->get_matrix();
-        mat.scale((double)image.width/(double)editor_size,
-                  (double)image.height/(double)editor_size);
+        mat.scale((double)pic->get_width()/(double)editor_size,
+                  (double)pic->get_height()/(double)editor_size);
         patt->set_matrix(mat);
     } else {
         Gdk::Cairo::set_source_rgba(cr, _border_colour);
@@ -303,6 +305,7 @@ bool TileEditor::on_motion_notify_event(GdkEventMotion *event)
 
 void TileEditor::flush_cell_stamp()
 {
+
 }
 
 void TileEditor::switch_tile(const SharedTile &tile)

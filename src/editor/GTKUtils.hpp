@@ -44,7 +44,7 @@ int message_dlg(Gtk::Window &parent,
 Glib::RefPtr<Gdk::Pixbuf> tile_image_data_to_pixbuf(ImageData *data);
 bool pixbuf_to_tile_image_data(
     const Glib::RefPtr<Gdk::Pixbuf> &src, ImageData *data);
-Cairo::RefPtr<Cairo::Surface>
+Cairo::RefPtr<Cairo::ImageSurface>
     get_temporary_cairo_surface_for_tile_image_data(ImageData *data);
 
 
