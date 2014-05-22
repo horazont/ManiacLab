@@ -822,12 +822,6 @@ TilesetEditee *RootWindow::load_tileset_by_name(
     }
 
     const std::string fullpath = "/data/tilesets/"+name;
-    if (!_vfs.file_readable(fullpath)) {
-        PyEngine::log->log(Information)
-            << "load_tileset_by_name: vfs claims we cannot read " << fullpath
-            << submit;
-        return nullptr;
-    }
 
     ContainerHandle header;
     FileType type;
