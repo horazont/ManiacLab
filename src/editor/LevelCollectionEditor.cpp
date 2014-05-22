@@ -170,6 +170,7 @@ LevelCollectionEditor::LevelCollectionEditor(
       +---------------------------------+------+
      */
 
+    initialize_contents();
 }
 
 LevelCollectionEditor::~LevelCollectionEditor()
@@ -209,6 +210,13 @@ SharedLevel LevelCollectionEditor::get_selected_level()
 
     TreeRow row = *iter;
     return SharedLevel(row[_level_columns.col_level]);
+}
+
+void LevelCollectionEditor::initialize_contents()
+{
+    for (auto &level: _editee->levels()) {
+        editee_level_created(_editee, level);
+    }
 }
 
 void LevelCollectionEditor::select_level(const SharedLevel &level)

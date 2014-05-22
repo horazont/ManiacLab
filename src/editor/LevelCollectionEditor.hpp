@@ -72,6 +72,7 @@ protected:
     Gtk::TreeNodeChildren::iterator find_level_row(
         const SharedLevel &level);
     SharedLevel get_selected_level();
+    void initialize_contents();
     void select_level(const SharedLevel &level);
 
 public:

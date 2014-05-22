@@ -606,7 +606,7 @@ IOQuality LevelData::load_from_raw(
         auto it = tile_reverse_map.find(placement.mapped_id);
         if (it == tile_reverse_map.end()) {
             PyEngine::log->log(Error)
-                << "mapped_id " << placement.mapped_id << "not in "
+                << "mapped_id " << placement.mapped_id << " not in "
                 << "reverse map" << submit;
             result = std::max(IOQ_ERRORNOUS, result);
             continue;
@@ -658,7 +658,7 @@ void LevelData::save_to_raw(
                 TilePlacement placement;
                 placement.x = x;
                 placement.y = y;
-                placement.layer = TILELAYER_AFFECTOR;
+                placement.layer = TILELAYER_DEFAULT;
                 placement.mapped_id = map_tile(
                     mapped_tiles, map_counter, *binding);
                 body->tile_placements.push_back(placement);
@@ -673,6 +673,7 @@ void LevelData::save_to_raw(
         entry.tileset_name = tileset_revlookup(binding.first);
         entry.tile_uuid = binding.second->uuid;
         entry.mapped_id = mapping.second;
+        body->tile_mapping.push_back(entry);
     }
 
     store_physics_layer(body, _pil_air_pressure, PHYATTR_AIR_PRESSURE);
@@ -689,12 +690,17 @@ void LevelData::update_block_map()
         const CoordInt py0 = gy * subdivision_count;
         for (CoordInt gx = 0; gx < level_width; gx++) {
             const CoordInt px0 = gx * subdivision_count;
-            const TileData &tile = *_default_layer[game_cell].second.get();
+            const TileData *tile = _default_layer[game_cell].second.get();
+
+            if (!tile) {
+                game_cell++;
+                continue;
+            }
 
             for (CoordInt pyoffs = 0; pyoffs < subdivision_count; pyoffs++) {
                 for (CoordInt pxoffs = 0; pxoffs < subdivision_count; pxoffs++) {
                     _block_map[(py0+pyoffs)*physics_width+pxoffs+px0] =
-                        tile.stamp.get_blocking(pxoffs, pyoffs);
+                        tile->stamp.get_blocking(pxoffs, pyoffs);
                 }
             }
 
@@ -769,7 +775,8 @@ IOQuality LevelCollection::load_from_raw(
      * data */
 
     for (auto &level_header: header->level_headers) {
-        std::unique_ptr<RawLevelBodyData> level_body;
+        std::unique_ptr<RawLevelBodyData> level_body(
+            new RawLevelBodyData());
 
         try {
             FromBitstream(
