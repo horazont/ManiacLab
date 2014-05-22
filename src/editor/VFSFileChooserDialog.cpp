@@ -268,15 +268,25 @@ void VFSFileChooserDialog::do_response(int response_id)
     case 2:
     {
         if (_open_for_writing) {
-            respond_with_file(_file_name_entry->get_text());
+            std::string full_path = _file_name_entry->get_text();
+            if (full_path == "") {
+                message_dlg(*this,
+                            "File name must not be empty",
+                            "File names cannot be blank; otherwise, they are not"
+                            " useful.",
+                            MESSAGE_ERROR,
+                            BUTTONS_OK);
+                return;
+            }
+            respond_with_file(join({_folder, full_path}));
         } else {
             ListStore::iterator iter = get_selected_row();
             if (iter == _file_list->children().end()) {
                 message_dlg(*this,
-                    "Select a file",
-                    "To continue, you have to select a file first.",
-                    MESSAGE_ERROR,
-                    BUTTONS_OK);
+                            "Select a file",
+                            "To continue, you have to select a file first.",
+                            MESSAGE_ERROR,
+                            BUTTONS_OK);
                 return;
             }
 
