@@ -47,6 +47,7 @@ class Level {
 public:
     Level(CoordInt width, CoordInt height, bool mp = true);
     ~Level();
+
 private:
     CoordInt _width, _height;
     LevelCell *_cells;
@@ -55,13 +56,28 @@ private:
 
     double _time_slice;
     double _time;
+
 private:
-    void get_fall_channel(const CoordInt x, const CoordInt y, LevelCell **aside, LevelCell **asidebelow);
-    bool handle_ca_interaction(const CoordInt x, const CoordInt y, LevelCell *cell, GameObject *obj);
-    bool handle_gravity(const CoordInt x, const CoordInt y, LevelCell *cell, GameObject *obj);
+    void get_fall_channel(
+        const CoordInt x,
+        const CoordInt y,
+        LevelCell *&aside,
+        LevelCell *&asidebelow);
+    bool handle_ca_interaction(
+        const CoordInt x,
+        const CoordInt y,
+        LevelCell &cell,
+        GameObject &obj);
+    bool handle_gravity(
+        const CoordInt x,
+        const CoordInt y,
+        LevelCell &cell,
+        GameObject &obj);
     void init_cells();
+
 protected:
     CoordPair get_physics_coords(const double x, const double y);
+
 public:
     void cleanup_cell(LevelCell *cell);
     void debug_test_object();
@@ -70,6 +86,7 @@ public:
     void debug_output(const double x, const double y);
     void physics_to_gl_texture(bool thread_regions);
     void update();
+
 };
 
 typedef boost::shared_ptr<Level> LevelHandle;

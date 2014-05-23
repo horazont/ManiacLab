@@ -39,28 +39,23 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
     _width(width),
     _height(height),
     _cells(new LevelCell[width*height]()),
-    _physics(Automaton(width*subdivision_count, height*subdivision_count, SimulationConfig(
-        0.3,        // flow friction
-        0.991,      // flow damping
-        0.3,        // convection friction
-        0.05,       // heat flow friction
-        0.1         // fog flow friction
-    ), mp)),
+    _physics(Automaton(
+                 width*subdivision_count,
+                 height*subdivision_count,
+                 SimulationConfig(
+                     0.3,        // flow friction
+                     0.991,      // flow damping
+                     0.3,        // convection friction
+                     0.05,       // heat flow friction
+                     0.1         // fog flow friction
+                 ),
+                 mp
+             )),
     _objects(),
     _time_slice(0.01),
     _time(0)
 {
     init_cells();
-    for (CoordInt y = 0; y < _height; y++) {
-        if (y < 4 || y > 46 || y % 4 != 0) {
-            TestObject *obj = debug_place_object(WALL_CENTER_X-1, y);
-            obj->set_is_affected_by_gravity(false);
-        }
-        if (y < 4 || y > 46 || y % 4 != 2) {
-            TestObject *obj = debug_place_object(WALL_CENTER_X+1, y);
-            obj->set_is_affected_by_gravity(false);
-        }
-    }
 }
 
 Level::~Level()
@@ -68,54 +63,64 @@ Level::~Level()
     delete[] _cells;
 }
 
-void Level::get_fall_channel(const CoordInt x, const CoordInt y,
-        LevelCell **aside, LevelCell **asidebelow)
+void Level::get_fall_channel(
+    const CoordInt x,
+    const CoordInt y,
+    LevelCell *&aside,
+    LevelCell *&asidebelow)
 {
-    *aside = &_cells[x+y*_width];
-    if ((*aside)->here || (*aside)->reserved_by)
+    aside = &_cells[x+y*_width];
+    if (aside->here || aside->reserved_by)
     {
-        *aside = 0;
-        *asidebelow = 0;
+        aside = nullptr;
+        asidebelow = nullptr;
         return;
     }
     else
-        *asidebelow = &_cells[x+(y+1)*_width];
-    if ((*asidebelow)->here || (*asidebelow)->reserved_by)
+        asidebelow = &_cells[x+(y+1)*_width];
+
+    if (asidebelow->here || asidebelow->reserved_by)
     {
-        *aside = 0;
-        *asidebelow = 0;
+        aside = 0;
+        asidebelow = 0;
     }
 }
 
-bool Level::handle_ca_interaction(const CoordInt x, const CoordInt y,
-    LevelCell *cell, GameObject *obj)
+bool Level::handle_ca_interaction(
+    const CoordInt x,
+    const CoordInt y,
+    LevelCell &cell,
+    GameObject &obj)
 {
     return true;
 }
 
-bool Level::handle_gravity(const CoordInt x, const CoordInt y, LevelCell *cell,
-    GameObject *obj)
+bool Level::handle_gravity(
+    const CoordInt x,
+    const CoordInt y,
+    LevelCell &cell,
+    GameObject &obj)
 {
     if (y == _height - 1) {
         // TODO: allow objects to leave the gamescope
         return true;
     }
-    assert(!(obj->movement));
+    assert(!(obj.movement));
 
     LevelCell *below = &_cells[x+(y+1)*_width];
     if (!below->here && !below->reserved_by) {
-        obj->movement = new MovementStraight(cell, below, 0, 1);
+        obj.movement = new MovementStraight(&cell, below, 0, 1);
     } else if (below->here
         && below->here->is_rollable
-        && obj->is_rollable)
+        && obj.is_rollable)
     {
         LevelCell *left = 0, *left_below = 0;
         LevelCell *right = 0, *right_below = 0;
         if (x > 0) {
-            get_fall_channel(x-1, y, &left, &left_below);
+            get_fall_channel(x-1, y, left, left_below);
         }
         if (x < _width-1) {
-            get_fall_channel(x+1, y, &right, &right_below);
+            get_fall_channel(x+1, y, right, right_below);
         }
 
         LevelCell *selected = 0, *selected_below = 0;
@@ -132,7 +137,11 @@ bool Level::handle_gravity(const CoordInt x, const CoordInt y, LevelCell *cell,
         }
 
         if (selected) {
-            obj->movement = new MovementRoll(cell, selected, selected_below, xoffset, 1);
+            obj.movement = new MovementRoll(
+                &cell,
+                selected,
+                selected_below,
+                xoffset, 1);
         }
     }
     return true;
@@ -266,7 +275,7 @@ void Level::update()
             if (!obj)
                 continue;
 
-            if (!handle_ca_interaction(x, y, cell, obj)) {
+            if (!handle_ca_interaction(x, y, *cell, *obj)) {
                 cleanup_cell(cell);
                 continue;
             }
@@ -294,7 +303,7 @@ void Level::update()
             }
 
             if (obj->is_gravity_affected && !movement) {
-                if (!handle_gravity(x, y, cell, obj)) {
+                if (!handle_gravity(x, y, *cell, *obj)) {
                     cleanup_cell(cell);
                     continue;
                 }
