@@ -70,8 +70,39 @@ protected:
 
 public:
     void dispatch_wm_quit() override;
+    bool ev_activate() override;
+    bool ev_caret_motion(
+        PyEngine::UI::CaretMotionDirection direction,
+        PyEngine::UI::CaretMotionStep step,
+        bool select) override;
+    bool ev_deactivate() override;
     bool ev_key_down(PyEngine::Key::Key key,
                      PyEngine::UI::KeyModifiers modifiers) override;
+    bool ev_key_up(PyEngine::Key::Key key,
+                   PyEngine::UI::KeyModifiers modifiers) override;
+    bool ev_mouse_click(
+        int x, int y,
+        PyEngine::UI::MouseButton button,
+        PyEngine::UI::KeyModifiers modifiers,
+        unsigned int nth) override;
+    bool ev_mouse_down(
+        int x, int y,
+        PyEngine::UI::MouseButton button,
+        PyEngine::UI::KeyModifiers modifiers) override;
+    bool ev_mouse_enter() override;
+    bool ev_mouse_leave() override;
+    bool ev_mouse_move(
+        int x, int y, int dx, int dy,
+        PyEngine::UI::MouseButton button,
+        PyEngine::UI::KeyModifiers modifiers) override;
+    bool ev_mouse_up(
+        int x, int y,
+        PyEngine::UI::MouseButton button,
+        PyEngine::UI::KeyModifiers modifiers) override;
+    bool ev_resize() override;
+    bool ev_scroll(int scrollx, int scrolly) override;
+    bool ev_text_input(const char* buf) override;
+    void frame_synced() override;
     void frame_unsynced(PyEngine::TimeFloat deltaT) override;
     void run(PyEngine::EventLoop *loop);
     void terminate();

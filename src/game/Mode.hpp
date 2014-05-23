@@ -46,6 +46,39 @@ protected:
 public:
     virtual void disable();
     virtual void enable(Application *root);
+    virtual bool ev_activate();
+    virtual bool ev_caret_motion(
+        PyEngine::UI::CaretMotionDirection direction,
+        PyEngine::UI::CaretMotionStep step,
+        bool select);
+    virtual bool ev_deactivate();
+    virtual bool ev_key_down(PyEngine::Key::Key key,
+                             PyEngine::UI::KeyModifiers modifiers);
+    virtual bool ev_key_up(PyEngine::Key::Key key,
+                           PyEngine::UI::KeyModifiers modifiers);
+    virtual bool ev_mouse_click(
+        int x, int y,
+        PyEngine::UI::MouseButton button,
+        PyEngine::UI::KeyModifiers modifiers,
+        unsigned int nth);
+    virtual bool ev_mouse_down(
+        int x, int y,
+        PyEngine::UI::MouseButton button,
+        PyEngine::UI::KeyModifiers modifiers);
+    virtual bool ev_mouse_enter();
+    virtual bool ev_mouse_leave();
+    virtual bool ev_mouse_move(
+        int x, int y, int dx, int dy,
+        PyEngine::UI::MouseButton button,
+        PyEngine::UI::KeyModifiers modifiers);
+    virtual bool ev_mouse_up(
+        int x, int y,
+        PyEngine::UI::MouseButton button,
+        PyEngine::UI::KeyModifiers modifiers);
+    virtual bool ev_resize();
+    virtual bool ev_scroll(int scrollx, int scrolly);
+    virtual bool ev_text_input(const char* buf);
+    virtual bool ev_wm_quit();
     virtual void frame_synced();
     virtual void frame_unsynced(PyEngine::TimeFloat deltaT);
 

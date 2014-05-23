@@ -321,34 +321,103 @@ void Application::set_mode(Mode *mode)
     if (_current_mode) {
         _current_mode->enable(this);
     }
+
+    invalidate_alignment();
+    realign();
 }
 
 void Application::dispatch_wm_quit()
 {
-    _loop->terminate();
+    _current_mode->ev_wm_quit();
 }
 
-bool Application::ev_key_down(PyEngine::Key::Key key,
-                              PyEngine::UI::KeyModifiers modifiers)
+bool Application::ev_activate()
 {
-    switch (key) {
-    case PyEngine::Key::q:
-    case PyEngine::Key::Escape:
-    {
-        _loop->terminate();
-        return true;
-    }
-    default: {}
-    }
+    return _current_mode->ev_activate();
+}
 
-    return false;
+bool Application::ev_caret_motion(
+    CaretMotionDirection direction,
+    CaretMotionStep step,
+    bool select)
+{
+    return _current_mode->ev_caret_motion(
+        direction, step, select);
+}
+
+bool Application::ev_deactivate()
+{
+    return _current_mode->ev_deactivate();
+}
+
+bool Application::ev_key_down(Key::Key key, KeyModifiers modifiers)
+{
+    return _current_mode->ev_key_down(key, modifiers);
+}
+
+bool Application::ev_key_up(Key::Key key, KeyModifiers modifiers)
+{
+    return _current_mode->ev_key_up(key, modifiers);
+}
+
+bool Application::ev_mouse_click(int x, int y, MouseButton button,
+                                 KeyModifiers modifiers, unsigned int nth)
+{
+    return _current_mode->ev_mouse_click(x, y, button, modifiers, nth);
+}
+
+bool Application::ev_mouse_down(int x, int y, MouseButton button,
+                                KeyModifiers modifiers)
+{
+    return _current_mode->ev_mouse_down(x, y, button, modifiers);
+}
+
+bool Application::ev_mouse_enter()
+{
+    return _current_mode->ev_mouse_enter();
+}
+
+bool Application::ev_mouse_leave()
+{
+    return _current_mode->ev_mouse_leave();
+}
+
+bool Application::ev_mouse_move(
+    int x, int y,
+    int dx, int dy,
+    MouseButtons buttons,
+    KeyModifiers modifiers)
+{
+    return _current_mode->ev_mouse_move(x, y, dx, dy, buttons, modifiers);
+}
+
+bool Application::ev_mouse_up(
+    int x, int y,
+    MouseButton button,
+    KeyModifiers modifiers)
+{
+    return _current_mode->ev_mouse_up(x, y, button, modifiers);
+}
+
+bool Application::ev_resize()
+{
+    return _current_mode->ev_resize();
+}
+
+bool Application::ev_scroll(int scrollx, int scrolly)
+{
+    return _current_mode->ev_scroll(scrollx, scrolly);
+}
+
+bool Application::ev_text_input(const char* buf)
+{
+    return _current_mode->ev_text_input(buf);
 }
 
 void Application::frame_unsynced(TimeFloat deltaT)
 {
     _window->switchTo();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
+    _current_mode->frame_unsynced(deltaT);
 
     Rect &rect = absolute_rect();
     glViewport(0, 0, rect.get_width(), rect.get_height());
@@ -389,6 +458,11 @@ void Application::frame_unsynced(TimeFloat deltaT)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     _window->flip();
+}
+
+void Application::frame_synced()
+{
+    _current_mode->frame_synced();
 }
 
 void Application::run(PyEngine::EventLoop *loop)

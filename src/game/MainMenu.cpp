@@ -29,6 +29,9 @@ authors named in the AUTHORS file.
 #include <CEngine/UI/Widgets/ButtonWidget.hpp>
 #include <CEngine/UI/Widgets/SpaceWidget.hpp>
 
+#include "Application.hpp"
+
+using namespace PyEngine;
 using namespace PyEngine::UI;
 
 /* MainMenu */
@@ -73,4 +76,37 @@ MainMenuMode::MainMenuMode():
     Mode()
 {
     _desktop_widgets.push_back(new MainMenu());
+}
+
+void MainMenuMode::enable(Application *root)
+{
+    Mode::enable(root);
+    glClearColor(0, 0.05, 0.1, 1);
+}
+
+bool MainMenuMode::ev_key_up(Key::Key key,
+                             KeyModifiers modifiers)
+{
+    switch (key) {
+    case Key::q:
+    case Key::Escape:
+    {
+        _root->dispatch_wm_quit();
+        return true;
+    }
+    default: {}
+    }
+    return false;
+}
+
+bool MainMenuMode::ev_wm_quit()
+{
+    _root->terminate();
+    return true;
+}
+
+void MainMenuMode::frame_unsynced(TimeFloat deltaT)
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
 }

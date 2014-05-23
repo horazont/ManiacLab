@@ -26,6 +26,7 @@ authors named in the AUTHORS file.
 
 #include "Application.hpp"
 
+using namespace PyEngine;
 using namespace PyEngine::UI;
 
 /* Mode */
@@ -69,14 +70,103 @@ void Mode::disable()
             parent->remove(widget);
         }
     }
+    _root = nullptr;
 }
 
 void Mode::enable(Application *root)
 {
+    _root = root;
     ParentPtr desktop = root->desktop_layer();
     for (auto widget: _desktop_widgets) {
         desktop->add(widget);
     }
+}
+
+bool Mode::ev_activate()
+{
+    return false;
+}
+
+bool Mode::ev_caret_motion(
+    CaretMotionDirection direction,
+    CaretMotionStep step,
+    bool select)
+{
+    return false;
+}
+
+bool Mode::ev_deactivate()
+{
+    return false;
+}
+
+bool Mode::ev_key_down(Key::Key key, KeyModifiers modifiers)
+{
+    return false;
+}
+
+bool Mode::ev_key_up(Key::Key key, KeyModifiers modifiers)
+{
+    return false;
+}
+
+bool Mode::ev_mouse_click(int x, int y, MouseButton button,
+                          KeyModifiers modifiers, unsigned int nth)
+{
+    return false;
+}
+
+bool Mode::ev_mouse_down(int x, int y, MouseButton button,
+                         KeyModifiers modifiers)
+{
+    return false;
+}
+
+bool Mode::ev_mouse_enter()
+{
+    return false;
+}
+
+bool Mode::ev_mouse_leave()
+{
+    return false;
+}
+
+bool Mode::ev_mouse_move(
+    int x, int y,
+    int dx, int dy,
+    MouseButtons buttons,
+    KeyModifiers modifiers)
+{
+    return false;
+}
+
+bool Mode::ev_mouse_up(
+    int x, int y,
+    MouseButton button,
+    KeyModifiers modifiers)
+{
+    return false;
+}
+
+bool Mode::ev_resize()
+{
+    return false;
+}
+
+bool Mode::ev_scroll(int scrollx, int scrolly)
+{
+    return false;
+}
+
+bool Mode::ev_text_input(const char* buf)
+{
+    return false;
+}
+
+bool Mode::ev_wm_quit()
+{
+    return false;
 }
 
 void Mode::frame_synced()

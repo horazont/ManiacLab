@@ -49,6 +49,12 @@ class MainMenuMode: public Mode
 public:
     MainMenuMode();
 
+public:
+    void enable(Application *root) override;
+    bool ev_key_up(PyEngine::Key::Key key,
+                   PyEngine::UI::KeyModifiers modifiers) override;
+    bool ev_wm_quit() override;
+    void frame_unsynced(PyEngine::TimeFloat deltaT) override;
 };
 
 #endif
