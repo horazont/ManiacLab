@@ -234,6 +234,17 @@ Application::Application(
         );
     }
 
+    {
+        std::unique_ptr<RuleGroup> group = rule_group({
+            simple_rule<FlexRule>(1)
+        });
+
+        theme->add_rule(
+            SelectorPtr(new Is("scene")),
+            std::move(group)
+        );
+    }
+
     theme->add_rule(
         SelectorPtr(new ChildOf(mainmenu,
                                 SelectorPtr(new Is("space")))),
@@ -324,6 +335,16 @@ void Application::set_mode(Mode *mode)
 
     invalidate_alignment();
     realign();
+}
+
+void Application::switch_to_main_menu_mode()
+{
+    set_mode(&_mode_main_menu);
+}
+
+void Application::switch_to_playground_mode()
+{
+    set_mode(&_mode_playground);
 }
 
 void Application::dispatch_wm_quit()

@@ -29,6 +29,7 @@ authors named in the AUTHORS file.
 #include <CEngine/UI/Widgets/ButtonWidget.hpp>
 #include <CEngine/UI/Widgets/SpaceWidget.hpp>
 
+#include "Playground.hpp"
 #include "Application.hpp"
 
 using namespace PyEngine;
@@ -46,18 +47,27 @@ MainMenu::MainMenu():
     subtitle->css_classes().insert("subtitle");
     add(subtitle);
     add(new Space());
-    add(new Button("Select profile"));
+    {
+        Button *btn_playground = new Button("Playground");
+        btn_playground->on_click().connect(
+            sigc::mem_fun(this, &MainMenu::playground));
+        add(btn_playground);
+    }
     add(new Space());
-    add(new Button("Continue playing"));
-    add(new Space());
-
-    Button *btn_quit = new Button("Quit");
-    btn_quit->on_click().connect(sigc::mem_fun(this, &MainMenu::quit));
-    add(btn_quit);
+    {
+        Button *btn_quit = new Button("Quit");
+        btn_quit->on_click().connect(sigc::mem_fun(this, &MainMenu::quit));
+        add(btn_quit);
+    }
     add(new Space());
 
     absolute_rect().set_width(400);
     absolute_rect().set_height(6*30);
+}
+
+void MainMenu::playground(WidgetPtr sender)
+{
+    static_cast<Application*>(_root)->switch_to_playground_mode();
 }
 
 void MainMenu::quit(WidgetPtr sender)

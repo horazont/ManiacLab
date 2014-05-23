@@ -35,6 +35,7 @@ authors named in the AUTHORS file.
 #include <CEngine/UI/Widgets/RootWidget.hpp>
 
 #include "MainMenu.hpp"
+#include "Playground.hpp"
 
 class Application: public PyEngine::UI::RootWidget
 {
@@ -60,6 +61,7 @@ private:
 
     Mode *_current_mode;
     MainMenuMode _mode_main_menu;
+    PlaygroundMode _mode_playground;
 
 protected:
     void _recreate_cairo_surface(unsigned int width,
@@ -67,6 +69,10 @@ protected:
 
 protected:
     void set_mode(Mode *mode);
+
+public:
+    void switch_to_main_menu_mode();
+    void switch_to_playground_mode();
 
 public:
     void dispatch_wm_quit() override;

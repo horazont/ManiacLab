@@ -35,8 +35,7 @@ public:
     MainMenu();
 
 public:
-    void map_editor(PyEngine::UI::WidgetPtr sender);
-    void tileset_editor(PyEngine::UI::WidgetPtr sender);
+    void playground(PyEngine::UI::WidgetPtr sender);
     void quit(PyEngine::UI::WidgetPtr sender);
 
 public:
