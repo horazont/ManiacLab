@@ -46,9 +46,9 @@ int main(int argc, char** argv)
 
     try {
         PyEngine::DisplayHandle dpy(new PyEngine::X11Display());
-        PyEngine::EventSinkHandle sink(new Application(*dpy.get()));
+        boost::shared_ptr<Application> sink(new Application(*dpy.get()));
         PyEngine::EventLoop loop(dpy, sink);
-        loop.run();
+        sink->run(&loop);
     }
     catch (const Exception& err)
     {

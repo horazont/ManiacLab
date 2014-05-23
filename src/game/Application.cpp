@@ -323,6 +323,27 @@ void Application::set_mode(Mode *mode)
     }
 }
 
+void Application::dispatch_wm_quit()
+{
+    _loop->terminate();
+}
+
+bool Application::ev_key_down(PyEngine::Key::Key key,
+                              PyEngine::UI::KeyModifiers modifiers)
+{
+    switch (key) {
+    case PyEngine::Key::q:
+    case PyEngine::Key::Escape:
+    {
+        _loop->terminate();
+        return true;
+    }
+    default: {}
+    }
+
+    return false;
+}
+
 void Application::frame_unsynced(TimeFloat deltaT)
 {
     _window->switchTo();
@@ -368,4 +389,21 @@ void Application::frame_unsynced(TimeFloat deltaT)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     _window->flip();
+}
+
+void Application::run(PyEngine::EventLoop *loop)
+{
+    _loop = loop;
+    try {
+        _loop->run();
+        _loop = nullptr;
+    } catch (...) {
+        _loop = nullptr;
+        throw;
+    }
+}
+
+void Application::terminate()
+{
+    _loop->terminate();
 }

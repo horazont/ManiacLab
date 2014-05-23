@@ -31,6 +31,7 @@ authors named in the AUTHORS file.
 #include <CEngine/IO/Time.hpp>
 #include <CEngine/WindowInterface/Display.hpp>
 #include <CEngine/WindowInterface/Window.hpp>
+#include <CEngine/WindowInterface/EventLoop.hpp>
 #include <CEngine/UI/Widgets/RootWidget.hpp>
 
 #include "MainMenu.hpp"
@@ -49,6 +50,7 @@ private:
     PyEngine::LogChannelHandle _log;
     PyEngine::Display &_dpy;
     PyEngine::WindowHandle _window;
+    PyEngine::EventLoop *_loop;
 
     GLuint _cairo_tex;
     unsigned int _cairo_tex_w;
@@ -67,7 +69,12 @@ protected:
     void set_mode(Mode *mode);
 
 public:
+    void dispatch_wm_quit() override;
+    bool ev_key_down(PyEngine::Key::Key key,
+                     PyEngine::UI::KeyModifiers modifiers) override;
     void frame_unsynced(PyEngine::TimeFloat deltaT) override;
+    void run(PyEngine::EventLoop *loop);
+    void terminate();
 
 };
 
