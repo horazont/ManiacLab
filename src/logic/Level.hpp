@@ -80,8 +80,6 @@ protected:
 
 public:
     void cleanup_cell(LevelCell *cell);
-    void debug_test_object();
-    TestObject *debug_place_object(const CoordInt x, const CoordInt y);
     void debug_test_stamp(const double x, const double y);
     void debug_output(const double x, const double y);
     void physics_to_gl_texture(bool thread_regions);
@@ -89,6 +87,6 @@ public:
 
 };
 
-typedef boost::shared_ptr<Level> LevelHandle;
+typedef std::shared_ptr<Level> LevelHandle;
 
 #endif

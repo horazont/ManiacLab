@@ -63,12 +63,12 @@ BOOST_PYTHON_MODULE(_cmaniaclab)
         ;
     */
 
-    class_<Level, LevelHandle>("Level", init<CoordInt, CoordInt, bool>())
+    /*class_<Level, LevelHandle>("Level", init<CoordInt, CoordInt, bool>())
         .def("update", &Level::update)
         .def("physics_to_gl_texture", &Level::physics_to_gl_texture)
         .def("debug_test_object", &Level::debug_test_object)
         .def("debug_test_stamp", &Level::debug_test_stamp)
-        .def("debug_output", &Level::debug_output);
+        .def("debug_output", &Level::debug_output);*/
 
     /*def("read_tileset_info", &TilesetInfo::read_from_stream,
         return_value_policy<manage_new_object>());

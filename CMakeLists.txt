@@ -24,7 +24,6 @@ set(LIB_SOURCES
     "src/logic/Stamp.cpp"
     "src/logic/Physics.cpp"
     "src/logic/Level.cpp"
-    "src/logic/TestObject.cpp"
     "src/logic/PythonInterface.cpp"
 )
 

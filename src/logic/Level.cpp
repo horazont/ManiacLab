@@ -29,8 +29,6 @@ authors named in the AUTHORS file.
 
 #include "CEngine/Misc/Exception.hpp"
 
-#include "TestObject.hpp"
-
 /* Level */
 
 #define WALL_CENTER_X 45
@@ -174,29 +172,6 @@ void Level::cleanup_cell(LevelCell *cell)
     }
 }
 
-TestObject *Level::debug_place_object(const CoordInt x, const CoordInt y)
-{
-    LevelCell *cell = &_cells[y*_width + x];
-    if (!cell->here && !cell->reserved_by) {
-        TestObject *const obj = new TestObject();
-        cell->here = obj;
-        obj->x = x;
-        obj->y = y;
-        obj->phy = get_physics_coords(x, y);
-        _physics.wait_for();
-        _physics.place_object(obj->phy.x, obj->phy.y, obj, 5);
-        return obj;
-    }
-    return 0;
-}
-
-void Level::debug_test_object()
-{
-    // const CoordInt x = ((double)rand() / RAND_MAX) * (_width - 1);
-    // const CoordInt y = ((double)rand() / RAND_MAX) * (_height - 1);
-    debug_place_object(WALL_CENTER_X, 0);
-}
-
 void Level::debug_test_stamp(const double x, const double y)
 {
     static CellInfo info_arr[cell_stamp_length];
@@ -311,62 +286,7 @@ void Level::update()
         }
     }
 
-    /*static const double origins[4][2] = {
-        {50.0, 50.0},
-        {50.0, 50.0},
-        {50.0, 50.0},
-        {50.0, 50.0}
-    };
-    static const double phase_freq[4][2] = {
-        {0.4, 2.0},
-        {0.45, 2.0},
-        {0.5, -1.5},
-        {0.55, -1.5},
-    };
-    for (int i = 0; i < 4; i++) {
-        const double cx = origins[i][0], cy = origins[i][1];
-        const double phase = phase_freq[i][0], freq = phase_freq[i][1];
-
-        const double r = sin(_time * 5.0) * 1.0 + 10.0;
-        const double y = cy + sin(_time * freq + phase) * r;
-        const double x = cx + cos(_time * freq + phase) * r;
-
-        debug_test_stamp(x, y, false);
-    }
-
     _time += _time_slice;
-
-    for (int i = 0; i < 4; i++) {
-        const double cx = origins[i][0], cy = origins[i][1];
-        const double phase = phase_freq[i][0], freq = phase_freq[i][1];
-
-        const double r = sin(_time * 5.0) * 1.0 + 10.0;
-        const double y = cy + sin(_time * freq + phase) * r;
-        const double x = cx + cos(_time * freq + phase) * r;
-
-        debug_test_stamp(x, y, true);
-    }*/
-
-    /*const double y0 = 10;
-    for (int i = 0; i < 80; i++) {
-        const double x = 50 + sin(_time * 2.0) * 10.0;
-        const double y = y0 + i * 0.5;
-
-        debug_test_stamp(x, y, false);
-    }
-
-    _time += _time_slice;
-
-    for (int i = 0; i < 80; i++) {
-        const double x = 50 + sin(_time * 2.0) * 10.0;
-        const double y = y0 + i * 0.5;
-
-        debug_test_stamp(x, y, true);
-    }*/
-
-    _time += _time_slice;
-    // debug_test_heat_stamp((sin(_time) + 1.0));
-    // debug_test_heat_source();
 
     _physics.resume();
 }
