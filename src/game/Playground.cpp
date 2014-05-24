@@ -65,6 +65,7 @@ void PlaygroundMode::enable(Application *root)
     _level->place_player(
         _player,
         0, 0);
+    _particles.clear();
 }
 
 bool PlaygroundMode::ev_key_down(Key::Key key,
@@ -75,6 +76,18 @@ bool PlaygroundMode::ev_key_down(Key::Key key,
     {
         if (modifiers == 0) {
             _player->acting = MOVE_UP;
+        } else {
+            _particles.spawn_generator(
+                4,
+                [this] (PhysicsParticle *part) {
+                    part->x = _player->x + 0.5 + ((float)random() / RAND_MAX)*0.1 - 0.05;
+                    part->y = _player->y + ((float)random() / RAND_MAX)*0.1 - 0.05;
+                    part->vx = ((float)random() / RAND_MAX)*0.3 - 0.15;
+                    part->vy = -4 + ((float)random() / RAND_MAX)*0.2 - 0.1;
+                    part->ax = 0;
+                    part->ay = 0;
+                    part->lifetime = 4;
+                });
         }
         return true;
     }
@@ -127,7 +140,12 @@ void PlaygroundMode::frame_synced()
 
 void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
 {
+    _particles.update(deltaT);
+    std::cout << _particles.active_size() << std::endl;
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
     LevelCell *cell = _level->get_cell(0, 0);
     for (int i = 0; i < level_width*level_height; i++) {
         if (!cell->here) {
@@ -154,10 +172,10 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
             buffer.getPositionView()->set(&pos.front());
 
             std::array<PyEngine::GL::GLVertexFloat, 16> colours({
-                    1, 1, 1, 0,
-                        1, 1, 0, 0,
-                        1, 0, 1, 0,
-                        0, 1, 1, 0
+                    1, 1, 1, 1,
+                        1, 1, 0, 1,
+                        1, 0, 1, 1,
+                        0, 1, 1, 1
                         });
             buffer.getColourView()->set(&colours.front());
 
@@ -169,6 +187,51 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
         ++cell;
     }
 
+    size_t i = 0;
+    for (auto &part: _particles)
+    {
+        if (_particle_verticies.size() == i) {
+            _particle_verticies.push_back(
+                _object_geometry->allocateVertices(4));
+        }
+
+        PyEngine::GL::GeometryBufferView buffer(
+            _object_geometry,
+            _particle_verticies[i]);
+
+        const PyEngine::GL::GLVertexFloat age = part->age / part->lifetime;
+        const PyEngine::GL::GLVertexFloat size = age * 0.8 + 0.2;
+        const PyEngine::GL::GLVertexFloat halfsize = size/2;
+        const PyEngine::GL::GLVertexFloat x0 = part->x - halfsize;
+        const PyEngine::GL::GLVertexFloat y0 = part->y - halfsize;
+
+        std::array<PyEngine::GL::GLVertexFloat, 12> pos({
+                x0, y0, 0,
+                    x0, y0+size, 0,
+                    x0+size, y0+size, 0,
+                    x0+size, y0, 0
+                    });
+        buffer.getPositionView()->set(&pos.front());
+
+        const PyEngine::GL::GLVertexFloat green = age * 0.5 + 0.5;
+        const PyEngine::GL::GLVertexFloat red = age * 0.3 + 0.7;
+        const PyEngine::GL::GLVertexFloat blue = age;
+        const PyEngine::GL::GLVertexFloat alpha = 1.0 - age;
+
+        std::array<PyEngine::GL::GLVertexFloat, 16> colours({
+                red, green, blue, alpha,
+                red, green, blue, alpha,
+                red, green, blue, alpha,
+                red, green, blue, alpha
+                    });
+        buffer.getColourView()->set(&colours.front());
+
+        _object_indicies->add(_particle_verticies[i]);
+
+        ++i;
+    }
+
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     const Rect &rect = _root->get_absolute_rect();
@@ -177,12 +240,17 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
             -1, 1);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    // move view into center
+    glTranslatef(rect.get_width()/2-12,
+                 rect.get_height()/2-12,
+                 0);
     glScalef(24, 24, 0);
+    glTranslatef(-_player->x, -_player->y, 0);
 
     _object_geometry->bind();
-    _object_indicies->bind();
-    _object_indicies->draw(GL_QUADS);
+    // _object_indicies->bind();
+    _object_indicies->drawUnbound(GL_QUADS);
     _object_indicies->clear();
-    _object_indicies->unbind();
+    // _object_indicies->unbind();
     _object_geometry->unbind();
 }

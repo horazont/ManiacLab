@@ -6,6 +6,7 @@
 
 #include "Mode.hpp"
 
+#include "logic/Particles.hpp"
 #include "logic/Level.hpp"
 
 class PlaygroundScene: public PyEngine::UI::Widget
@@ -27,6 +28,8 @@ private:
     std::unique_ptr<Level> _level;
     PyEngine::GL::GeometryBufferHandle _object_geometry;
     PyEngine::GL::StreamIndexBufferHandle _object_indicies;
+    ParticleSystem _particles;
+    std::vector<PyEngine::GL::VertexIndexListHandle> _particle_verticies;
 
     ObjectInfo _player_object_info;
     GameObject *_player;
@@ -40,6 +43,7 @@ public:
                    PyEngine::UI::KeyModifiers modifiers) override;
     void frame_synced() override;
     void frame_unsynced(PyEngine::TimeFloat deltaT) override;
+
 };
 
 #endif

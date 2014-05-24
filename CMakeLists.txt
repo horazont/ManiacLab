@@ -25,9 +25,13 @@ set(LIB_SOURCES
     "src/logic/Physics.cpp"
     "src/logic/Level.cpp"
     "src/logic/PythonInterface.cpp"
+    "src/logic/Particles.cpp"
 )
 
+set(COMMON_SOURCES)
+
 set(GAME_SOURCES
+    ${COMMON_SOURCES}
     "src/game/Mode.cpp"
     "src/game/MainMenu.cpp"
     "src/game/Playground.cpp"
@@ -35,6 +39,7 @@ set(GAME_SOURCES
 )
 
 set(EDITOR_SOURCES
+    ${COMMON_SOURCES}
     "src/editor/GTKUtils.cpp"
     "src/editor/Operation.cpp"
     "src/editor/Editor.cpp"
