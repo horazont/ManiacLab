@@ -47,13 +47,15 @@ Movement::~Movement()
 void Movement::delete_self()
 {
     _obj->movement = 0;
-    delete this;
+    // movement is a unique_ptr, this will call the destructor
 }
 
 /* MovementStraight */
 
-MovementStraight::MovementStraight(LevelCell *from, LevelCell *to,
-        int offsetX, int offsetY):
+MovementStraight::MovementStraight(
+    LevelCell *from,
+    LevelCell *to,
+    int offsetX, int offsetY):
     Movement::Movement(from->here),
     _from(from),
     _to(to),
@@ -79,13 +81,23 @@ MovementStraight::MovementStraight(LevelCell *from, LevelCell *to,
     assert(!to->reserved_by);
 
     from->reserved_by = _obj;
-    from->here = 0;
+    from->here = nullptr;
     to->here = _obj;
 }
 
 MovementStraight::~MovementStraight()
 {
-    _from->reserved_by = 0;
+    _from->reserved_by = nullptr;
+}
+
+void MovementStraight::abort()
+{
+    _obj->x = _startX;
+    _obj->y = _startY;
+    _from->reserved_by = nullptr;
+    _from->here = _obj;
+    _to->here = nullptr;
+    delete_self();
 }
 
 bool MovementStraight::update(TimeFloat interval)
@@ -102,6 +114,8 @@ bool MovementStraight::update(TimeFloat interval)
         delete_self();
         return true;
     }
+
+    _obj->view.invalidated = true;
     return false;
 }
 
@@ -127,8 +141,15 @@ MovementRoll::~MovementRoll()
     _to->reserved_by = 0;
 }
 
+void MovementRoll::abort()
+{
+    assert(false);
+    delete_self();
+}
+
 bool MovementRoll::update(TimeFloat interval)
 {
+    _obj->view.invalidated = true;
     assert(false);
     delete_self();
     return true;

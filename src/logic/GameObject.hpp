@@ -27,48 +27,102 @@ authors named in the AUTHORS file.
 
 #include <CEngine/IO/Stream.hpp>
 #include <CEngine/Misc/Exception.hpp>
+#include <CEngine/GL/GeometryBuffer.hpp>
 
 #include "Movements.hpp"
 #include "Stamp.hpp"
+
+#include "io/TilesetData.hpp"
 
 struct Cell;
 class Level;
 class Movement;
 
-// If this ever exceeds two bytes, an increase in the version number is
-// mandatory!
-enum TemplateBinaryFlags {
-    TBF_HAS_STAMP             = 0x0001,
-    TBF_GRAVITY_AFFECTED      = 0x0002,
-    TBF_ROLLABLE              = 0x0004,
+/**
+ * The FrameState holds a set of flags and values which are calculated for each
+ * object each frame. Each object has its own FrameState and its updated by the
+ * engine before calling the GameObject::frame() method. This allows objects to
+ * react on events in their surroundings simultanously (the data is latched).
+ */
+struct FrameState
+{
+    /** The object is part of an explosion area */
+    bool explode;
+
+    /**
+     * The object is being hit by igniting particles. This has nothing to do
+     * with any igniting thresholds defined in the object, but it can be used
+     * by an object to trigger ignition, if combustion cannot be triggered by
+     * temperature alone.
+     *
+     * Examples of ignition triggers are explosions, flames and sparks.
+     */
+    bool ignite;
+
+    /**
+     * Average temperature of the object. This only applies if it has blocking
+     * parts in its stamp.
+     */
+    float own_temperature;
+
+    /**
+     * Surrounding temperature in the fields neighbouring the object.
+     */
+    float surr_temperature;
+
+    /**
+     * Reset the frame state to defaults. This should be called by the
+     * GameObject after each processing. The Engine will only set some flags,
+     * not reset them by itself.
+     */
+    void reset();
 };
 
-struct Template {
-public:
-    Template();
-    Template(Template const &ref);
-    Template& operator=(Template const &ref);
-    virtual ~Template();
+struct ObjectInfo: public TileData
+{
+    explicit ObjectInfo(const CellStamp &stamp);
+    explicit ObjectInfo(const TileData &src_data);
+    ObjectInfo(const ObjectInfo &ref) = default;
+    ObjectInfo &operator=(const ObjectInfo &ref) = default;
 
-public:
-    Stamp *stamp;
-    bool is_gravity_affected, is_rollable;
-    double temp_coefficient;
-    double radius;
-
+    Stamp stamp;
 };
 
-struct GameObject: public Template {
+struct ObjectView
+{
+    ObjectView();
+
+    bool invalidated;
+    PyEngine::GL::VertexIndexListHandle vertices;
+};
+
+enum Acting {
+    NONE = 0,
+    MOVE_UP,
+    MOVE_DOWN,
+    MOVE_RIGHT,
+    MOVE_LEFT
+};
+
+struct GameObject
+{
 public:
-    GameObject();
-    GameObject(GameObject const &ref);
-    GameObject& operator=(GameObject const &ref);
-    virtual ~GameObject();
+    explicit GameObject(const ObjectInfo &info);
+    GameObject(const GameObject &ref) = delete;
+    GameObject& operator=(const GameObject &ref) = delete;
+
 public:
+    FrameState frame_state;
+    const ObjectInfo &info;
+
     double x, y, phi;
-    Movement *movement;
+    std::unique_ptr<Movement> movement;
 
     CoordPair phy;
+
+    ObjectView view;
+
+    Acting acting;
 };
 
 #endif

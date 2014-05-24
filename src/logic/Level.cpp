@@ -107,10 +107,11 @@ bool Level::handle_gravity(
 
     LevelCell *below = &_cells[x+(y+1)*_width];
     if (!below->here && !below->reserved_by) {
-        obj.movement = new MovementStraight(&cell, below, 0, 1);
+        obj.movement = std::unique_ptr<Movement>(
+            new MovementStraight(&cell, below, 0, 1));
     } else if (below->here
-        && below->here->is_rollable
-        && obj.is_rollable)
+        && below->here->info.is_rollable
+        && obj.info.is_rollable)
     {
         LevelCell *left = 0, *left_below = 0;
         LevelCell *right = 0, *right_below = 0;
@@ -135,11 +136,12 @@ bool Level::handle_gravity(
         }
 
         if (selected) {
-            obj.movement = new MovementRoll(
-                &cell,
-                selected,
-                selected_below,
-                xoffset, 1);
+            obj.movement = std::unique_ptr<Movement>(
+                new MovementRoll(
+                    &cell,
+                    selected,
+                    selected_below,
+                    xoffset, 1));
         }
     }
     return true;
@@ -167,7 +169,13 @@ void Level::cleanup_cell(LevelCell *cell)
     GameObject *const obj = cell->here;
     if (obj)
     {
-        _physics.clear_cells(obj->phy.x, obj->phy.y, obj->stamp);
+        if (obj == _player) {
+            _on_player_death(this, obj);
+            _player = nullptr;
+        }
+        _physics.clear_cells(
+            obj->phy.x, obj->phy.y,
+            obj->info.stamp);
         delete obj;
     }
 }
@@ -218,7 +226,9 @@ void Level::debug_output(const double x, const double y)
         }
         CellMetadata *meta = _physics.meta_at(cx, cy);
 
-        const double tc = (meta->blocked ? meta->obj->temp_coefficient : airtempcoeff_per_pressure * cell->air_pressure);
+        const double tc = (meta->blocked
+                           ? meta->obj->info.temp_coefficient
+                           : airtempcoeff_per_pressure * cell->air_pressure);
 
         if (meta->blocked) {
             std::cout << "  blocked with " << meta->obj << std::endl;
@@ -235,6 +245,38 @@ void Level::debug_output(const double x, const double y)
 void Level::physics_to_gl_texture(bool thread_regions)
 {
     _physics.to_gl_texture(0.0, 2.0, thread_regions);
+}
+
+void Level::place_player(
+    GameObject *player,
+    const CoordInt x,
+    const CoordInt y)
+{
+    if (_player) {
+        return;
+    }
+
+    _physics.wait_for();
+
+    LevelCell *dest = &_cells[x+y*_width];
+    if (dest->reserved_by) {
+        GameObject *obj = dest->reserved_by;
+        const CoordPair oldpos = get_physics_coords(
+            obj->x,
+            obj->y);
+        obj->movement->abort();
+        const CoordPair newpos = get_physics_coords(
+            obj->x,
+            obj->y);
+        _physics.move_stamp(
+            oldpos.x, oldpos.y,
+            newpos.x, newpos.y,
+            obj->info.stamp);
+    }
+    cleanup_cell(dest);
+
+    dest->here = player;
+    _player = player;
 }
 
 void Level::update()
@@ -255,21 +297,19 @@ void Level::update()
                 continue;
             }
 
-            Movement *movement = obj->movement;
+            Movement *movement = obj->movement.get();
             if (movement) {
                 if (movement->update(_time_slice)) {
-                    movement = 0;
+                    movement = nullptr;
                 }
                 CoordPair new_coords = get_physics_coords(obj->x, obj->y);
                 if (new_coords != obj->phy) {
-                    if (obj->stamp && obj->stamp->non_empty()) {
-                        /*_physics.clear_cells(obj->phy.x, obj->phy.y, obj->stamp);
-                        _physics.place_object(new_coords.x, new_coords.y, obj);*/
+                    if (obj->info.stamp.non_empty()) {
                         const CoordPair vel = CoordPair(0, 1);
                         _physics.move_stamp(
                             obj->phy.x, obj->phy.y,
                             new_coords.x, new_coords.y,
-                            obj->stamp,
+                            obj->info.stamp,
                             &vel
                         );
                     }
@@ -277,10 +317,54 @@ void Level::update()
                 }
             }
 
-            if (obj->is_gravity_affected && !movement) {
+            if (obj->info.is_gravity_affected && !movement) {
                 if (!handle_gravity(x, y, *cell, *obj)) {
                     cleanup_cell(cell);
                     continue;
+                }
+            }
+
+            if (obj->acting != NONE && !movement) {
+                CoordInt offsx = 0;
+                CoordInt offsy = 0;
+                switch (obj->acting) {
+                case MOVE_UP:
+                {
+                    offsy = -1;
+                    break;
+                };
+                case MOVE_DOWN:
+                {
+                    offsy = 1;
+                    break;
+                }
+                case MOVE_LEFT:
+                {
+                    offsx = -1;
+                    break;
+                }
+                case MOVE_RIGHT:
+                {
+                    offsx = 1;
+                    break;
+                }
+                default: {}
+                }
+
+                obj->acting = NONE;
+
+                const CoordInt neighx = offsx + x;
+                const CoordInt neighy = offsy + y;
+
+                if ((offsx != 0 || offsy != 0)
+                    && neighx >= 0 && neighx < _width
+                    && neighy >= 0 && neighy < _height)
+                {
+                    LevelCell *neighbour = &_cells[neighx+neighy*_width];
+                    obj->movement = std::unique_ptr<Movement>(
+                        new MovementStraight(
+                            cell, neighbour,
+                            offsx, offsy));
                 }
             }
         }

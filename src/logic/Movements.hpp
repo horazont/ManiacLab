@@ -36,39 +36,53 @@ class Movement {
 public:
     Movement(GameObject *obj);
     virtual ~Movement();
+
 protected:
     double _time;
     GameObject *_obj;
+
 protected:
     void delete_self();
+
 public:
+    virtual void abort() = 0;
     virtual bool update(PyEngine::TimeFloat interval) = 0;
+
 };
 
 class MovementStraight: public Movement {
 public:
     MovementStraight(LevelCell *from, LevelCell *to, int offsetX, int offsetY);
     virtual ~MovementStraight();
+
 private:
     LevelCell *_from, *_to;
     int _offX, _offY;
     CoordInt _startX, _startY;
+
 public:
-    virtual bool update(PyEngine::TimeFloat interval);
+    void abort() override;
+    bool update(PyEngine::TimeFloat interval) override;
+
 public:
     static const double duration;
+
 };
 
 class MovementRoll: public Movement {
 public:
     MovementRoll(LevelCell *from, LevelCell *via, LevelCell *to, int offsetX, int offsetY);
     virtual ~MovementRoll();
+
 private:
     LevelCell *_from, *_via, *_to;
     int _offX, _offY;
     CoordInt _startX, _startY;
+
 public:
-    virtual bool update(PyEngine::TimeFloat interval);
+    void abort() override;
+    bool update(PyEngine::TimeFloat interval) override;
+
 };
 
 #endif

@@ -134,8 +134,10 @@ public:
         return (x >= 0 && x < _width && y >= 0 && y < _height) ? cell_at(x, y) : 0;
     };
 
-    void clear_cells(const CoordInt x, const CoordInt y,
-        const Stamp *stamp);
+    void clear_cells(
+        const CoordInt x,
+        const CoordInt y,
+        const Stamp &stamp);
 
     void get_cell_stamp_at(const CoordInt left, const CoordInt top, PhysicsCellStamp *stamp);
     CellMetadata inline *meta_at(CoordInt x, CoordInt y) { return &_metadata[x+_width*y]; };
@@ -143,7 +145,8 @@ public:
     void move_stamp(
         const CoordInt oldx, const CoordInt oldy,
         const CoordInt newx, const CoordInt newy,
-        const Stamp *stamp, const CoordPair *const vel = nullptr);
+        const Stamp &stamp,
+        const CoordPair *const vel = nullptr);
 
     void place_object(const CoordInt x, const CoordInt y,
         const GameObject *obj, const double initial_temperature);

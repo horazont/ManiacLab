@@ -27,7 +27,7 @@ authors named in the AUTHORS file.
 
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
+#include <sigc++/sigc++.h>
 
 #include <CEngine/IO/Stream.hpp>
 
@@ -43,6 +43,10 @@ struct LevelCell {
     GameObject *here, *reserved_by;
 };
 
+class Level;
+
+typedef sigc::signal<void, Level*, GameObject*> PlayerDeathEvent;
+
 class Level {
 public:
     Level(CoordInt width, CoordInt height, bool mp = true);
@@ -56,6 +60,9 @@ private:
 
     double _time_slice;
     double _time;
+
+    GameObject *_player;
+    PlayerDeathEvent _on_player_death;
 
 private:
     void get_fall_channel(
@@ -82,11 +89,25 @@ public:
     void cleanup_cell(LevelCell *cell);
     void debug_test_stamp(const double x, const double y);
     void debug_output(const double x, const double y);
+    void place_player(
+        GameObject *player,
+        const CoordInt x,
+        const CoordInt y);
     void physics_to_gl_texture(bool thread_regions);
     void update();
 
-};
+    inline LevelCell *get_cell(
+        CoordInt x, CoordInt y)
+    {
+        return &_cells[x+y*_width];
+    }
 
-typedef std::shared_ptr<Level> LevelHandle;
+public:
+    inline PlayerDeathEvent &on_player_death()
+    {
+        return _on_player_death;
+    }
+
+};
 
 #endif

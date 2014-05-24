@@ -27,73 +27,50 @@ authors named in the AUTHORS file.
 #include "Errors.hpp"
 #include "Physics.hpp"
 
-Template::Template():
-    stamp(0),
-    is_gravity_affected(false),
-    is_rollable(false),
-    temp_coefficient(1.0),
-    radius(0.5)
+/* FrameState */
+
+void FrameState::reset()
+{
+    explode = false;
+    ignite = false;
+    own_temperature = NAN;
+    surr_temperature = NAN;
+}
+
+/* ObjectInfo */
+
+ObjectInfo::ObjectInfo(const CellStamp &stamp):
+    TileData(),
+    stamp(stamp)
+{
+    TileData::stamp = stamp;
+}
+
+ObjectInfo::ObjectInfo(const TileData &src):
+    TileData(src),
+    stamp(src.stamp)
 {
 
 }
 
-Template::Template(Template const &ref):
-    stamp(ref.stamp),
-    is_gravity_affected(ref.is_gravity_affected),
-    is_rollable(ref.is_rollable),
-    temp_coefficient(ref.temp_coefficient),
-    radius(ref.radius)
+/* ObjectView */
+
+ObjectView::ObjectView():
+    invalidated(true)
 {
 
 }
 
-Template& Template::operator=(Template const &ref)
-{
-    if (stamp) {
-        delete stamp;
-    }
-    stamp = ref.stamp;
-    is_gravity_affected = ref.is_gravity_affected;
-    is_rollable = ref.is_rollable;
-    temp_coefficient = ref.temp_coefficient;
-    return *this;
-}
+/* GameObject */
 
-Template::~Template()
-{
-    if (stamp) {
-        delete stamp;
-    }
-}
-
-GameObject::GameObject():
-    Template::Template(),
-    x(0), y(0), phi(0),
-    movement(0)
-{
-
-}
-
-GameObject::GameObject(GameObject const &ref):
-    Template::Template(ref),
-    x(ref.x), y(ref.y), phi(ref.phi),
-    movement(ref.movement)
-{
-
-}
-
-GameObject& GameObject::operator=(GameObject const &ref)
-{
-    Template::operator=(static_cast<Template const&>(ref));
-    x = ref.x;
-    y = ref.y;
-    phi = ref.phi;
-    movement = nullptr;
-    phy = ref.phy;
-    return *this;
-}
-
-GameObject::~GameObject()
+GameObject::GameObject(const ObjectInfo &info):
+    frame_state(),
+    info(info),
+    x(0),
+    y(0),
+    phi(0),
+    phy(),
+    view()
 {
 
 }

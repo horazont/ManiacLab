@@ -167,13 +167,15 @@ void Automaton::init_threads()
     );
 }
 
-void Automaton::clear_cells(const CoordInt dx, const CoordInt dy,
-    const Stamp *stamp)
+void Automaton::clear_cells(
+    const CoordInt dx,
+    const CoordInt dy,
+    const Stamp &stamp)
 {
     assert(!_resumed);
 
     uintptr_t stamp_cells_len = 0;
-    const CoordPair *stamp_cells = stamp->get_map_coords(&stamp_cells_len);
+    const CoordPair *const stamp_cells = stamp.get_map_coords(&stamp_cells_len);
 
     for (uintptr_t i = 0; i < stamp_cells_len; i++) {
         const CoordPair p = stamp_cells[i];
@@ -211,9 +213,10 @@ void Automaton::apply_temperature_stamp(const CoordInt x, const CoordInt y,
 
         CellMetadata *meta = meta_at(cx, cy);
         if (meta->blocked) {
-            cell->heat_energy = temperature * meta->obj->temp_coefficient;
+            cell->heat_energy = temperature * meta->obj->info.temp_coefficient;
         } else {
-            cell->heat_energy = temperature * (airtempcoeff_per_pressure * cell->air_pressure);
+            cell->heat_energy = temperature * (
+                airtempcoeff_per_pressure*cell->air_pressure);
         }
     }
 }
@@ -232,9 +235,11 @@ void Automaton::get_cell_stamp_at(const CoordInt left, const CoordInt top,
     }
 }
 
-void Automaton::move_stamp(const CoordInt oldx, const CoordInt oldy,
+void Automaton::move_stamp(
+    const CoordInt oldx, const CoordInt oldy,
     const CoordInt newx, const CoordInt newy,
-    const Stamp *stamp, const CoordPair *const vel)
+    const Stamp &stamp,
+    const CoordPair *const vel)
 {
     assert(!_resumed);
 
@@ -243,7 +248,7 @@ void Automaton::move_stamp(const CoordInt oldx, const CoordInt oldy,
     uintptr_t write_index = 0;
 
     uintptr_t stamp_cells_len = 0;
-    const CoordPair *stamp_cells = stamp->get_map_coords(&stamp_cells_len);
+    const CoordPair *stamp_cells = stamp.get_map_coords(&stamp_cells_len);
     stamp_cells--;
 
     for (uintptr_t i = 0; i < stamp_cells_len; i++) {
@@ -281,9 +286,10 @@ void Automaton::place_object(const CoordInt dx, const CoordInt dy,
     static CellInfo cells[cell_stamp_length];
 
     uintptr_t stamp_cells_len = 0;
-    const CoordPair *stamp_cells = obj->stamp->get_map_coords(&stamp_cells_len);
+    const CoordPair *stamp_cells = obj->info.stamp.get_map_coords(
+        &stamp_cells_len);
 
-    double heat_energy = initial_temperature * obj->temp_coefficient;
+    double heat_energy = initial_temperature * obj->info.temp_coefficient;
 
     for (uintptr_t i = 0; i < stamp_cells_len; i++) {
         CellInfo *const dst = &cells[i];
@@ -632,8 +638,12 @@ inline void AutomatonThread::temperature_flow(
     const CellMetadata *m_cellB, const Cell *b_cellB, Cell *f_cellB,
     CoordInt direction)
 {
-    const double tcA = (m_cellA->blocked ? m_cellA->obj->temp_coefficient : b_cellA->air_pressure * airtempcoeff_per_pressure);
-    const double tcB = (m_cellB->blocked ? m_cellB->obj->temp_coefficient : b_cellB->air_pressure * airtempcoeff_per_pressure);
+    const double tcA = (m_cellA->blocked
+                        ? m_cellA->obj->info.temp_coefficient
+                        : b_cellA->air_pressure * airtempcoeff_per_pressure);
+    const double tcB = (m_cellB->blocked
+                        ? m_cellB->obj->info.temp_coefficient
+                        : b_cellB->air_pressure * airtempcoeff_per_pressure);
 
     if (tcA < 1e-17 || tcB < 1e-17) {
         return;
@@ -644,7 +654,9 @@ inline void AutomatonThread::temperature_flow(
 
     const double temp_gradient = tempB - tempA;
 
-    const double energy_flow_raw = (temp_gradient > 0 ? tcB * temp_gradient : tcA * temp_gradient);
+    const double energy_flow_raw = (temp_gradient > 0
+                                    ? tcB * temp_gradient
+                                    : tcA * temp_gradient);
     const double energy_flow = clamp(
         energy_flow_raw * _sim.heat_flow_friction,
         -b_cellA->heat_energy / 4.,
