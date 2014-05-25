@@ -57,6 +57,7 @@ void PlaygroundMode::disable()
     _fire_indicies = nullptr;
     _object_indicies = nullptr;
     _level = nullptr;
+    glDeleteTextures(1, &_debug_tex);
     Mode::disable();
 }
 
@@ -81,6 +82,20 @@ void PlaygroundMode::enable(Application *root)
         _player,
         0, 0);
     _level->particles().clear();
+
+    glGenTextures(1, &_debug_tex);
+    glBindTexture(GL_TEXTURE_2D, _debug_tex);
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 GL_RGB8,
+                 256, 256,
+                 0,
+                 GL_RGB,
+                 GL_UNSIGNED_BYTE,
+                 nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 bool PlaygroundMode::ev_key_down(Key::Key key,
@@ -278,4 +293,28 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     _fire_indicies->clear();
     // _fire_indicies->unbind();
     _object_geometry->unbind();
+
+
+    glBindTexture(GL_TEXTURE_2D, _debug_tex);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+
+    _level->physics().wait_for();
+    _level->physics().to_gl_texture(0.5, 1.5, false);
+
+    glColor4f(1, 1, 1, 0.5);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0);
+    glVertex2f(0, 0);
+    glTexCoord2f(0, 250./256.);
+    glVertex2f(0, level_height);
+    glTexCoord2f(250./256., 250./256.);
+    glVertex2f(level_width, level_height);
+    glTexCoord2f(250./256., 0);
+    glVertex2f(level_width, 0);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -25,6 +25,8 @@ public:
     PlaygroundMode();
 
 private:
+    GLuint _debug_tex;
+
     std::unique_ptr<Level> _level;
     PyEngine::GL::GeometryBufferHandle _object_geometry;
     PyEngine::GL::StreamIndexBufferHandle _object_indicies;

@@ -479,7 +479,8 @@ void Automaton::wait_for()
     _cells = tmp;
 }
 
-void Automaton::to_gl_texture(const double min, const double max,
+void Automaton::to_gl_texture(
+    const double min, const double max,
     bool thread_regions)
 {
     if (!_rgba_buffer) {
@@ -497,18 +498,18 @@ void Automaton::to_gl_texture(const double min, const double max,
         } else {
             const bool right = (i % _height) >= half;
             const unsigned char press_color = (unsigned char)(clamp((source->air_pressure - min) / (max - min), 0.0, 1.0) * 255.0);
-            //~ const double temperature = (meta_source->blocked ? source->heat_energy / meta_source->obj->temp_coefficient : source->heat_energy / (source->air_pressure * airtempcoeff_per_pressure));
-            const double fog = (meta_source->blocked ? 0 : source->fog);
-            //~ const unsigned char temp_color = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
-            const unsigned char fog_color = (unsigned char)(clamp((fog - min) / (max - min), 0.0, 1.0) *255.0);
-            const unsigned char b = (right ? fog_color : press_color);
+            const double temperature = (meta_source->blocked ? source->heat_energy / meta_source->obj->info.temp_coefficient : source->heat_energy / (source->air_pressure * airtempcoeff_per_pressure));
+            // const double fog = (meta_source->blocked ? 0 : source->fog);
+            const unsigned char temp_color = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
+            // const unsigned char fog_color = (unsigned char)(clamp((fog - min) / (max - min), 0.0, 1.0) *255.0);
+            const unsigned char b = (right ? temp_color : press_color);
             const unsigned char r = b;
             if (thread_regions) {
                 const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _thread_count) / _thread_count * 255.0);
                 //const unsigned char b = (unsigned char)(clamp((source->flow[1] - min) / (max - min), -1.0, 1.0) * 127.0 + 127.0);
                 *target = r | (g << 8) | (r << 16);
             } else {
-                *target = r | (r << 8) | (b << 16);
+                *target = r | (b << 8) | (b << 16);
             }
         }
         target++;
