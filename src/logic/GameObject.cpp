@@ -69,8 +69,10 @@ GameObject::GameObject(const ObjectInfo &info):
     x(0),
     y(0),
     phi(0),
+    movement(nullptr),
     phy(),
-    view()
+    view(),
+    acting(NONE)
 {
 
 }
