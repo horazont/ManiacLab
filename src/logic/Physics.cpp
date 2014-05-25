@@ -150,6 +150,7 @@ void Automaton::init_threads()
             ));
         slice_y0 += slice_size;
     }
+
     _threads[_thread_count-1] = std::unique_ptr<AutomatonThread>(
         new AutomatonThread(
             *this,
@@ -278,8 +279,10 @@ void Automaton::move_stamp(
     place_stamp(newx, newy, cells, write_index, vel);
 }
 
-void Automaton::place_object(const CoordInt dx, const CoordInt dy,
-    const GameObject *obj, const double initial_temperature)
+void Automaton::place_object(
+    const CoordInt dx, const CoordInt dy,
+    const GameObject *obj,
+    const double initial_temperature)
 {
     assert(!_resumed);
 

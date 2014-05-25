@@ -1,5 +1,7 @@
 #include "Particles.hpp"
 
+#include "Level.hpp"
+
 inline void update_coord(PyEngine::TimeFloat deltaT,
                          float &v, float &vv, float &av)
 {
@@ -7,19 +9,14 @@ inline void update_coord(PyEngine::TimeFloat deltaT,
     vv = vv + av*deltaT;
 }
 
-inline void update_one(PhysicsParticle *part,
-                       PyEngine::TimeFloat deltaT)
-{
-    part->age += deltaT;
-    if (part->age > part->lifetime) {
-        part->alive = false;
-        return;
-    }
-    update_coord(deltaT, part->x, part->vx, part->ax);
-    update_coord(deltaT, part->y, part->vy, part->ay);
-}
-
 /* ParticleSystem */
+
+ParticleSystem::ParticleSystem(Level &level):
+    GenericParticleSystem<PhysicsParticle, 1024>(),
+    _level(level)
+{
+
+}
 
 ParticleSystem::Particle *ParticleSystem::spawn()
 {
@@ -43,14 +40,49 @@ void ParticleSystem::spawn_generator(size_t n, const Generator &generator)
 
 void ParticleSystem::update(PyEngine::TimeFloat deltaT)
 {
+    Automaton &physics = _level.physics();
+    // const SimulationConfig &config = physics.config();
+
     for (auto it = _active.begin();
          it != _active.end();
          it++)
     {
         Particle *const part = *it;
-        update_one(part, deltaT);
-        if (!part->alive) {
+        part->age += deltaT;
+        if (part->age > part->lifetime) {
             it = _active.erase(it);
+            continue;
+        }
+        update_coord(deltaT, part->x, part->vx, part->ax);
+        update_coord(deltaT, part->y, part->vy, part->ay);
+
+        CoordPair phy = _level.get_physics_coords(part->x, part->y);
+        if (phy.x < 0 || phy.y < 0
+            || phy.x >= _level.get_width()*subdivision_count
+            || phy.y >= _level.get_height()*subdivision_count)
+        {
+            continue;
+        }
+        Cell *cell = physics.cell_at(phy.x, phy.y);
+        CellMetadata *meta = physics.meta_at(phy.x, phy.y);
+        if (meta->blocked) {
+            // FIXME: collision!
+            continue;
+        }
+
+        switch (part->type) {
+        case ParticleType::FIRE:
+        {
+            // const double prev_vx = part->vx;
+            // const double prev_vy = part->vy;
+            // cell->flow[0] = cell->flow[0] * config.flow_damping - prev_vy * (1.0 - config.flow_damping);
+            // cell->flow[1] = cell->flow[1] * config.flow_damping - prev_vx * (1.0 - config.flow_damping);
+            part->vx = part->vx * 0.999 - cell->flow[1] * 0.001;
+            part->vy = part->vy * 0.999 - cell->flow[0] * 0.001;
+
+            cell->heat_energy += 0.1 * cell->air_pressure;
+            break;
+        }
         }
     }
 }

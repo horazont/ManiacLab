@@ -37,12 +37,25 @@ PlaygroundMode::PlaygroundMode():
     _level(),
     _player_object_info(player_stamp)
 {
+    _player_object_info.is_actor = true;
+    _player_object_info.is_blocking = true;
+    _player_object_info.is_destructible = true;
+    _player_object_info.is_edible = false;
+    _player_object_info.is_gravity_affected = false;
+    _player_object_info.is_movable = false;
+    _player_object_info.is_rollable = false;
+    _player_object_info.is_sticky = false;
+
+    _player_object_info.temp_coefficient = 1.0;
+
     _desktop_widgets.push_back(new PlaygroundScene());
 }
 
 void PlaygroundMode::disable()
 {
     _object_geometry = nullptr;
+    _fire_indicies = nullptr;
+    _object_indicies = nullptr;
     _level = nullptr;
     Mode::disable();
 }
@@ -60,12 +73,14 @@ void PlaygroundMode::enable(Application *root)
     );
     _object_indicies = PyEngine::GL::StreamIndexBufferHandle(
         new PyEngine::GL::StreamIndexBuffer());
+    _fire_indicies = PyEngine::GL::StreamIndexBufferHandle(
+        new PyEngine::GL::StreamIndexBuffer());
 
     _player = new GameObject(_player_object_info);
     _level->place_player(
         _player,
         0, 0);
-    _particles.clear();
+    _level->particles().clear();
 }
 
 bool PlaygroundMode::ev_key_down(Key::Key key,
@@ -73,42 +88,48 @@ bool PlaygroundMode::ev_key_down(Key::Key key,
 {
     switch (key) {
     case Key::Up:
-    {
-        if (modifiers == 0) {
-            _player->acting = MOVE_UP;
-        } else {
-            _particles.spawn_generator(
-                4,
-                [this] (PhysicsParticle *part) {
-                    part->x = _player->x + 0.5 + ((float)random() / RAND_MAX)*0.1 - 0.05;
-                    part->y = _player->y + ((float)random() / RAND_MAX)*0.1 - 0.05;
-                    part->vx = ((float)random() / RAND_MAX)*0.3 - 0.15;
-                    part->vy = -4 + ((float)random() / RAND_MAX)*0.2 - 0.1;
-                    part->ax = 0;
-                    part->ay = 0;
-                    part->lifetime = 4;
-                });
-        }
-        return true;
-    }
     case Key::Down:
-    {
-        if (modifiers == 0) {
-            _player->acting = MOVE_DOWN;
-        }
-        return true;
-    }
     case Key::Left:
-    {
-        if (modifiers == 0) {
-            _player->acting = MOVE_LEFT;
-        }
-        return true;
-    }
     case Key::Right:
     {
         if (modifiers == 0) {
-            _player->acting = MOVE_RIGHT;
+            switch (key) {
+            case Key::Up:
+            {
+                _player->acting = MOVE_UP;
+                break;
+            }
+            case Key::Down:
+            {
+                _player->acting = MOVE_DOWN;
+                break;
+            }
+            case Key::Right:
+            {
+                _player->acting = MOVE_RIGHT;
+                break;
+            }
+            case Key::Left:
+            {
+                _player->acting = MOVE_LEFT;
+                break;
+            }
+            default: {}
+            }
+
+        } else {
+            _level->particles().spawn_generator(
+                4,
+                [this] (PhysicsParticle *part) {
+                    part->type = ParticleType::FIRE;
+                    part->x = _player->x + 1.0 + ((float)random() / RAND_MAX)*0.2 - 0.05;
+                    part->y = _player->y + 0.5 + ((float)random() / RAND_MAX)*0.1 - 0.05;
+                    part->vx = 8 + ((float)random() / RAND_MAX)*0.2 - 0.1;
+                    part->vy = ((float)random() / RAND_MAX)*0.5 - 0.25;
+                    part->ax = 0;
+                    part->ay = 0;
+                    part->lifetime = 1;
+                });
         }
         return true;
     }
@@ -140,8 +161,6 @@ void PlaygroundMode::frame_synced()
 
 void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
 {
-    _particles.update(deltaT);
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -164,17 +183,17 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
 
             std::array<PyEngine::GL::GLVertexFloat, 12> pos({
                     (float)obj->x, (float)obj->y, 0,
-                        (float)obj->x, (float)obj->y+1, 0,
-                        (float)obj->x+1, (float)obj->y+1, 0,
-                        (float)obj->x+1, (float)obj->y, 0
+                    (float)obj->x, (float)obj->y+1, 0,
+                    (float)obj->x+1, (float)obj->y+1, 0,
+                    (float)obj->x+1, (float)obj->y, 0
                         });
             buffer.getPositionView()->set(&pos.front());
 
             std::array<PyEngine::GL::GLVertexFloat, 16> colours({
                     1, 1, 1, 1,
-                        1, 1, 0, 1,
-                        1, 0, 1, 1,
-                        0, 1, 1, 1
+                    1, 1, 0, 1,
+                    1, 0, 1, 1,
+                    0, 1, 1, 1
                         });
             buffer.getColourView()->set(&colours.front());
 
@@ -187,7 +206,7 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     }
 
     size_t i = 0;
-    for (auto &part: _particles)
+    for (auto &part: _level->particles())
     {
         if (_particle_verticies.size() == i) {
             _particle_verticies.push_back(
@@ -206,15 +225,15 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
 
         std::array<PyEngine::GL::GLVertexFloat, 12> pos({
                 x0, y0, 0,
-                    x0, y0+size, 0,
-                    x0+size, y0+size, 0,
-                    x0+size, y0, 0
+                x0, y0+size, 0,
+                x0+size, y0+size, 0,
+                x0+size, y0, 0
                     });
         buffer.getPositionView()->set(&pos.front());
 
         const PyEngine::GL::GLVertexFloat green = age * 0.5 + 0.5;
         const PyEngine::GL::GLVertexFloat red = age * 0.3 + 0.7;
-        const PyEngine::GL::GLVertexFloat blue = age;
+        const PyEngine::GL::GLVertexFloat blue = age * 0.8 + 0.1;
         const PyEngine::GL::GLVertexFloat alpha = 1.0 - age;
 
         std::array<PyEngine::GL::GLVertexFloat, 16> colours({
@@ -225,7 +244,7 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
                     });
         buffer.getColourView()->set(&colours.front());
 
-        _object_indicies->add(_particle_verticies[i]);
+        _fire_indicies->add(_particle_verticies[i]);
 
         ++i;
     }
@@ -247,9 +266,16 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     glTranslatef(-_player->x, -_player->y, 0);
 
     _object_geometry->bind();
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // _object_indicies->bind();
     _object_indicies->drawUnbound(GL_QUADS);
     _object_indicies->clear();
     // _object_indicies->unbind();
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    // _fire_indicies->bind();
+    _fire_indicies->drawUnbound(GL_QUADS);
+    _fire_indicies->clear();
+    // _fire_indicies->unbind();
     _object_geometry->unbind();
 }

@@ -128,26 +128,38 @@ private:
      */
     void init_threads();
 public:
-    void apply_temperature_stamp(const CoordInt x, const CoordInt y,
+    void apply_temperature_stamp(
+        const CoordInt x, const CoordInt y,
         const Stamp &stamp, const double temperature);
 
     Cell inline *cell_at(CoordInt x, CoordInt y)
     {
         return &_cells[x+_width*y];
-    };
+    }
 
     Cell inline *safe_cell_at(CoordInt x, CoordInt y)
     {
         return (x >= 0 && x < _width && y >= 0 && y < _height) ? cell_at(x, y) : 0;
-    };
+    }
 
     void clear_cells(
         const CoordInt x,
         const CoordInt y,
         const Stamp &stamp);
 
-    void get_cell_stamp_at(const CoordInt left, const CoordInt top, PhysicsCellStamp *stamp);
-    CellMetadata inline *meta_at(CoordInt x, CoordInt y) { return &_metadata[x+_width*y]; };
+    inline const SimulationConfig &config() const
+    {
+        return _config;
+    }
+
+    void get_cell_stamp_at(
+        const CoordInt left, const CoordInt top,
+        PhysicsCellStamp *stamp);
+
+    CellMetadata inline *meta_at(CoordInt x, CoordInt y)
+    {
+        return &_metadata[x+_width*y];
+    }
 
     void move_stamp(
         const CoordInt oldx, const CoordInt oldy,
@@ -155,11 +167,15 @@ public:
         const Stamp &stamp,
         const CoordPair *const vel = nullptr);
 
-    void place_object(const CoordInt x, const CoordInt y,
-        const GameObject *obj, const double initial_temperature);
+    void place_object(
+        const CoordInt x, const CoordInt y,
+        const GameObject *obj,
+        const double initial_temperature);
 
-    void place_stamp(const CoordInt atx, const CoordInt aty,
-        const CellInfo *cells, const uintptr_t cells_len,
+    void place_stamp(
+        const CoordInt atx, const CoordInt aty,
+        const CellInfo *cells,
+        const uintptr_t cells_len,
         const CoordPair *const vel = nullptr);
 
     /**

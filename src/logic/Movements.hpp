@@ -47,6 +47,7 @@ protected:
 public:
     virtual void abort() = 0;
     virtual bool update(PyEngine::TimeFloat interval) = 0;
+    virtual CoordPair velocity_vector() = 0;
 
 };
 
@@ -63,6 +64,7 @@ private:
 public:
     void abort() override;
     bool update(PyEngine::TimeFloat interval) override;
+    virtual CoordPair velocity_vector() override;
 
 public:
     static const double duration;
@@ -82,6 +84,7 @@ private:
 public:
     void abort() override;
     bool update(PyEngine::TimeFloat interval) override;
+    CoordPair velocity_vector() override;
 
 };
 

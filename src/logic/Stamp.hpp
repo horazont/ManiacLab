@@ -155,6 +155,7 @@ public:
         *map_coords_len = _map_coords_len;
         return _map_coords;
     }
+
     inline const CoordPair* get_border(uintptr_t *border_len) const {
         *border_len = _border_len;
         return _border;

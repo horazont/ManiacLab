@@ -119,6 +119,11 @@ bool MovementStraight::update(TimeFloat interval)
     return false;
 }
 
+CoordPair MovementStraight::velocity_vector()
+{
+    return CoordPair{_offX, _offY};
+}
+
 /* MovementRoll */
 
 MovementRoll::MovementRoll(LevelCell *from, LevelCell *via, LevelCell *to,
@@ -153,6 +158,12 @@ bool MovementRoll::update(TimeFloat interval)
     assert(false);
     delete_self();
     return true;
+}
+
+CoordPair MovementRoll::velocity_vector()
+{
+    assert(false);
+    return CoordPair();
 }
 
 const double MovementStraight::duration = 0.5;

@@ -52,7 +52,8 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
     _objects(),
     _time_slice(0.01),
     _time(0),
-    _player(nullptr)
+    _player(nullptr),
+    _physics_particles(*this)
 {
     init_cells();
 }
@@ -157,14 +158,6 @@ void Level::init_cells()
     }
 }
 
-CoordPair Level::get_physics_coords(const double x, const double y)
-{
-    CoordPair result;
-    result.x = (CoordInt)(x * subdivision_count);// - subdivision_count / 2;
-    result.y = (CoordInt)(y * subdivision_count);// - subdivision_count / 2;
-    return result;
-}
-
 void Level::cleanup_cell(LevelCell *cell)
 {
     GameObject *const obj = cell->here;
@@ -243,6 +236,14 @@ void Level::debug_output(const double x, const double y)
     }
 }
 
+CoordPair Level::get_physics_coords(const double x, const double y)
+{
+    CoordPair result;
+    result.x = round(x * subdivision_count);// - subdivision_count / 2;
+    result.y = round(y * subdivision_count);// - subdivision_count / 2;
+    return result;
+}
+
 void Level::physics_to_gl_texture(bool thread_regions)
 {
     _physics.to_gl_texture(0.0, 2.0, thread_regions);
@@ -276,8 +277,16 @@ void Level::place_player(
     }
     cleanup_cell(dest);
 
-    dest->here = player;
     _player = player;
+
+    _player->x = x;
+    _player->y = y;
+    _player->phy = get_physics_coords(x, y);
+
+    std::cout << _player->phy.x << " " << _player->phy.y << std::endl;
+
+    _physics.place_object(_player->phy.x, _player->phy.y, _player, 1.0);
+    dest->here = _player;
 }
 
 void Level::update()
@@ -300,13 +309,13 @@ void Level::update()
 
             Movement *movement = obj->movement.get();
             if (movement) {
+                const CoordPair vel = movement->velocity_vector();
                 if (movement->update(_time_slice)) {
                     movement = nullptr;
                 }
                 CoordPair new_coords = get_physics_coords(obj->x, obj->y);
                 if (new_coords != obj->phy) {
                     if (obj->info.stamp.non_empty()) {
-                        const CoordPair vel = CoordPair(0, 1);
                         _physics.move_stamp(
                             obj->phy.x, obj->phy.y,
                             new_coords.x, new_coords.y,
@@ -372,6 +381,8 @@ void Level::update()
     }
 
     _time += _time_slice;
+
+    _physics_particles.update(0.01);
 
     _physics.resume();
 }

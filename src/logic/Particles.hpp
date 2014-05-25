@@ -103,7 +103,7 @@ public:
 };
 
 enum class ParticleType {
-    PARTICLE_FIRE
+    FIRE
 };
 
 struct PhysicsParticle
@@ -118,10 +118,18 @@ struct PhysicsParticle
     ParticleType type;
 };
 
+class Level;
+
 class ParticleSystem: public GenericParticleSystem<PhysicsParticle, 1024>
 {
 public:
+    explicit ParticleSystem(Level &level);
+
+public:
     typedef std::function<void(Particle*)> Generator;
+
+private:
+    Level &_level;
 
 public:
     Particle *spawn();

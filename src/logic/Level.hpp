@@ -34,6 +34,7 @@ authors named in the AUTHORS file.
 #include "Types.hpp"
 #include "GameObject.hpp"
 #include "Physics.hpp"
+#include "Particles.hpp"
 
 struct Cell;
 
@@ -64,6 +65,8 @@ private:
     GameObject *_player;
     PlayerDeathEvent _on_player_death;
 
+    ParticleSystem _physics_particles;
+
 private:
     void get_fall_channel(
         const CoordInt x,
@@ -82,13 +85,22 @@ private:
         GameObject &obj);
     void init_cells();
 
-protected:
-    CoordPair get_physics_coords(const double x, const double y);
-
 public:
     void cleanup_cell(LevelCell *cell);
     void debug_test_stamp(const double x, const double y);
     void debug_output(const double x, const double y);
+    CoordPair get_physics_coords(const double x, const double y);
+
+    inline ParticleSystem &particles()
+    {
+        return _physics_particles;
+    }
+
+    inline Automaton &physics()
+    {
+        return _physics;
+    }
+
     void place_player(
         GameObject *player,
         const CoordInt x,
@@ -100,6 +112,16 @@ public:
         CoordInt x, CoordInt y)
     {
         return &_cells[x+y*_width];
+    }
+
+    inline CoordInt get_width() const
+    {
+        return _width;
+    }
+
+    inline CoordInt get_height() const
+    {
+        return _height;
     }
 
 public:
