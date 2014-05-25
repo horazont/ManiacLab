@@ -55,6 +55,7 @@ void PlaygroundMode::disable()
 {
     _object_geometry = nullptr;
     _fire_indicies = nullptr;
+    _smoke_indicies = nullptr;
     _object_indicies = nullptr;
     _level = nullptr;
     glDeleteTextures(1, &_debug_tex);
@@ -76,8 +77,10 @@ void PlaygroundMode::enable(Application *root)
         new PyEngine::GL::StreamIndexBuffer());
     _fire_indicies = PyEngine::GL::StreamIndexBufferHandle(
         new PyEngine::GL::StreamIndexBuffer());
+    _smoke_indicies = PyEngine::GL::StreamIndexBufferHandle(
+        new PyEngine::GL::StreamIndexBuffer());
 
-    _player = new GameObject(_player_object_info);
+    _player = new GameObject(_player_object_info, _level.get());
     _level->place_player(
         _player,
         0, 0);
@@ -246,20 +249,47 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
                     });
         buffer.getPositionView()->set(&pos.front());
 
-        const PyEngine::GL::GLVertexFloat green = age * 0.5 + 0.5;
-        const PyEngine::GL::GLVertexFloat red = age * 0.3 + 0.7;
-        const PyEngine::GL::GLVertexFloat blue = age * 0.8 + 0.1;
-        const PyEngine::GL::GLVertexFloat alpha = 1.0 - age;
+        switch (part->type)
+        {
+        case ParticleType::FIRE:
+        {
+            const PyEngine::GL::GLVertexFloat green = age * 0.5 + 0.5;
+            const PyEngine::GL::GLVertexFloat red = age * 0.3 + 0.7;
+            const PyEngine::GL::GLVertexFloat blue = age * 0.8 + 0.1;
+            const PyEngine::GL::GLVertexFloat alpha = 1.0 - age;
 
-        std::array<PyEngine::GL::GLVertexFloat, 16> colours({
-                red, green, blue, alpha,
-                red, green, blue, alpha,
-                red, green, blue, alpha,
-                red, green, blue, alpha
-                    });
-        buffer.getColourView()->set(&colours.front());
+            std::array<PyEngine::GL::GLVertexFloat, 16> colours({
+                    red, green, blue, alpha,
+                        red, green, blue, alpha,
+                        red, green, blue, alpha,
+                        red, green, blue, alpha
+                        });
+            buffer.getColourView()->set(&colours.front());
 
-        _fire_indicies->add(_particle_verticies[i]);
+            _fire_indicies->add(_particle_verticies[i]);
+
+            break;
+        }
+        case ParticleType::SMOKE:
+        {
+            const PyEngine::GL::GLVertexFloat green = 0.2;
+            const PyEngine::GL::GLVertexFloat red = 0.2;
+            const PyEngine::GL::GLVertexFloat blue = 0.2;
+            const PyEngine::GL::GLVertexFloat alpha = 1.0 - age;
+
+            std::array<PyEngine::GL::GLVertexFloat, 16> colours({
+                    red, green, blue, alpha,
+                        red, green, blue, alpha,
+                        red, green, blue, alpha,
+                        red, green, blue, alpha
+                        });
+            buffer.getColourView()->set(&colours.front());
+
+            _smoke_indicies->add(_particle_verticies[i]);
+
+            break;
+        }
+        }
 
         ++i;
     }
@@ -282,16 +312,16 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
 
     _object_geometry->bind();
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // _object_indicies->bind();
     _object_indicies->drawUnbound(GL_QUADS);
     _object_indicies->clear();
-    // _object_indicies->unbind();
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    _smoke_indicies->drawUnbound(GL_QUADS);
+    _smoke_indicies->clear();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    // _fire_indicies->bind();
     _fire_indicies->drawUnbound(GL_QUADS);
     _fire_indicies->clear();
-    // _fire_indicies->unbind();
     _object_geometry->unbind();
 
 
@@ -303,7 +333,7 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     _level->physics().wait_for();
     _level->physics().to_gl_texture(0.5, 1.5, false);
 
-    glColor4f(1, 1, 1, 0.5);
+    glColor4f(1, 1, 1, 0.1);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex2f(0, 0);

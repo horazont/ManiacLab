@@ -44,8 +44,6 @@ protected:
         }
         Particle *result = _available.front();
         _available.pop_front();
-        result->alive = true;
-        result->age = 0;
         return result;
     }
 
@@ -103,7 +101,8 @@ public:
 };
 
 enum class ParticleType {
-    FIRE
+    FIRE,
+    SMOKE
 };
 
 struct PhysicsParticle
@@ -114,6 +113,8 @@ struct PhysicsParticle
     float x, y;
     float vx, vy;
     float ax, ay;
+
+    uint32_t ctr;
 
     ParticleType type;
 };

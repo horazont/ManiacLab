@@ -31,6 +31,7 @@ private:
     PyEngine::GL::GeometryBufferHandle _object_geometry;
     PyEngine::GL::StreamIndexBufferHandle _object_indicies;
     PyEngine::GL::StreamIndexBufferHandle _fire_indicies;
+    PyEngine::GL::StreamIndexBufferHandle _smoke_indicies;
     std::vector<PyEngine::GL::VertexIndexListHandle> _particle_verticies;
 
     ObjectInfo _player_object_info;

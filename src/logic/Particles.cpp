@@ -21,6 +21,9 @@ ParticleSystem::ParticleSystem(Level &level):
 ParticleSystem::Particle *ParticleSystem::spawn()
 {
     Particle *part = allocate();
+    part->alive = true;
+    part->age = 0;
+    part->ctr = 0;
     _active.push_back(part);
     return part;
 }
@@ -29,6 +32,9 @@ void ParticleSystem::spawn_generator(size_t n, const Generator &generator)
 {
     for (size_t i = 0; i < n; i++) {
         Particle *const part = allocate();
+        part->alive = true;
+        part->age = 0;
+        part->ctr = 0;
         generator(part);
         if (part->lifetime > 0) {
             _active.push_back(part);
@@ -55,6 +61,36 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
         }
         update_coord(deltaT, part->x, part->vx, part->ax);
         update_coord(deltaT, part->y, part->vy, part->ay);
+
+        switch (part->type) {
+        case ParticleType::FIRE:
+        {
+            const uint32_t old_ctr = part->ctr;
+            const uint32_t new_ctr = part->age * 50;
+            part->ctr = new_ctr;
+
+            const uint32_t to_spawn = new_ctr - old_ctr;
+
+            for (uint32_t i = 0; i < to_spawn; i++)
+            {
+                Particle *const subpart = spawn();
+                subpart->type = ParticleType::SMOKE;
+                subpart->lifetime = 4+((float)rand() / RAND_MAX)*2-1;
+                subpart->x = part->x - ((float)rand() / RAND_MAX) * part->vx * 0.01;
+                subpart->y = part->y - ((float)rand() / RAND_MAX) * part->vy * 0.01;
+                subpart->vx = part->vx * 0.1;
+                subpart->vy = part->vy * 0.1 - 1.5;
+                subpart->ax = 0;
+                subpart->ay = 0;
+            }
+
+            break;
+        }
+        case ParticleType::SMOKE:
+        {
+            break;
+        }
+        }
 
         CoordPair phy = _level.get_physics_coords(part->x, part->y);
         if (phy.x < 0 || phy.y < 0
@@ -83,6 +119,17 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
             cell->heat_energy += 0.1 * cell->air_pressure;
             break;
         }
+        case ParticleType::SMOKE:
+        {
+            part->vx = part->vx * 0.995 - cell->flow[1] * 0.005;
+            part->vy = part->vy * 0.995 - cell->flow[0] * 0.005;
+
+            cell->fog += 0.001;
+            break;
         }
+        }
+
     }
+
+
 }
