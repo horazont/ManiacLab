@@ -141,7 +141,6 @@ void PlaygroundMode::frame_synced()
 void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
 {
     _particles.update(deltaT);
-    std::cout << _particles.active_size() << std::endl;
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
