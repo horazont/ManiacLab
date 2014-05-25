@@ -45,7 +45,7 @@ protected:
     void delete_self();
 
 public:
-    virtual void abort() = 0;
+    virtual void skip() = 0;
     virtual bool update(PyEngine::TimeFloat interval) = 0;
     virtual CoordPair velocity_vector() = 0;
 
@@ -62,7 +62,7 @@ private:
     CoordInt _startX, _startY;
 
 public:
-    void abort() override;
+    void skip() override;
     bool update(PyEngine::TimeFloat interval) override;
     virtual CoordPair velocity_vector() override;
 
@@ -82,7 +82,7 @@ private:
     CoordInt _startX, _startY;
 
 public:
-    void abort() override;
+    void skip() override;
     bool update(PyEngine::TimeFloat interval) override;
     CoordPair velocity_vector() override;
 

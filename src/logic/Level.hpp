@@ -50,6 +50,9 @@ typedef sigc::signal<void, Level*, GameObject*> PlayerDeathEvent;
 
 class Level {
 public:
+    static constexpr double time_slice = 0.01;
+
+public:
     Level(CoordInt width, CoordInt height, bool mp = true);
     ~Level();
 
@@ -59,7 +62,6 @@ private:
     Automaton _physics;
     std::vector<GameObject*> _objects;
 
-    double _time_slice;
     double _time;
 
     GameObject *_player;
@@ -68,28 +70,38 @@ private:
     ParticleSystem _physics_particles;
 
 private:
+    void init_cells();
+
+public:
+    void cleanup_cell(LevelCell *cell);
+
+    void debug_test_stamp(const double x, const double y);
+
+    void debug_output(const double x, const double y);
+
+    inline LevelCell *get_cell(
+        CoordInt x, CoordInt y)
+    {
+        return &_cells[x+y*_width];
+    }
+
     void get_fall_channel(
         const CoordInt x,
         const CoordInt y,
         LevelCell *&aside,
         LevelCell *&asidebelow);
-    bool handle_ca_interaction(
-        const CoordInt x,
-        const CoordInt y,
-        LevelCell &cell,
-        GameObject &obj);
-    bool handle_gravity(
-        const CoordInt x,
-        const CoordInt y,
-        LevelCell &cell,
-        GameObject &obj);
-    void init_cells();
 
-public:
-    void cleanup_cell(LevelCell *cell);
-    void debug_test_stamp(const double x, const double y);
-    void debug_output(const double x, const double y);
+    inline CoordInt get_height() const
+    {
+        return _height;
+    }
+
     CoordPair get_physics_coords(const double x, const double y);
+
+    inline CoordInt get_width() const
+    {
+        return _width;
+    }
 
     inline ParticleSystem &particles()
     {
@@ -101,28 +113,14 @@ public:
         return _physics;
     }
 
+    void physics_to_gl_texture(bool thread_regions);
+
     void place_player(
         GameObject *player,
         const CoordInt x,
         const CoordInt y);
-    void physics_to_gl_texture(bool thread_regions);
+
     void update();
-
-    inline LevelCell *get_cell(
-        CoordInt x, CoordInt y)
-    {
-        return &_cells[x+y*_width];
-    }
-
-    inline CoordInt get_width() const
-    {
-        return _width;
-    }
-
-    inline CoordInt get_height() const
-    {
-        return _height;
-    }
 
 public:
     inline PlayerDeathEvent &on_player_death()

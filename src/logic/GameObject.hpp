@@ -107,22 +107,122 @@ enum Acting {
 struct GameObject
 {
 public:
-    explicit GameObject(const ObjectInfo &info);
+    explicit GameObject(const ObjectInfo &info,
+                        Level *level);
     GameObject(const GameObject &ref) = delete;
     GameObject& operator=(const GameObject &ref) = delete;
+    virtual ~GameObject();
 
 public:
+    Level *const level;
     FrameState frame_state;
     const ObjectInfo &info;
-
+    CoordPair cell;
     double x, y, phi;
     std::unique_ptr<Movement> movement;
-
     CoordPair phy;
-
     ObjectView view;
-
     Acting acting;
+
+protected:
+    /**
+     * Destruct this object.
+     */
+    void destruct_self();
+
+    /**
+     * Let the object fall if possible.
+     *
+     * @return true if handling shall continue, false otherwise (e.g. if the
+     * object has been destroyed).
+     */
+    bool handle_gravity();
+
+public:
+    /**
+     * Notify the object of the end of a movement.
+     *
+     * At the time of call, the movement member is still set to the movement
+     * just finished.
+     *
+     * @return true if further handlers (to be specified) shall be called, false
+     * otherwise.
+     */
+    virtual bool after_movement();
+
+    /**
+     * Notify the object of a movement which is about to start.
+     *
+     * @param movement The movement which is going to happen.
+     */
+    virtual void before_movement(Movement *movement);
+
+    /**
+     * Notify the object that it has been touched by an explosion.
+     *
+     * The callee is allowed to delete itself, if it properly removes itself
+     * from the Level.
+     */
+    virtual void explosion_touch();
+
+    /**
+     * Notify the object that another object has landed on top of it, driven by
+     * gravity.
+     *
+     * headache() is called after impact() is called. Both are called from
+     * after_movement() of the moving object.
+     *
+     * @param from_object The object which has hit this object.
+     */
+    virtual void headache(GameObject *from_object);
+
+    /**
+     * Called during each tick in which no movement took place from
+     * update().
+     *
+     * @return true if the object still exists after idle().
+     */
+    virtual bool idle();
+
+    /**
+     * Notify the object that it has been touched by igniting particles (sparks
+     * etc.).
+     */
+    virtual void ignition_touch();
+
+    /**
+     * Notify the object that it has landed on another object, driven by
+     * gravity.
+     *
+     * impact() is called before headache() is called. Both are called from
+     * after_movement() of the moving object.
+     *
+     * @param on_object The object which was hit by this object.
+     * @return false if headache() and subsequent handlers should not be called,
+     * true otherwise.
+     */
+    virtual bool impact(GameObject *on_object);
+
+    /**
+     * Notify the object that it got hit by an explosive projectile.
+     *
+     * The object must return true if it triggers an explosion at its site,
+     * otherwise it must return false. In the false case, the projectile assumes
+     * that the object cannot be destructed by projectiles and will thus explode
+     * on the tile it was on before.
+     *
+     * @return true if the object was destructed, false otherwise.
+     */
+    virtual bool projectile_impact();
+
+    /**
+     * Update the objects state by advancing by one tick.
+     *
+     * The default implementation takes care of quite a few things and should
+     * always be called.
+     */
+    virtual void update();
+
 };
 
 #endif

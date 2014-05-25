@@ -46,6 +46,7 @@ Movement::~Movement()
 
 void Movement::delete_self()
 {
+    _obj->after_movement();
     _obj->movement = 0;
     // movement is a unique_ptr, this will call the destructor
 }
@@ -83,6 +84,9 @@ MovementStraight::MovementStraight(
     from->reserved_by = _obj;
     from->here = nullptr;
     to->here = _obj;
+
+    _obj->cell = CoordPair{_startX + _offX,
+                           _startY + _offY};
 }
 
 MovementStraight::~MovementStraight()
@@ -90,13 +94,10 @@ MovementStraight::~MovementStraight()
     _from->reserved_by = nullptr;
 }
 
-void MovementStraight::abort()
+void MovementStraight::skip()
 {
-    _obj->x = _startX;
-    _obj->y = _startY;
-    _from->reserved_by = nullptr;
-    _from->here = _obj;
-    _to->here = nullptr;
+    _obj->x = _startX + _offX;
+    _obj->y = _startY + _offY;
     delete_self();
 }
 
@@ -146,7 +147,7 @@ MovementRoll::~MovementRoll()
     _to->reserved_by = 0;
 }
 
-void MovementRoll::abort()
+void MovementRoll::skip()
 {
     assert(false);
     delete_self();

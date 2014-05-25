@@ -50,7 +50,6 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
         mp
     ),
     _objects(),
-    _time_slice(0.01),
     _time(0),
     _player(nullptr),
     _physics_particles(*this)
@@ -63,91 +62,6 @@ Level::~Level()
     delete[] _cells;
 }
 
-void Level::get_fall_channel(
-    const CoordInt x,
-    const CoordInt y,
-    LevelCell *&aside,
-    LevelCell *&asidebelow)
-{
-    aside = &_cells[x+y*_width];
-    if (aside->here || aside->reserved_by)
-    {
-        aside = nullptr;
-        asidebelow = nullptr;
-        return;
-    }
-    else
-        asidebelow = &_cells[x+(y+1)*_width];
-
-    if (asidebelow->here || asidebelow->reserved_by)
-    {
-        aside = 0;
-        asidebelow = 0;
-    }
-}
-
-bool Level::handle_ca_interaction(
-    const CoordInt x,
-    const CoordInt y,
-    LevelCell &cell,
-    GameObject &obj)
-{
-    return true;
-}
-
-bool Level::handle_gravity(
-    const CoordInt x,
-    const CoordInt y,
-    LevelCell &cell,
-    GameObject &obj)
-{
-    if (y == _height - 1) {
-        // TODO: allow objects to leave the gamescope
-        return true;
-    }
-    assert(!(obj.movement));
-
-    LevelCell *below = &_cells[x+(y+1)*_width];
-    if (!below->here && !below->reserved_by) {
-        obj.movement = std::unique_ptr<Movement>(
-            new MovementStraight(&cell, below, 0, 1));
-    } else if (below->here
-        && below->here->info.is_rollable
-        && obj.info.is_rollable)
-    {
-        LevelCell *left = 0, *left_below = 0;
-        LevelCell *right = 0, *right_below = 0;
-        if (x > 0) {
-            get_fall_channel(x-1, y, left, left_below);
-        }
-        if (x < _width-1) {
-            get_fall_channel(x+1, y, right, right_below);
-        }
-
-        LevelCell *selected = 0, *selected_below = 0;
-        CoordInt xoffset = 0;
-        if (left) {
-            // TODO: Use random here?
-            selected = left;
-            selected_below = left_below;
-            xoffset = -1;
-        } else if (right) {
-            selected = right;
-            selected_below = right_below;
-            xoffset = 1;
-        }
-
-        if (selected) {
-            obj.movement = std::unique_ptr<Movement>(
-                new MovementRoll(
-                    &cell,
-                    selected,
-                    selected_below,
-                    xoffset, 1));
-        }
-    }
-    return true;
-}
 
 void Level::init_cells()
 {
@@ -236,6 +150,29 @@ void Level::debug_output(const double x, const double y)
     }
 }
 
+void Level::get_fall_channel(
+    const CoordInt x,
+    const CoordInt y,
+    LevelCell *&aside,
+    LevelCell *&asidebelow)
+{
+    aside = &_cells[x+y*_width];
+    if (aside->here || aside->reserved_by)
+    {
+        aside = nullptr;
+        asidebelow = nullptr;
+        return;
+    }
+    else
+        asidebelow = &_cells[x+(y+1)*_width];
+
+    if (asidebelow->here || asidebelow->reserved_by)
+    {
+        aside = 0;
+        asidebelow = 0;
+    }
+}
+
 CoordPair Level::get_physics_coords(const double x, const double y)
 {
     CoordPair result;
@@ -263,10 +200,8 @@ void Level::place_player(
     LevelCell *dest = &_cells[x+y*_width];
     if (dest->reserved_by) {
         GameObject *obj = dest->reserved_by;
-        const CoordPair oldpos = get_physics_coords(
-            obj->x,
-            obj->y);
-        obj->movement->abort();
+        const CoordPair oldpos = obj->phy;
+        obj->movement->skip();
         const CoordPair newpos = get_physics_coords(
             obj->x,
             obj->y);
@@ -281,6 +216,7 @@ void Level::place_player(
 
     _player->x = x;
     _player->y = y;
+    _player->cell = CoordPair{x, y};
     _player->phy = get_physics_coords(x, y);
 
     std::cout << _player->phy.x << " " << _player->phy.y << std::endl;
@@ -301,86 +237,11 @@ void Level::update()
             GameObject *obj = cell->here;
             if (!obj)
                 continue;
-
-            if (!handle_ca_interaction(x, y, *cell, *obj)) {
-                cleanup_cell(cell);
-                continue;
-            }
-
-            Movement *movement = obj->movement.get();
-            if (movement) {
-                const CoordPair vel = movement->velocity_vector();
-                if (movement->update(_time_slice)) {
-                    movement = nullptr;
-                }
-                CoordPair new_coords = get_physics_coords(obj->x, obj->y);
-                if (new_coords != obj->phy) {
-                    if (obj->info.stamp.non_empty()) {
-                        _physics.move_stamp(
-                            obj->phy.x, obj->phy.y,
-                            new_coords.x, new_coords.y,
-                            obj->info.stamp,
-                            &vel
-                        );
-                    }
-                    obj->phy = new_coords;
-                }
-            }
-
-            if (obj->info.is_gravity_affected && !movement) {
-                if (!handle_gravity(x, y, *cell, *obj)) {
-                    cleanup_cell(cell);
-                    continue;
-                }
-            }
-
-            if (obj->acting != NONE && !movement) {
-                CoordInt offsx = 0;
-                CoordInt offsy = 0;
-                switch (obj->acting) {
-                case MOVE_UP:
-                {
-                    offsy = -1;
-                    break;
-                };
-                case MOVE_DOWN:
-                {
-                    offsy = 1;
-                    break;
-                }
-                case MOVE_LEFT:
-                {
-                    offsx = -1;
-                    break;
-                }
-                case MOVE_RIGHT:
-                {
-                    offsx = 1;
-                    break;
-                }
-                default: {}
-                }
-
-                obj->acting = NONE;
-
-                const CoordInt neighx = offsx + x;
-                const CoordInt neighy = offsy + y;
-
-                if ((offsx != 0 || offsy != 0)
-                    && neighx >= 0 && neighx < _width
-                    && neighy >= 0 && neighy < _height)
-                {
-                    LevelCell *neighbour = &_cells[neighx+neighy*_width];
-                    obj->movement = std::unique_ptr<Movement>(
-                        new MovementStraight(
-                            cell, neighbour,
-                            offsx, offsy));
-                }
-            }
+            obj->update();
         }
     }
 
-    _time += _time_slice;
+    _time += time_slice;
 
     _physics_particles.update(0.01);
 
