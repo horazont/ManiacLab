@@ -25,6 +25,8 @@ authors named in the AUTHORS file.
 #ifndef _ML_PHYSICS_H
 #define _ML_PHYSICS_H
 
+#include <vector>
+
 #include <CEngine/Misc/Int.hpp>
 #include <CEngine/IO/Thread.hpp>
 
@@ -58,32 +60,31 @@ struct CellInfo {
 
 class AutomatonThread;
 
-/** \rst
-Create a cellular automaton which simulates air flow between a given
-grid of cells more or less correctly. There are some free parameters you
-may change to adapt the simulation to your needs.
-
-*flow_friction* is used to damp the initial creation of flow between
-two cells. The “wanted” flow for a pressure gradient is given by:
-
-    new_flow = (cellA->pressure - cellB->pressure) * flow_friction
-
-Then the old flow value (i.e. momentum of the air) is taken into
-account using:
-
-    flow = old_flow * flow_damping + new_flow * (1.0 - flow_damping)
-
-making the flow work like a moving average.
-
-In the nature of moving averages lies the fact that the factor used
-for scaling the movement speed is highly dependend on the update
-rate of your simulation. This implies that you will need very
-different factors depending on how often per second you update the
-automaton.
-
-*initial_pressure* and *initial_temperature* just do what they sound
-like, they're used as initial values for the cells in the automaton.
-\endrst */
+/**
+ * Create a cellular automaton which simulates air flow between a given grid of
+ * cells more or less correctly. There are some free parameters you may change
+ * to adapt the simulation to your needs.
+ *
+ * *flow_friction* is used to damp the initial creation of flow between two
+ * cells. The “wanted” flow for a pressure gradient is given by:
+ *
+ *     new_flow = (cellA->pressure - cellB->pressure) * flow_friction
+ *
+ * Then the old flow value (i.e. momentum of the air) is taken into account
+ * using:
+ *
+ *     flow = old_flow * flow_damping + new_flow * (1.0 - flow_damping)
+ *
+ * making the flow work like a moving average.
+ *
+ * In the nature of moving averages lies the fact that the factor used for
+ * scaling the movement speed is highly dependend on the update rate of your
+ * simulation. This implies that you will need very different factors depending
+ * on how often per second you update the automaton.
+ *
+ * *initial_pressure* and *initial_temperature* just do what they sound like,
+ * they're used as initial values for the cells in the automaton.
+ */
 class Automaton {
 public:
     Automaton(CoordInt width, CoordInt height,
@@ -100,14 +101,20 @@ private:
     Cell *_cells, *_backbuffer;
     const SimulationConfig _config;
     unsigned int _thread_count;
-    AutomatonThread **_threads;
-    PyEngine::Semaphore **_finished_signals, **_forward_signals;
-    PyEngine::Mutex **_shared_zones;
+    PyEngine::Semaphore _finished_signal;
+    std::vector<PyEngine::Semaphore> _resume_signals;
+    std::vector<PyEngine::Semaphore> _forward_signals;
+    std::vector<std::mutex> _shared_zones;
+    std::vector<std::unique_ptr<AutomatonThread>> _threads;
 
     uint32_t *_rgba_buffer; //! Used by to_gl_texture() and allocated on-demand.
 private:
-    void init_cell(Cell *buffer, CoordInt x, CoordInt y,
-        double initial_pressure, double initial_temperature);
+    void init_cell(
+        Cell *buffer,
+        CoordInt x, CoordInt y,
+        double initial_pressure,
+        double initial_temperature);
+
     void init_metadata(CellMetadata *buffer, CoordInt x, CoordInt y);
 
     /**
@@ -183,40 +190,82 @@ public:
      */
     void to_gl_texture(const double min, const double max, bool thread_regions);
 
-friend class AutomatonThread;
+    friend class AutomatonThread;
 };
 
-class AutomatonThread: public PyEngine::Thread {
+class AutomatonThread
+{
 public:
-    AutomatonThread(Automaton *data_class, CoordInt slice_y0,
-        CoordInt slice_y1, PyEngine::Semaphore *finished_signal,
-        PyEngine::Semaphore *top_shared_ready, PyEngine::Semaphore *bottom_shared_forward,
-        PyEngine::Mutex *top_shared_zone, PyEngine::Mutex *bottom_shared_zone);
+    AutomatonThread(
+        Automaton &data_class,
+        CoordInt slice_y0,
+        CoordInt slice_y1,
+        PyEngine::Semaphore &finished_signal,
+        PyEngine::Semaphore *top_shared_ready,
+        PyEngine::Semaphore *bottom_shared_forward,
+        std::mutex *top_shared_zone,
+        std::mutex *bottom_shared_zone,
+        PyEngine::Semaphore &resume_signal);
+    ~AutomatonThread();
+
 private:
-    PyEngine::Semaphore *_finished_signal, *_top_shared_ready, *_bottom_shared_forward;
-    PyEngine::Mutex *_top_shared_zone, *_bottom_shared_zone;
-    Automaton *_dataclass;
+    PyEngine::Semaphore &_finished_signal;
+    PyEngine::Semaphore *_top_shared_ready;
+    PyEngine::Semaphore *_bottom_shared_forward;
+    std::mutex *_top_shared_zone;
+    std::mutex *_bottom_shared_zone;
+    PyEngine::Semaphore &_resume_signal;
+    Automaton &_dataclass;
     const CoordInt _width, _height, _slice_y0, _slice_y1;
     const SimulationConfig _sim;
     Cell *_backbuffer, *_cells;
     CellMetadata *_metadata;
+    std::atomic_bool _terminated;
+    std::thread _thread;
+
 protected:
     void activate_cell(Cell *front, Cell *back);
-    template<class CType>
-    void get_cell_and_neighbours(CType *buffer, CType **cell,
-        CType *(*neighbours)[2], CoordInt x, CoordInt y);
-    double flow(const Cell *b_cellA, Cell *f_cellA, const Cell *b_cellB,
-        Cell *f_cellB, CoordInt direction);
-    void temperature_flow(const CellMetadata *m_cellA, const Cell *b_cellA, Cell *f_CellA,
-                         const CellMetadata *m_cellB, const Cell *b_cellB, Cell *f_cellB,
-                         CoordInt direction);
-    void fog_flow(const Cell *b_cellA, Cell *f_cellA,
-                 const Cell *b_cellB, Cell *f_cellB);
 
-    void update_cell(CoordInt x, CoordInt y, bool activate = true);
+    template<class CType>
+    void get_cell_and_neighbours(
+        CType *buffer,
+        CType **cell,
+        CType *(*neighbours)[2],
+        CoordInt x,
+        CoordInt y);
+
+    double flow(
+        const Cell *b_cellA,
+        Cell *f_cellA,
+        const Cell *b_cellB,
+        Cell *f_cellB,
+        CoordInt direction);
+
+    void temperature_flow(
+        const CellMetadata *m_cellA,
+        const Cell *b_cellA,
+        Cell *f_CellA,
+        const CellMetadata *m_cellB,
+        const Cell *b_cellB,
+        Cell *f_cellB,
+        CoordInt direction);
+
+    void fog_flow(
+        const Cell *b_cellA,
+        Cell *f_cellA,
+        const Cell *b_cellB,
+        Cell *f_cellB);
+
+    void update_cell(
+        CoordInt x,
+        CoordInt y,
+        bool activate = true);
+
     void update();
+
 public:
     virtual void *execute();
+
 };
 
 #endif

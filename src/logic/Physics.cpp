@@ -31,8 +31,6 @@ authors named in the AUTHORS file.
 
 #include <glew.h>
 
-#include <CEngine/IO/Thread.hpp>
-
 #include "GameObject.hpp"
 
 using namespace PyEngine;
@@ -54,10 +52,12 @@ inline double max(const double a, const double b)
     return b;
 }
 
-Automaton::Automaton(CoordInt width, CoordInt height,
+Automaton::Automaton(
+        CoordInt width, CoordInt height,
         const SimulationConfig &config,
         bool mp,
-        double initial_pressure, double initial_temperature):
+        double initial_pressure,
+        double initial_temperature):
     _resumed(false),
     _width(width),
     _height(height),
@@ -65,11 +65,12 @@ Automaton::Automaton(CoordInt width, CoordInt height,
     _cells(new Cell[width*height]()),
     _backbuffer(new Cell[width*height]()),
     _config(config),
-    _thread_count(mp?(Thread::getHardwareThreadCount()):1),
-    _threads(new AutomatonThread*[_thread_count]()),
-    _finished_signals(new Semaphore*[_thread_count]()),
-    _forward_signals(new Semaphore*[_thread_count-1]()),
-    _shared_zones(new Mutex*[_thread_count-1]()),
+    _thread_count(mp?(get_hardware_thread_count()):1),
+    _finished_signal(),
+    _resume_signals(_thread_count),
+    _forward_signals(_thread_count),
+    _shared_zones(_thread_count),
+    _threads(_thread_count),
     _rgba_buffer(0)
 {
     for (CoordInt y = 0; y < _height; y++) {
@@ -84,20 +85,8 @@ Automaton::Automaton(CoordInt width, CoordInt height,
 
 Automaton::~Automaton()
 {
+    std::cout << "destroying automaton" << std::endl;
     wait_for();
-    for (unsigned int i = 0; i < _thread_count - 1; i++) {
-        delete _forward_signals[i];
-        delete _finished_signals[i];
-        delete _shared_zones[i];
-    }
-    delete _finished_signals[_thread_count-1];
-    delete[] _shared_zones;
-    delete[] _forward_signals;
-    delete[] _finished_signals;
-    delete[] _threads;
-    delete[] _cells;
-    delete[] _backbuffer;
-    delete[] _metadata;
     if (_rgba_buffer) {
         free(_rgba_buffer);
     }
@@ -116,7 +105,8 @@ void Automaton::init_cell(Cell *buffer, CoordInt x, CoordInt y,
 {
     Cell *cell = &buffer[x+_width*y];
     cell->air_pressure = initial_pressure;
-    cell->heat_energy = initial_temperature * (airtempcoeff_per_pressure * cell->air_pressure);
+    cell->heat_energy = initial_temperature * (
+        airtempcoeff_per_pressure * cell->air_pressure);
     cell->flow[0] = 0;
     cell->flow[1] = 0;
     cell->fog = 0;
@@ -124,13 +114,6 @@ void Automaton::init_cell(Cell *buffer, CoordInt x, CoordInt y,
 
 void Automaton::init_threads()
 {
-    for (unsigned int i = 0; i < _thread_count - 1; i++) {
-        _finished_signals[i] = new Semaphore();
-        _shared_zones[i] = new Mutex();
-        _forward_signals[i] = new Semaphore();
-    }
-    _finished_signals[_thread_count - 1] = new Semaphore();
-
     // We limit the thread count to 64 for now. Above that, synchronization is
     // probably more expensive than everything else. Synchronization is O(n),
     // with n being the count of threads. Threads have to prepare the bottommost
@@ -141,30 +124,47 @@ void Automaton::init_threads()
     // Additionally, everything will break if we have an amount of threads for
     // which the height divided by the thread count (integer division) gives
     // zero (which is asserted against below).
-    const CoordInt slice_size = _height / (_thread_count <= 64 ? _thread_count : 64);
+    const CoordInt slice_size =
+        _height / (_thread_count <= 64 ? _thread_count : 64);
+
     assert(slice_size > 0);
 
     CoordInt slice_y0 = 0;
 
     for (unsigned int i = 0; i < _thread_count - 1; i++) {
-        _threads[i] = new AutomatonThread(this,
-            slice_y0, slice_y0 + slice_size-1,  // range on which this thread works
-            _finished_signals[i],
-            (i>0) ? _forward_signals[i-1] : 0,
-            _forward_signals[i],
-            (i>0) ? _shared_zones[i-1] : 0,
-            _shared_zones[i]
-        );
+        _threads[i] = std::unique_ptr<AutomatonThread>(
+            new AutomatonThread(
+                *this,
+                // range on which this thread works
+                slice_y0, slice_y0 + slice_size-1,
+                _finished_signal,
+                (i > 0
+                 ? &_forward_signals[i-1]
+                 : nullptr),
+                &_forward_signals[i],
+                (i > 0
+                 ? &_shared_zones[i-1]
+                 : nullptr),
+                &_shared_zones[i],
+                _resume_signals[i]
+            ));
         slice_y0 += slice_size;
     }
-    _threads[_thread_count-1] = new AutomatonThread(this,
-        slice_y0, _height-1,
-        _finished_signals[_thread_count-1],
-        (_thread_count > 1) ? _forward_signals[_thread_count-2] : 0,
-        0,
-        (_thread_count > 1) ? _shared_zones[_thread_count-2] : 0,
-        0
-    );
+    _threads[_thread_count-1] = std::unique_ptr<AutomatonThread>(
+        new AutomatonThread(
+            *this,
+            slice_y0, _height-1,
+            _finished_signal,
+            (_thread_count > 1
+             ? &_forward_signals[_thread_count-2]
+             : nullptr),
+            nullptr,
+            (_thread_count > 1
+             ? &_shared_zones[_thread_count-2]
+             : nullptr),
+            nullptr,
+            _resume_signals[_thread_count-1]
+        ));
 }
 
 void Automaton::clear_cells(
@@ -451,8 +451,8 @@ void Automaton::place_stamp(const CoordInt atx, const CoordInt aty,
 
 void Automaton::resume()
 {
-    for (unsigned int i = 0; i < _thread_count; i++) {
-        _threads[i]->resume();
+    for (auto &sem: _resume_signals) {
+        sem.post();
     }
     _resumed = true;
 }
@@ -468,7 +468,7 @@ void Automaton::wait_for()
     if (!_resumed)
         return;
     for (unsigned int i = 0; i < _thread_count; i++) {
-        _finished_signals[i]->wait();
+        _finished_signal.wait();
     }
     _resumed = false;
     Cell *tmp = _backbuffer;
@@ -518,27 +518,42 @@ void Automaton::to_gl_texture(const double min, const double max,
 
 /* AutomatonThread::AutomatonThread */
 
-AutomatonThread::AutomatonThread(Automaton *dataclass, CoordInt slice_y0,
-        CoordInt slice_y1, Semaphore *finished_signal,
-        Semaphore *top_shared_ready, Semaphore *bottom_shared_forward,
-        Mutex *top_shared_zone, Mutex *bottom_shared_zone):
-    Thread::Thread(),
+AutomatonThread::AutomatonThread(
+        Automaton &dataclass,
+        CoordInt slice_y0,
+        CoordInt slice_y1,
+        Semaphore &finished_signal,
+        Semaphore *top_shared_ready,
+        Semaphore *bottom_shared_forward,
+        std::mutex *top_shared_zone,
+        std::mutex *bottom_shared_zone,
+        Semaphore &resume_signal):
     _finished_signal(finished_signal),
     _top_shared_ready(top_shared_ready),
     _bottom_shared_forward(bottom_shared_forward),
     _top_shared_zone(top_shared_zone),
     _bottom_shared_zone(bottom_shared_zone),
+    _resume_signal(resume_signal),
     _dataclass(dataclass),
-    _width(dataclass->_width),
-    _height(dataclass->_height),
+    _width(dataclass._width),
+    _height(dataclass._height),
     _slice_y0(slice_y0),
     _slice_y1(slice_y1),
-    _sim(dataclass->_config),
-    _backbuffer(dataclass->_backbuffer),
-    _cells(dataclass->_cells),
-    _metadata(dataclass->_metadata)
+    _sim(dataclass._config),
+    _backbuffer(dataclass._backbuffer),
+    _cells(dataclass._cells),
+    _metadata(dataclass._metadata),
+    _terminated(false),
+    _thread(&AutomatonThread::execute, this)
 {
 
+}
+
+AutomatonThread::~AutomatonThread()
+{
+    _terminated = true;
+    _resume_signal.post();
+    _thread.join();
 }
 
 inline void AutomatonThread::activate_cell(Cell *front, Cell *back)
@@ -765,13 +780,16 @@ void AutomatonThread::update()
     if (_bottom_shared_zone)
         _bottom_shared_zone->unlock();
 
-    _finished_signal->post();
+    _finished_signal.post();
 }
 
 void *AutomatonThread::execute()
 {
     while (true) {
-        suspend();
+        _resume_signal.wait();
+        if (_terminated) {
+            return 0;
+        }
         update();
     }
     return 0;

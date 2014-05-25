@@ -37,21 +37,22 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
     _width(width),
     _height(height),
     _cells(new LevelCell[width*height]()),
-    _physics(Automaton(
-                 width*subdivision_count,
-                 height*subdivision_count,
-                 SimulationConfig(
-                     0.3,        // flow friction
-                     0.991,      // flow damping
-                     0.3,        // convection friction
-                     0.05,       // heat flow friction
-                     0.1         // fog flow friction
-                 ),
-                 mp
-             )),
+    _physics(
+        width*subdivision_count,
+        height*subdivision_count,
+        SimulationConfig(
+            0.3,        // flow friction
+            0.991,      // flow damping
+            0.3,        // convection friction
+            0.05,       // heat flow friction
+            0.1         // fog flow friction
+        ),
+        mp
+    ),
     _objects(),
     _time_slice(0.01),
-    _time(0)
+    _time(0),
+    _player(nullptr)
 {
     init_cells();
 }
