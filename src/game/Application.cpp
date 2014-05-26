@@ -156,7 +156,7 @@ Application::Application(
         std::unique_ptr<RuleGroup> group = rule_group({
             simple_rule<HeightRule>(600),
             simple_rule<WidthRule>(400),
-            simple_rule<BackgroundRule>(FillPtr(new Colour(0, 0, 0, 0.7))),
+            simple_rule<BackgroundRule>(FillPtr(new Colour(0, 0, 0, 0.5))),
             simple_rule<FontWeightRule>(PANGO_WEIGHT_BOLD),
             simple_rule<TextAlignRule>(PANGO_ALIGN_CENTER)
         });

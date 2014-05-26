@@ -80,7 +80,7 @@ void PlaygroundMode::enable(Application *root)
     _smoke_indicies = PyEngine::GL::StreamIndexBufferHandle(
         new PyEngine::GL::StreamIndexBuffer());
 
-    _player = new GameObject(_player_object_info, _level.get());
+    _player = new PlayerObject(_player_object_info, _level.get());
     _level->place_player(
         _player,
         0, 0);
@@ -96,8 +96,8 @@ void PlaygroundMode::enable(Application *root)
                  GL_RGB,
                  GL_UNSIGNED_BYTE,
                  nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -184,12 +184,15 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     glEnable(GL_BLEND);
     LevelCell *cell = _level->get_cell(0, 0);
     for (int i = 0; i < level_width*level_height; i++) {
-        if (!cell->here) {
+        GameObject *const obj = cell->here;
+        if (!obj) {
             ++cell;
             continue;
         }
 
-        GameObject *const obj = cell->here;
+        if (obj->view) {
+            obj->view->update(deltaT);
+        }
 
         if (obj->view.invalidated) {
             if (!obj->view.vertices) {
@@ -304,10 +307,10 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     // move view into center
-    glTranslatef(rect.get_width()/2-12,
-                 rect.get_height()/2-12,
+    glTranslatef(rect.get_width()/2-32,
+                 rect.get_height()/2-32,
                  0);
-    glScalef(24, 24, 0);
+    glScalef(64, 64, 0);
     glTranslatef(-_player->x, -_player->y, 0);
 
     _object_geometry->bind();
@@ -333,7 +336,7 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     _level->physics().wait_for();
     _level->physics().to_gl_texture(0.5, 1.5, false);
 
-    glColor4f(1, 1, 1, 0.1);
+    glColor4f(1, 1, 1, 0.3);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex2f(0, 0);

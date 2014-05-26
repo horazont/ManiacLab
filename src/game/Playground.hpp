@@ -8,6 +8,7 @@
 
 #include "logic/Particles.hpp"
 #include "logic/Level.hpp"
+#include "logic/PlayerObject.hpp"
 
 class PlaygroundScene: public PyEngine::UI::Widget
 {
@@ -35,7 +36,7 @@ private:
     std::vector<PyEngine::GL::VertexIndexListHandle> _particle_verticies;
 
     ObjectInfo _player_object_info;
-    GameObject *_player;
+    PlayerObject *_player;
 
 public:
     void disable() override;

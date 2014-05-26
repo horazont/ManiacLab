@@ -90,10 +90,20 @@ struct ObjectInfo: public TileData
 
 struct ObjectView
 {
+public:
     ObjectView();
+    ObjectView(const ObjectView &ref) = delete;
+    ObjectView &operator=(const ObjectView &ref) = delete;
+    virtual ~ObjectView();
 
-    bool invalidated;
-    PyEngine::GL::VertexIndexListHandle vertices;
+private:
+    bool _invalidated;
+
+public:
+    void invalidate();
+
+    virtual void update(PyEngine::TimeFloat deltaT);
+
 };
 
 enum Acting {
@@ -121,8 +131,7 @@ public:
     double x, y, phi;
     std::unique_ptr<Movement> movement;
     CoordPair phy;
-    ObjectView view;
-    Acting acting;
+    std::unique_ptr<ObjectView> view;
 
 protected:
     /**
@@ -214,6 +223,16 @@ public:
      * @return true if the object was destructed, false otherwise.
      */
     virtual bool projectile_impact();
+
+    /**
+     * This is called once for each GameObject, upon instanciation in the game
+     * view.
+     *
+     * For objects being present from the beginning, this is called after all
+     * starting objects have been placed. For objects being created during
+     * runtime, this method is called right after the object has been created.
+     */
+    virtual void setup_view();
 
     /**
      * Update the objects state by advancing by one tick.

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_CXX_FLAGS "-g -Wall -Wextra -Werror -std=c++11 -Wno-mismatched-tags -Wno-unused-parameter -Wno-literal-suffix -DPNG_SKIP_SETJMP_CHECK")
+set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wextra -Werror -std=c++11 -Wno-mismatched-tags -Wno-unused-parameter -Wno-literal-suffix -DPNG_SKIP_SETJMP_CHECK")
 add_subdirectory(structstream EXCLUDE_FROM_ALL)
 add_subdirectory(PyEngine)
-set(CMAKE_CXX_FLAGS "-g -Wall -Wextra -Werror -std=c++11 -pedantic -msse -msse2 -msse3 -mmmx -Wno-mismatched-tags -Wno-unused-parameter -Wno-unused-private-field -Wno-literal-suffix -DPNG_SKIP_SETJMP_CHECK")
+set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wextra -Werror -std=c++11 -pedantic -msse -msse2 -msse3 -mmmx -Wno-mismatched-tags -Wno-unused-parameter -Wno-unused-private-field -Wno-literal-suffix -DPNG_SKIP_SETJMP_CHECK")
 
 get_property(PYENGINE_DEPENDENCIES DIRECTORY PyEngine PROPERTY PYENGINE_DEPENDENCIES)
 get_property(PYENGINE_LINK_TARGETS DIRECTORY PyEngine PROPERTY PYENGINE_LINK_TARGETS)
@@ -26,6 +26,8 @@ set(LIB_SOURCES
     "src/logic/Level.cpp"
     "src/logic/PythonInterface.cpp"
     "src/logic/Particles.cpp"
+    "src/logic/PlayerObject.cpp"
+    "src/logic/TileMaterial.cpp"
 )
 
 set(COMMON_SOURCES)
