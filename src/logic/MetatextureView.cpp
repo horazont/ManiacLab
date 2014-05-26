@@ -20,7 +20,7 @@ void MetatextureView::update(
     if (_diffuse) {
         _material.diffuse->update_tile(
             *_diffuse,
-            object.x, object.y,
+            object.x + 0.5, object.y + 0.5,
             deltaT);
 
         _diffuse->stream();
@@ -29,7 +29,7 @@ void MetatextureView::update(
     if (_emmission) {
         _material.emmission->update_tile(
             *_emmission,
-            object.x, object.y,
+            object.x + 0.5, object.y + 0.5,
             deltaT);
 
         _emmission->stream();

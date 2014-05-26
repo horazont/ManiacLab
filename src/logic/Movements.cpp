@@ -47,7 +47,7 @@ Movement::~Movement()
 void Movement::delete_self()
 {
     _obj->after_movement();
-    _obj->movement = 0;
+    _obj->movement = nullptr;
     // movement is a unique_ptr, this will call the destructor
 }
 
@@ -79,7 +79,7 @@ MovementStraight::MovementStraight(
     assert(from->here);
     assert(!from->reserved_by);
     assert(!to->here);
-    assert(!to->reserved_by);
+    // assert(!to->reserved_by);
 
     from->reserved_by = _obj;
     from->here = nullptr;
@@ -101,23 +101,31 @@ void MovementStraight::skip()
     delete_self();
 }
 
-bool MovementStraight::update(TimeFloat interval)
+bool MovementStraight::update()
 {
-    _time += interval / duration;
-    if (_time >= 2.0) {
-        _time = 2.0;
+    _time += 1;
+
+    if (_to->reserved_by)
+    {
+        // if another object is currently moving out ouf the cell we’re moving
+        // in, we have to make sure it gets updated before us, to avoid
+        // collisions.
+        _to->reserved_by->update();
     }
 
-    _obj->x = _startX + _offX * _time / 2;
-    _obj->y = _startY + _offY * _time / 2;
 
-    if (_time >= 2.0) {
+    if (_time >= 100) {
+        _obj->x = _startX + _offX;
+        _obj->y = _startY + _offY;
+        _obj->view->invalidate();
         delete_self();
         return true;
+    } else {
+        _obj->x = _startX + _offX * (_time * Level::time_slice / duration);
+        _obj->y = _startY + _offY * (_time * Level::time_slice / duration);
+        _obj->view->invalidate();
+        return false;
     }
-
-    _obj->view->invalidate();
-    return false;
 }
 
 CoordPair MovementStraight::velocity_vector()
@@ -153,7 +161,7 @@ void MovementRoll::skip()
     delete_self();
 }
 
-bool MovementRoll::update(TimeFloat interval)
+bool MovementRoll::update()
 {
     _obj->view->invalidate();
     assert(false);
@@ -167,4 +175,4 @@ CoordPair MovementRoll::velocity_vector()
     return CoordPair();
 }
 
-const double MovementStraight::duration = 0.5;
+const double MovementStraight::duration = 1.0;

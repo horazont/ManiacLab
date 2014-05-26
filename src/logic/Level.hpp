@@ -62,12 +62,12 @@ private:
     Automaton _physics;
     std::vector<GameObject*> _objects;
 
-    double _time;
-
     GameObject *_player;
     PlayerDeathEvent _on_player_death;
 
     ParticleSystem _physics_particles;
+
+    TickCounter _ticks;
 
 private:
     void init_cells();
@@ -97,6 +97,11 @@ public:
     }
 
     CoordPair get_physics_coords(const double x, const double y);
+
+    inline TickCounter get_ticks() const
+    {
+        return _ticks;
+    }
 
     inline CoordInt get_width() const
     {

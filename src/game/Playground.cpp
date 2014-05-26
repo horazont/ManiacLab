@@ -6,6 +6,7 @@
 #include "Application.hpp"
 
 #include "logic/SafeWallObject.hpp"
+#include "logic/RockObject.hpp"
 
 using namespace PyEngine;
 using namespace PyEngine::UI;
@@ -140,6 +141,23 @@ void PlaygroundMode::enable(Application *root)
         diffuse,
         nullptr);
 
+    diffuse = _tilemats->register_metatexture(
+        "rock_diffuse",
+        std::unique_ptr<Metatexture>(
+            new SimpleMetatexture(
+                _atlas_geometry,
+                _diffuse_indicies,
+                (0 + 0.5) / texw,
+                (0 + 0.5) / texh,
+                (64 - 0.5) / texw,
+                (64 - 0.5) / texh,
+                1.0,
+                1.0)));
+    _tilemats->new_material(
+        mat_rock,
+        diffuse,
+        nullptr);
+
     _player = new PlayerObject(_level.get());
     _level->place_player(
         _player,
@@ -155,9 +173,15 @@ void PlaygroundMode::enable(Application *root)
     obj = new SafeWallObject(_level.get());
     _level->place_object(
         obj,
-        2, 1);
+        1, 2);
     obj->setup_view(*_tilemats);
     obj = new SafeWallObject(_level.get());
+    _level->place_object(
+        obj,
+        0, 2);
+    obj->setup_view(*_tilemats);
+
+    obj = new RockObject(_level.get());
     _level->place_object(
         obj,
         2, 0);
@@ -386,26 +410,26 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     _fire_indicies->clear();
     _object_geometry->unbind();
 
-    // glBindTexture(GL_TEXTURE_2D, _debug_tex);
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // glEnable(GL_TEXTURE_2D);
-    // glEnable(GL_BLEND);
+    glBindTexture(GL_TEXTURE_2D, _debug_tex);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
 
-    // _level->physics().wait_for();
-    // _level->physics().to_gl_texture(0.5, 1.5, false);
+    _level->physics().wait_for();
+    _level->physics().to_gl_texture(0.5, 1.5, false);
 
-    // glColor4f(1, 1, 1, 0.3);
-    // glBegin(GL_QUADS);
-    // glTexCoord2f(0, 0);
-    // glVertex2f(0, 0);
-    // glTexCoord2f(0, 250./256.);
-    // glVertex2f(0, level_height);
-    // glTexCoord2f(250./256., 250./256.);
-    // glVertex2f(level_width, level_height);
-    // glTexCoord2f(250./256., 0);
-    // glVertex2f(level_width, 0);
-    // glEnd();
+    glColor4f(1, 1, 1, 0.3);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0);
+    glVertex2f(0, 0);
+    glTexCoord2f(0, 250./256.);
+    glVertex2f(0, level_height);
+    glTexCoord2f(250./256., 250./256.);
+    glVertex2f(level_width, level_height);
+    glTexCoord2f(250./256., 0);
+    glVertex2f(level_width, 0);
+    glEnd();
 
-    // glDisable(GL_TEXTURE_2D);
-    // glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

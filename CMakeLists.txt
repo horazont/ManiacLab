@@ -30,6 +30,7 @@ set(LIB_SOURCES
     "src/logic/TileMaterial.cpp"
     "src/logic/MetatextureView.cpp"
     "src/logic/SafeWallObject.cpp"
+    "src/logic/RockObject.cpp"
 )
 
 set(COMMON_SOURCES)

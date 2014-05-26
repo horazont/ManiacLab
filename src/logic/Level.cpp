@@ -50,9 +50,9 @@ Level::Level(CoordInt width, CoordInt height, bool mp):
         mp
     ),
     _objects(),
-    _time(0),
     _player(nullptr),
-    _physics_particles(*this)
+    _physics_particles(*this),
+    _ticks(0)
 {
     init_cells();
 }
@@ -234,6 +234,8 @@ void Level::place_player(
 
 void Level::update()
 {
+    _ticks += 1;
+
     _physics.wait_for();
     LevelCell *cell = &_cells[-1];
     for (CoordInt y = 0; y < _height; y++)
@@ -247,8 +249,6 @@ void Level::update()
             obj->update();
         }
     }
-
-    _time += time_slice;
 
     _physics_particles.update(0.01);
 

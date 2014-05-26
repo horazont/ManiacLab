@@ -58,6 +58,8 @@ struct CellInfo {
     CellMetadata meta;
 };
 
+typedef uint32_t TickCounter;
+
 class AutomatonThread;
 
 /**

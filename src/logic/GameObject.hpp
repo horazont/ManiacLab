@@ -31,6 +31,7 @@ authors named in the AUTHORS file.
 
 #include "Movements.hpp"
 #include "Stamp.hpp"
+#include "Physics.hpp"
 
 #include "io/TilesetData.hpp"
 
@@ -122,7 +123,7 @@ public:
 
 };
 
-enum Acting {
+enum MoveDirection {
     NONE = 0,
     MOVE_UP,
     MOVE_DOWN,
@@ -148,6 +149,12 @@ public:
     std::unique_ptr<Movement> movement;
     CoordPair phy;
     std::unique_ptr<ObjectView> view;
+
+    /**
+     * Stores the tick of the last full update. This is used to manage
+     * dependencies between movements.
+     */
+    TickCounter ticks;
 
 protected:
     /**
@@ -227,6 +234,15 @@ public:
      * true otherwise.
      */
     virtual bool impact(GameObject *on_object);
+
+    /**
+     * Instruct the object to move into the given direction. Return whether
+     * movement initiation worked.
+     *
+     * @param dir Direction to move to
+     * @return true if the object is now moving, false otherwise.
+     */
+    bool move(MoveDirection dir, bool chain_move);
 
     /**
      * Notify the object that it got hit by an explosive projectile.

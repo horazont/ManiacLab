@@ -17,7 +17,7 @@ public:
     PlayerObject(Level *level);
 
 public:
-    Acting acting;
+    MoveDirection acting;
 
 public:
     bool idle() override;

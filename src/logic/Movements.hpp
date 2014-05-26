@@ -27,6 +27,7 @@ authors named in the AUTHORS file.
 
 #include "CEngine/IO/Time.hpp"
 
+#include "Physics.hpp"
 #include "Level.hpp"
 
 struct LevelCell;
@@ -38,15 +39,16 @@ public:
     virtual ~Movement();
 
 protected:
-    double _time;
+    TickCounter _time;
     GameObject *_obj;
+    GameObject *_dependency;
 
 protected:
     void delete_self();
 
 public:
     virtual void skip() = 0;
-    virtual bool update(PyEngine::TimeFloat interval) = 0;
+    virtual bool update() = 0;
     virtual CoordPair velocity_vector() = 0;
 
 };
@@ -63,7 +65,7 @@ private:
 
 public:
     void skip() override;
-    bool update(PyEngine::TimeFloat interval) override;
+    bool update() override;
     virtual CoordPair velocity_vector() override;
 
 public:
@@ -83,7 +85,7 @@ private:
 
 public:
     void skip() override;
-    bool update(PyEngine::TimeFloat interval) override;
+    bool update() override;
     CoordPair velocity_vector() override;
 
 };

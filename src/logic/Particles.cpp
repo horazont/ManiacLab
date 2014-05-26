@@ -9,6 +9,15 @@ inline void update_coord(PyEngine::TimeFloat deltaT,
     vv = vv + av*deltaT;
 }
 
+inline void handle_collision(
+    Automaton &physics,
+    float &x, float &vx,
+    float &y, float &vy)
+{
+
+}
+
+
 /* ParticleSystem */
 
 ParticleSystem::ParticleSystem(Level &level):
@@ -102,7 +111,10 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
         Cell *cell = physics.cell_at(phy.x, phy.y);
         CellMetadata *meta = physics.meta_at(phy.x, phy.y);
         if (meta->blocked) {
-            // FIXME: collision!
+            handle_collision(
+                physics,
+                part->x, part->y,
+                part->vx, part->vy);
             continue;
         }
 

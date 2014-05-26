@@ -115,7 +115,8 @@ GameObject::GameObject(const ObjectInfo &info,
     phi(0),
     movement(nullptr),
     phy(),
-    view()
+    view(),
+    ticks(0)
 {
 
 }
@@ -262,6 +263,64 @@ bool GameObject::impact(GameObject *on_object)
     return true;
 }
 
+bool GameObject::move(MoveDirection dir, bool chain_move)
+{
+    if (!info.is_movable || movement || dir == NONE) {
+        return false;
+    }
+
+    CoordInt offsx = 0;
+    CoordInt offsy = 0;
+    switch (dir) {
+    case MOVE_UP:
+    {
+        offsy = -1;
+        break;
+    };
+    case MOVE_DOWN:
+    {
+        offsy = 1;
+        break;
+    }
+    case MOVE_LEFT:
+    {
+        offsx = -1;
+        break;
+    }
+    case MOVE_RIGHT:
+    {
+        offsx = 1;
+        break;
+    }
+    default: {
+        return false;
+    }
+    }
+
+    const CoordInt neighx = offsx + x;
+    const CoordInt neighy = offsy + y;
+
+    if ((offsx != 0 || offsy != 0)
+        && neighx >= 0 && neighx < level->get_width()
+        && neighy >= 0 && neighy < level->get_height())
+    {
+        LevelCell *neighbour = level->get_cell(neighx, neighy);
+        if (!neighbour->reserved_by
+            && (!neighbour->here || (chain_move
+                                     && neighbour->here->move(dir, false))))
+        {
+            movement = std::unique_ptr<Movement>(
+                new MovementStraight(
+                    level->get_cell(cell.x, cell.y),
+                    neighbour,
+                    offsx, offsy));
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool GameObject::projectile_impact()
 {
     return false;
@@ -274,8 +333,13 @@ void GameObject::setup_view(TileMaterialManager &matman)
 
 void GameObject::update()
 {
+    if (ticks == level->get_ticks()) {
+        return;
+    }
+    ticks = level->get_ticks();
+
     if (movement) {
-        movement->update(level->time_slice);
+        movement->update();
     }
 
     CoordPair new_coords = level->get_physics_coords(x, y);
