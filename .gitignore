@@ -11,3 +11,4 @@ CMakeCache.txt
 .local/
 *.geany
 *.emacs.desktop*
+*.blend1
