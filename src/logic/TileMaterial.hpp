@@ -18,7 +18,7 @@ class Metatexture;
 struct MetatextureObject
 {
 public:
-    float cx, cy;
+    float cx, cy, phi;
     PyEngine::TimeFloat t;
     PyEngine::GL::VertexIndexListHandle vertices;
     PyEngine::GL::StreamIndexBufferHandle index_buffer;
@@ -53,6 +53,7 @@ public:
      */
     virtual std::unique_ptr<MetatextureObject> create_tile(
         const float cx, const float cy,
+        const float phi,
         const PyEngine::TimeFloat t) const = 0;
 
     /**
@@ -72,6 +73,7 @@ public:
     virtual void update_tile(
         MetatextureObject &tile,
         const float cx, const float cy,
+        const float phi,
         const PyEngine::TimeFloat t) const = 0;
 
 };
@@ -96,17 +98,20 @@ public:
 
 private:
     void set_buffer(MetatextureObject &obj,
-                    const float cx, const float cy) const;
+                    const float cx, const float cy,
+                    const float phi) const;
 
 public:
     std::unique_ptr<MetatextureObject> create_tile(
         const float cx, const float cy,
+        const float phi,
         const PyEngine::TimeFloat t) const override;
     float get_height() const override;
     float get_width() const override;
     void update_tile(
         MetatextureObject &tile,
         const float cx, const float cy,
+        const float phi,
         const PyEngine::TimeFloat t) const override;
 
 };

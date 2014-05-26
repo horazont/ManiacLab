@@ -55,7 +55,9 @@ public:
 
 class MovementStraight: public Movement {
 public:
-    MovementStraight(LevelCell *from, LevelCell *to, int offsetX, int offsetY);
+    MovementStraight(
+        LevelCell *from, LevelCell *to,
+        int offsetX, int offsetY);
     virtual ~MovementStraight();
 
 private:
@@ -75,7 +77,9 @@ public:
 
 class MovementRoll: public Movement {
 public:
-    MovementRoll(LevelCell *from, LevelCell *via, LevelCell *to, int offsetX, int offsetY);
+    MovementRoll(
+        LevelCell *from, LevelCell *via, LevelCell *to,
+        int offsetX, int offsetY);
     virtual ~MovementRoll();
 
 private:

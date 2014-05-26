@@ -113,6 +113,14 @@ bool MovementStraight::update()
         _to->reserved_by->update();
     }
 
+    if (_obj->info.is_rollable)
+    {
+        if (_offX != 0) {
+            _obj->phi += Level::time_slice / _obj->info.roll_radius * _offX;
+        } else {
+            _obj->phi += sin(_time * Level::time_slice * 2*3.14159) / 100;
+        }
+    }
 
     if (_time >= 100) {
         _obj->x = _startX + _offX;
@@ -135,7 +143,8 @@ CoordPair MovementStraight::velocity_vector()
 
 /* MovementRoll */
 
-MovementRoll::MovementRoll(LevelCell *from, LevelCell *via, LevelCell *to,
+MovementRoll::MovementRoll(
+        LevelCell *from, LevelCell *via, LevelCell *to,
         int offsetX, int offsetY):
     Movement::Movement(from->here),
     _from(from),

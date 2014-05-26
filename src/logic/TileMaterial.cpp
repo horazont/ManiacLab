@@ -3,6 +3,8 @@
 #include <stdexcept>
 
 #include <CEngine/GL/GeometryBufferView.hpp>
+#include <CEngine/Math/Vectors.hpp>
+#include <CEngine/Math/Matrices.hpp>
 
 using namespace PyEngine;
 using namespace PyEngine::GL;
@@ -52,7 +54,8 @@ SimpleMetatexture::SimpleMetatexture(
 
 void SimpleMetatexture::set_buffer(
     MetatextureObject &tile,
-    const float cx, const float cy) const
+    const float cx, const float cy,
+    const float phi) const
 {
     GeometryBufferView view(
         geometry_buffer, tile.vertices);
@@ -60,34 +63,45 @@ void SimpleMetatexture::set_buffer(
     const float half_width = width / 2;
     const float half_height = height / 2;
 
-    const std::array<float, 12> position_data({
-            cx - half_width, cy - half_height, 0,
-            cx - half_width, cy + half_height, 0,
-            cx + half_width, cy + half_height, 0,
-            cx + half_width, cy - half_height, 0});
+    const Matrix3f rotmat = rotation3(eZ, phi);
+
+    const Vector3f offset = Vector3f(cx, cy, 0);
+
+    std::array<Vector3f, 4> position_data({
+            Vector3f(-half_width, -half_height, 0),
+                Vector3f(-half_width, half_height, 0),
+                Vector3f(half_width, half_height, 0),
+                Vector3f(half_width, -half_height, 0)});
+
+    for (auto &vec: position_data) {
+        vec = rotmat * vec + offset;
+    }
+
     const std::array<float, 8> texcoord_data({
             x0, y0,
             x0, y1,
             x1, y1,
             x1, y0});
 
-    view.getPositionView()->set(&position_data.front());
+    view.getPositionView()->set(&position_data.front()[0]);
     view.getTexCoordView(0)->set(&texcoord_data.front());
 
     tile.cx = cx;
     tile.cy = cy;
+    tile.phi = phi;
     tile.t = 0;
 }
 
 std::unique_ptr<MetatextureObject> SimpleMetatexture::create_tile(
     const float cx, const float cy,
+    const float phi,
     const PyEngine::TimeFloat t) const
 {
     auto result = std::unique_ptr<MetatextureObject>(new MetatextureObject());
     result->index_buffer = index_buffer;
     result->vertices = geometry_buffer->allocateVertices(4);
 
-    set_buffer(*result, cx, cy);
+    set_buffer(*result, cx, cy, phi);
 
     return result;
 }
@@ -105,10 +119,12 @@ float SimpleMetatexture::get_width() const
 void SimpleMetatexture::update_tile(
     MetatextureObject &tile,
     const float cx, const float cy,
+    const float phi,
     const PyEngine::TimeFloat t) const
 {
-    if (cx != tile.cx || cy != tile.cy) {
-        set_buffer(tile, cx, cy);
+    if (cx != tile.cx || cy != tile.cy || phi != tile.phi)
+    {
+        set_buffer(tile, cx, cy, phi);
     }
 }
 

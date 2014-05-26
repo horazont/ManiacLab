@@ -18,7 +18,7 @@ static ObjectInfo rock_object_info(
     true,
     true,
     false,
-    1.0,
+    0.5,
     1.0,
     rock_object_stamp);
 
