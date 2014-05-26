@@ -80,6 +80,17 @@ struct FrameState
 
 struct ObjectInfo: public TileData
 {
+    ObjectInfo(
+        bool is_blocking,
+        bool is_destructible,
+        bool is_edible,
+        bool is_gravity_affected,
+        bool is_movable,
+        bool is_rollable,
+        bool is_sticky,
+        float roll_radius,
+        float temp_coefficient,
+        const CellStamp &stamp);
     explicit ObjectInfo(const CellStamp &stamp);
     explicit ObjectInfo(const TileData &src_data);
     ObjectInfo(const ObjectInfo &ref) = default;
@@ -88,12 +99,27 @@ struct ObjectInfo: public TileData
     Stamp stamp;
 };
 
+class TileMaterialManager;
+struct GameObject;
+
 struct ObjectView
 {
+public:
     ObjectView();
+    ObjectView(const ObjectView &ref) = delete;
+    ObjectView &operator=(const ObjectView &ref) = delete;
+    virtual ~ObjectView();
 
-    bool invalidated;
-    PyEngine::GL::VertexIndexListHandle vertices;
+private:
+    bool _invalidated;
+
+public:
+    void invalidate();
+
+    virtual void update(
+        GameObject &object,
+        PyEngine::TimeFloat deltaT);
+
 };
 
 enum Acting {
@@ -121,8 +147,7 @@ public:
     double x, y, phi;
     std::unique_ptr<Movement> movement;
     CoordPair phy;
-    ObjectView view;
-    Acting acting;
+    std::unique_ptr<ObjectView> view;
 
 protected:
     /**
@@ -214,6 +239,16 @@ public:
      * @return true if the object was destructed, false otherwise.
      */
     virtual bool projectile_impact();
+
+    /**
+     * This is called once for each GameObject, upon instanciation in the game
+     * view.
+     *
+     * For objects being present from the beginning, this is called after all
+     * starting objects have been placed. For objects being created during
+     * runtime, this method is called right after the object has been created.
+     */
+    virtual void setup_view(TileMaterialManager &matman);
 
     /**
      * Update the objects state by advancing by one tick.

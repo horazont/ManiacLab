@@ -1,21 +1,15 @@
 #include "Playground.hpp"
 
 #include <CEngine/GL/GeometryBufferView.hpp>
+#include <CEngine/Resources/Image.hpp>
 
 #include "Application.hpp"
+
+#include "logic/SafeWallObject.hpp"
 
 using namespace PyEngine;
 using namespace PyEngine::UI;
 
-static const CellStamp player_stamp(
-    {
-        false, true, true, true, false,
-        true, true, true, true, true,
-        true, true, true, true, true,
-        true, true, true, true, true,
-        false, true, true, true, false,
-    }
-);
 
 /* PlaygroundScene */
 
@@ -34,31 +28,24 @@ bool PlaygroundScene::is_element(const std::string &name) const
 
 PlaygroundMode::PlaygroundMode():
     Mode(),
-    _level(),
-    _player_object_info(player_stamp)
+    _level()
 {
-    _player_object_info.is_actor = true;
-    _player_object_info.is_blocking = true;
-    _player_object_info.is_destructible = true;
-    _player_object_info.is_edible = false;
-    _player_object_info.is_gravity_affected = false;
-    _player_object_info.is_movable = false;
-    _player_object_info.is_rollable = false;
-    _player_object_info.is_sticky = false;
-
-    _player_object_info.temp_coefficient = 1.0;
-
     _desktop_widgets.push_back(new PlaygroundScene());
 }
 
 void PlaygroundMode::disable()
 {
-    _object_geometry = nullptr;
+    _tilemats = nullptr;
     _fire_indicies = nullptr;
     _smoke_indicies = nullptr;
     _object_indicies = nullptr;
+    _diffuse_indicies = nullptr;
+    _emmission_indicies = nullptr;
+    _atlas_geometry = nullptr;
+    _object_geometry = nullptr;
     _level = nullptr;
     glDeleteTextures(1, &_debug_tex);
+    glDeleteTextures(1, &_texatlas);
     Mode::disable();
 }
 
@@ -67,24 +54,114 @@ void PlaygroundMode::enable(Application *root)
     Mode::enable(root);
     glClearColor(0, 0, 0, 1);
     _level = std::unique_ptr<Level>(new Level(level_width, level_height));
+
     _object_geometry = PyEngine::GL::GeometryBufferHandle(
         new PyEngine::GL::GeometryBuffer(
             PyEngine::GL::VertexFormatHandle(
                 new PyEngine::GL::VertexFormat(3, 4)),
-            GL_DYNAMIC_DRAW)
-    );
+            GL_DYNAMIC_DRAW));
+    _atlas_geometry = PyEngine::GL::GeometryBufferHandle(
+        new PyEngine::GL::GeometryBuffer(
+            PyEngine::GL::VertexFormatHandle(
+                new PyEngine::GL::VertexFormat(3, 0, 2)),
+            GL_DYNAMIC_DRAW));
+
     _object_indicies = PyEngine::GL::StreamIndexBufferHandle(
         new PyEngine::GL::StreamIndexBuffer());
     _fire_indicies = PyEngine::GL::StreamIndexBufferHandle(
         new PyEngine::GL::StreamIndexBuffer());
     _smoke_indicies = PyEngine::GL::StreamIndexBufferHandle(
         new PyEngine::GL::StreamIndexBuffer());
+    _diffuse_indicies = PyEngine::GL::StreamIndexBufferHandle(
+        new PyEngine::GL::StreamIndexBuffer());
+    _emmission_indicies = PyEngine::GL::StreamIndexBufferHandle(
+        new PyEngine::GL::StreamIndexBuffer());
 
-    _player = new GameObject(_player_object_info, _level.get());
+    glGenTextures(1, &_texatlas);
+    glBindTexture(GL_TEXTURE_2D, _texatlas);
+    PyEngine::Resources::ImageHandle atlas =
+        PyEngine::Resources::Image::PNGImage(
+            _root->vfs().open(
+                "/data/tileset/atlas.png",
+                OM_READ));
+    atlas->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA8);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    static const std::size_t texw = 256;
+    static const std::size_t texh = 256;
+
+    _tilemats = std::unique_ptr<TileMaterialManager>(new TileMaterialManager());
+
+    Metatexture *diffuse = _tilemats->register_metatexture(
+        "safewall0_diffuse",
+        std::unique_ptr<Metatexture>(
+            new SimpleMetatexture(
+                _atlas_geometry,
+                _diffuse_indicies,
+                (64 + 0.5) / texw,
+                (0 + 0.5) / texh,
+                (128 - 0.5) / texw,
+                (64 - 0.5) / texh,
+                1.0,
+                1.0)));
+    Metatexture *emmission = _tilemats->register_metatexture(
+        "safewall0_emmission",
+        std::unique_ptr<Metatexture>(
+            new SimpleMetatexture(
+                _atlas_geometry,
+                _emmission_indicies,
+                (0 + 0.5) / texw,
+                (64 + 0.5) / texh,
+                (128 - 0.5) / texw,
+                (192 - 0.5) / texh,
+                3.0,
+                3.0)));
+    _tilemats->new_material(
+        mat_safewall_standalone,
+        diffuse,
+        emmission);
+
+    diffuse = _tilemats->register_metatexture(
+        "player_diffuse",
+        std::unique_ptr<Metatexture>(
+            new SimpleMetatexture(
+                _atlas_geometry,
+                _diffuse_indicies,
+                (128 + 0.5) / texw,
+                (0 + 0.5) / texh,
+                (192 - 0.5) / texw,
+                (64 - 0.5) / texh,
+                1.0,
+                1.0)));
+    _tilemats->new_material(
+        mat_player,
+        diffuse,
+        nullptr);
+
+    _player = new PlayerObject(_level.get());
     _level->place_player(
         _player,
         0, 0);
     _level->particles().clear();
+    _player->setup_view(*_tilemats);
+
+    GameObject *obj = new SafeWallObject(_level.get());
+    _level->place_object(
+        obj,
+        2, 2);
+    obj->setup_view(*_tilemats);
+    obj = new SafeWallObject(_level.get());
+    _level->place_object(
+        obj,
+        2, 1);
+    obj->setup_view(*_tilemats);
+    obj = new SafeWallObject(_level.get());
+    _level->place_object(
+        obj,
+        2, 0);
+    obj->setup_view(*_tilemats);
 
     glGenTextures(1, &_debug_tex);
     glBindTexture(GL_TEXTURE_2D, _debug_tex);
@@ -96,8 +173,8 @@ void PlaygroundMode::enable(Application *root)
                  GL_RGB,
                  GL_UNSIGNED_BYTE,
                  nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -184,41 +261,15 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     glEnable(GL_BLEND);
     LevelCell *cell = _level->get_cell(0, 0);
     for (int i = 0; i < level_width*level_height; i++) {
-        if (!cell->here) {
+        GameObject *const obj = cell->here;
+        if (!obj) {
             ++cell;
             continue;
         }
 
-        GameObject *const obj = cell->here;
-
-        if (obj->view.invalidated) {
-            if (!obj->view.vertices) {
-                obj->view.vertices = _object_geometry->allocateVertices(4);
-            }
-            PyEngine::GL::GeometryBufferView buffer(
-                _object_geometry,
-                obj->view.vertices);
-
-            std::array<PyEngine::GL::GLVertexFloat, 12> pos({
-                    (float)obj->x, (float)obj->y, 0,
-                    (float)obj->x, (float)obj->y+1, 0,
-                    (float)obj->x+1, (float)obj->y+1, 0,
-                    (float)obj->x+1, (float)obj->y, 0
-                        });
-            buffer.getPositionView()->set(&pos.front());
-
-            std::array<PyEngine::GL::GLVertexFloat, 16> colours({
-                    1, 1, 1, 1,
-                    1, 1, 0, 1,
-                    1, 0, 1, 1,
-                    0, 1, 1, 1
-                        });
-            buffer.getColourView()->set(&colours.front());
-
-            // obj->view.invalidated = false;
+        if (obj->view) {
+            obj->view->update(*obj, deltaT);
         }
-
-        _object_indicies->add(obj->view.vertices);
 
         ++cell;
     }
@@ -304,11 +355,22 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     // move view into center
-    glTranslatef(rect.get_width()/2-12,
-                 rect.get_height()/2-12,
+    glTranslatef(rect.get_width()/2-32,
+                 rect.get_height()/2-32,
                  0);
-    glScalef(24, 24, 0);
+    glScalef(64, 64, 0);
     glTranslatef(-_player->x, -_player->y, 0);
+
+    _atlas_geometry->bind();
+    glBindTexture(GL_TEXTURE_2D, _texatlas);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    _diffuse_indicies->drawUnbound(GL_QUADS);
+    _diffuse_indicies->clear();
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    _emmission_indicies->drawUnbound(GL_QUADS);
+    _emmission_indicies->clear();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    _atlas_geometry->unbind();
 
     _object_geometry->bind();
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -324,27 +386,26 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     _fire_indicies->clear();
     _object_geometry->unbind();
 
+    // glBindTexture(GL_TEXTURE_2D, _debug_tex);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glEnable(GL_TEXTURE_2D);
+    // glEnable(GL_BLEND);
 
-    glBindTexture(GL_TEXTURE_2D, _debug_tex);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_BLEND);
+    // _level->physics().wait_for();
+    // _level->physics().to_gl_texture(0.5, 1.5, false);
 
-    _level->physics().wait_for();
-    _level->physics().to_gl_texture(0.5, 1.5, false);
+    // glColor4f(1, 1, 1, 0.3);
+    // glBegin(GL_QUADS);
+    // glTexCoord2f(0, 0);
+    // glVertex2f(0, 0);
+    // glTexCoord2f(0, 250./256.);
+    // glVertex2f(0, level_height);
+    // glTexCoord2f(250./256., 250./256.);
+    // glVertex2f(level_width, level_height);
+    // glTexCoord2f(250./256., 0);
+    // glVertex2f(level_width, 0);
+    // glEnd();
 
-    glColor4f(1, 1, 1, 0.1);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0);
-    glVertex2f(0, 0);
-    glTexCoord2f(0, 250./256.);
-    glVertex2f(0, level_height);
-    glTexCoord2f(250./256., 250./256.);
-    glVertex2f(level_width, level_height);
-    glTexCoord2f(250./256., 0);
-    glVertex2f(level_width, 0);
-    glEnd();
-
-    glDisable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // glDisable(GL_TEXTURE_2D);
+    // glBindTexture(GL_TEXTURE_2D, 0);
 }

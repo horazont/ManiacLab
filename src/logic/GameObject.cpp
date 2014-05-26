@@ -39,6 +39,31 @@ void FrameState::reset()
 
 /* ObjectInfo */
 
+ObjectInfo::ObjectInfo(
+        bool is_blocking_,
+        bool is_destructible_,
+        bool is_edible_,
+        bool is_gravity_affected_,
+        bool is_movable_,
+        bool is_rollable_,
+        bool is_sticky_,
+        float roll_radius_,
+        float temp_coefficient_,
+        const CellStamp &stamp):
+    TileData(),
+    stamp(stamp)
+{
+    is_blocking = is_blocking_;
+    is_destructible = is_destructible_;
+    is_edible = is_edible_;
+    is_gravity_affected = is_gravity_affected_;
+    is_movable = is_movable_;
+    is_rollable = is_rollable_;
+    is_sticky = is_sticky_;
+    roll_radius = roll_radius_;
+    temp_coefficient = temp_coefficient_;
+}
+
 ObjectInfo::ObjectInfo(const CellStamp &stamp):
     TileData(),
     stamp(stamp)
@@ -56,7 +81,24 @@ ObjectInfo::ObjectInfo(const TileData &src):
 /* ObjectView */
 
 ObjectView::ObjectView():
-    invalidated(true)
+    _invalidated(false)
+{
+
+}
+
+ObjectView::~ObjectView()
+{
+
+}
+
+void ObjectView::invalidate()
+{
+    _invalidated = true;
+}
+
+void ObjectView::update(
+    GameObject &object,
+    PyEngine::TimeFloat deltaT)
 {
 
 }
@@ -73,8 +115,7 @@ GameObject::GameObject(const ObjectInfo &info,
     phi(0),
     movement(nullptr),
     phy(),
-    view(),
-    acting(NONE)
+    view()
 {
 
 }
@@ -197,55 +238,14 @@ void GameObject::headache(GameObject *from_object)
 
 bool GameObject::idle()
 {
+    if (movement) {
+        return true;
+    }
+
     if (info.is_gravity_affected && cell.y < level->get_height() - 1)
     {
         if (!handle_gravity()) {
             return false;
-        }
-    }
-
-    if (acting != NONE && !movement) {
-        CoordInt offsx = 0;
-        CoordInt offsy = 0;
-        switch (acting) {
-        case MOVE_UP:
-        {
-            offsy = -1;
-            break;
-        };
-        case MOVE_DOWN:
-        {
-            offsy = 1;
-            break;
-        }
-        case MOVE_LEFT:
-        {
-            offsx = -1;
-            break;
-        }
-        case MOVE_RIGHT:
-        {
-            offsx = 1;
-            break;
-        }
-        default: {}
-        }
-
-        acting = NONE;
-
-        const CoordInt neighx = offsx + x;
-        const CoordInt neighy = offsy + y;
-
-        if ((offsx != 0 || offsy != 0)
-            && neighx >= 0 && neighx < level->get_width()
-            && neighy >= 0 && neighy < level->get_height())
-        {
-            LevelCell *neighbour = level->get_cell(neighx, neighy);
-            movement = std::unique_ptr<Movement>(
-                new MovementStraight(
-                    level->get_cell(cell.x, cell.y),
-                    neighbour,
-                    offsx, offsy));
         }
     }
 
@@ -265,6 +265,11 @@ bool GameObject::impact(GameObject *on_object)
 bool GameObject::projectile_impact()
 {
     return false;
+}
+
+void GameObject::setup_view(TileMaterialManager &matman)
+{
+
 }
 
 void GameObject::update()

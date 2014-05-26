@@ -29,6 +29,7 @@ authors named in the AUTHORS file.
 
 #include <CEngine/IO/Log.hpp>
 #include <CEngine/IO/Time.hpp>
+#include <CEngine/VFS/FileSystem.hpp>
 #include <CEngine/WindowInterface/Display.hpp>
 #include <CEngine/WindowInterface/Window.hpp>
 #include <CEngine/WindowInterface/EventLoop.hpp>
@@ -53,6 +54,8 @@ private:
     PyEngine::WindowHandle _window;
     PyEngine::EventLoop *_loop;
 
+    PyEngine::FileSystem _vfs;
+
     GLuint _cairo_tex;
     unsigned int _cairo_tex_w;
     unsigned int _cairo_tex_h;
@@ -73,6 +76,7 @@ protected:
 public:
     void switch_to_main_menu_mode();
     void switch_to_playground_mode();
+    PyEngine::FileSystem &vfs();
 
 public:
     void dispatch_wm_quit() override;

@@ -115,6 +115,11 @@ public:
 
     void physics_to_gl_texture(bool thread_regions);
 
+    void place_object(
+        GameObject *obj,
+        const CoordInt x,
+        const CoordInt y);
+
     void place_player(
         GameObject *player,
         const CoordInt x,

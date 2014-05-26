@@ -116,7 +116,7 @@ bool MovementStraight::update(TimeFloat interval)
         return true;
     }
 
-    _obj->view.invalidated = true;
+    _obj->view->invalidate();
     return false;
 }
 
@@ -155,7 +155,7 @@ void MovementRoll::skip()
 
 bool MovementRoll::update(TimeFloat interval)
 {
-    _obj->view.invalidated = true;
+    _obj->view->invalidate();
     assert(false);
     delete_self();
     return true;

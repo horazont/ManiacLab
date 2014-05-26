@@ -26,6 +26,10 @@ set(LIB_SOURCES
     "src/logic/Level.cpp"
     "src/logic/PythonInterface.cpp"
     "src/logic/Particles.cpp"
+    "src/logic/PlayerObject.cpp"
+    "src/logic/TileMaterial.cpp"
+    "src/logic/MetatextureView.cpp"
+    "src/logic/SafeWallObject.cpp"
 )
 
 set(COMMON_SOURCES)

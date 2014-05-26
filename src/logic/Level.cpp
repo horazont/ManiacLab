@@ -186,15 +186,11 @@ void Level::physics_to_gl_texture(bool thread_regions)
     _physics.to_gl_texture(0.0, 2.0, thread_regions);
 }
 
-void Level::place_player(
-    GameObject *player,
+void Level::place_object(
+    GameObject *obj,
     const CoordInt x,
     const CoordInt y)
 {
-    if (_player) {
-        return;
-    }
-
     _physics.wait_for();
 
     LevelCell *dest = &_cells[x+y*_width];
@@ -212,17 +208,28 @@ void Level::place_player(
     }
     cleanup_cell(dest);
 
+    obj->x = x;
+    obj->y = y;
+    obj->cell = CoordPair{x, y};
+    obj->phy = get_physics_coords(x, y);
+    _physics.place_object(
+        obj->phy.x, obj->phy.y,
+        obj, 1.0);
+
+    dest->here = obj;
+}
+
+void Level::place_player(
+    GameObject *player,
+    const CoordInt x,
+    const CoordInt y)
+{
+    if (_player) {
+        return;
+    }
+
+    place_object(player, x, y);
     _player = player;
-
-    _player->x = x;
-    _player->y = y;
-    _player->cell = CoordPair{x, y};
-    _player->phy = get_physics_coords(x, y);
-
-    std::cout << _player->phy.x << " " << _player->phy.y << std::endl;
-
-    _physics.place_object(_player->phy.x, _player->phy.y, _player, 1.0);
-    dest->here = _player;
 }
 
 void Level::update()

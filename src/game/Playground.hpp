@@ -8,6 +8,7 @@
 
 #include "logic/Particles.hpp"
 #include "logic/Level.hpp"
+#include "logic/PlayerObject.hpp"
 
 class PlaygroundScene: public PyEngine::UI::Widget
 {
@@ -26,16 +27,21 @@ public:
 
 private:
     GLuint _debug_tex;
+    GLuint _texatlas;
 
     std::unique_ptr<Level> _level;
     PyEngine::GL::GeometryBufferHandle _object_geometry;
+    PyEngine::GL::GeometryBufferHandle _atlas_geometry;
     PyEngine::GL::StreamIndexBufferHandle _object_indicies;
     PyEngine::GL::StreamIndexBufferHandle _fire_indicies;
     PyEngine::GL::StreamIndexBufferHandle _smoke_indicies;
+    PyEngine::GL::StreamIndexBufferHandle _diffuse_indicies;
+    PyEngine::GL::StreamIndexBufferHandle _emmission_indicies;
     std::vector<PyEngine::GL::VertexIndexListHandle> _particle_verticies;
 
-    ObjectInfo _player_object_info;
-    GameObject *_player;
+    std::unique_ptr<TileMaterialManager> _tilemats;
+
+    PlayerObject *_player;
 
 public:
     void disable() override;

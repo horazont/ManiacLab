@@ -28,6 +28,7 @@ authors named in the AUTHORS file.
 
 #include <CEngine/GL/CairoUtils.hpp>
 #include <CEngine/UI/CSS/Rules.hpp>
+#include <CEngine/VFS/Mount.hpp>
 
 using namespace PyEngine;
 using namespace PyEngine::UI;
@@ -57,6 +58,8 @@ Application::Application(
     _log(PyEngine::log->getChannel("maniaclab")),
     _dpy(dpy),
     _window(nullptr),
+    _loop(nullptr),
+    _vfs(),
     _cairo_tex(0),
     _cairo_tex_w(0),
     _cairo_tex_h(0),
@@ -93,7 +96,10 @@ Application::Application(
     }
     display_mode = candidate;
 
-    /* TODO: vfs */
+    _vfs.mount(
+        "/data",
+        std::move(MountPtr(new MountDirectory("data", false))),
+        MountPriority::FileSystem);
 
     _log->log(Information) << "Creating context with display mode "
         << *display_mode << submit;
@@ -156,7 +162,7 @@ Application::Application(
         std::unique_ptr<RuleGroup> group = rule_group({
             simple_rule<HeightRule>(600),
             simple_rule<WidthRule>(400),
-            simple_rule<BackgroundRule>(FillPtr(new Colour(0, 0, 0, 0.7))),
+            simple_rule<BackgroundRule>(FillPtr(new Colour(0, 0, 0, 0.5))),
             simple_rule<FontWeightRule>(PANGO_WEIGHT_BOLD),
             simple_rule<TextAlignRule>(PANGO_ALIGN_CENTER)
         });
@@ -345,6 +351,11 @@ void Application::switch_to_main_menu_mode()
 void Application::switch_to_playground_mode()
 {
     set_mode(&_mode_playground);
+}
+
+FileSystem &Application::vfs()
+{
+    return _vfs;
 }
 
 void Application::dispatch_wm_quit()
