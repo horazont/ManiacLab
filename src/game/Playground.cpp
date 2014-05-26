@@ -132,14 +132,26 @@ void PlaygroundMode::enable(Application *root)
                 _diffuse_indicies,
                 (128 + 0.5) / texw,
                 (0 + 0.5) / texh,
-                (192 - 0.5) / texw,
-                (64 - 0.5) / texh,
-                1.0,
-                1.0)));
+                (224 - 0.5) / texw,
+                (96 - 0.5) / texh,
+                1.5,
+                1.5)));
+    emmission = _tilemats->register_metatexture(
+        "player_emmission",
+        std::unique_ptr<Metatexture>(
+            new SimpleMetatexture(
+                _atlas_geometry,
+                _emmission_indicies,
+                (128 + 0.5) / texw,
+                (96 + 0.5) / texh,
+                (256 - 0.5) / texw,
+                (224 - 0.5) / texh,
+                2.0,
+                2.0)));
     _tilemats->new_material(
         mat_player,
         diffuse,
-        nullptr);
+        emmission);
 
     diffuse = _tilemats->register_metatexture(
         "rock_diffuse",
