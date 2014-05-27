@@ -51,9 +51,15 @@ Movement::~Movement()
 
 void Movement::delete_self()
 {
-    _obj->after_movement();
     _obj->movement = nullptr;
     // movement is a unique_ptr, this will call the destructor
+}
+
+bool Movement::finalize()
+{
+    std::unique_ptr<Movement> me = std::move(_obj->movement);
+    bool result = _obj->after_movement(this);
+    return result;
 }
 
 /* MovementStraight */
@@ -129,13 +135,12 @@ bool MovementStraight::update()
         _obj->x = _startX + offset_x;
         _obj->y = _startY + offset_y;
         _obj->view->invalidate();
-        delete_self();
-        return true;
+        return finalize();
     } else {
         _obj->x = _startX + offset_x * (_time * Level::time_slice / duration);
         _obj->y = _startY + offset_y * (_time * Level::time_slice / duration);
         _obj->view->invalidate();
-        return false;
+        return true;
     }
 }
 
@@ -190,8 +195,10 @@ bool MovementRoll::update()
     _time += 1;
 
     if (_time >= 100) {
-        skip();
-        return true;
+        _obj->x = _startX + offset_x;
+        _obj->y = _startY + offset_y;
+        _obj->view->invalidate();
+        return finalize();
     }
 
     if (_time >= 50) {
@@ -203,7 +210,7 @@ bool MovementRoll::update()
     }
 
     _obj->view->invalidate();
-    return false;
+    return true;
 }
 
 const double MovementStraight::duration = 1.0;

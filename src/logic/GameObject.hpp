@@ -174,13 +174,14 @@ public:
     /**
      * Notify the object of the end of a movement.
      *
-     * At the time of call, the movement member is still set to the movement
-     * just finished.
+     * At the time of call, the movement member is already nullptr. If you need
+     * access to the previous movement, use the argument instead.
      *
+     * @param prev_movement is the previously executed movement.
      * @return true if further handlers (to be specified) shall be called, false
      * otherwise.
      */
-    virtual bool after_movement();
+    virtual bool after_movement(Movement *prev_movement);
 
     /**
      * Notify the object of a movement which is about to start.

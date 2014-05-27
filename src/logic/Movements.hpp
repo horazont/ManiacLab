@@ -46,6 +46,7 @@ protected:
 
 protected:
     void delete_self();
+    bool finalize();
 
 public:
     const CoordInt offset_x;
@@ -53,6 +54,12 @@ public:
 
 public:
     virtual void skip() = 0;
+
+    /**
+     * Advance the movement by one tick. Return either true if the movement is
+     * still in progress, or the result of the after_movement handler from the
+     * object if the movement is finished.
+     */
     virtual bool update() = 0;
 
 };

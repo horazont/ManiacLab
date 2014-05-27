@@ -193,14 +193,14 @@ bool GameObject::handle_gravity()
     return true;
 }
 
-bool GameObject::after_movement()
+bool GameObject::after_movement(Movement *prev_movement)
 {
     if (!info.is_gravity_affected) {
         return true;
     }
 
     if (cell.y < level->get_height() - 1
-        && movement->offset_y > 0)
+        && prev_movement->offset_y > 0)
     {
         LevelCell *const cell = level->get_cell(this->cell.x,
                                                 this->cell.y+1);
@@ -341,7 +341,9 @@ void GameObject::update()
     ticks = level->get_ticks();
 
     if (movement) {
-        movement->update();
+        if (!movement->update()) {
+            return;
+        }
     }
 
     CoordPair new_coords = level->get_physics_coords(x, y);
