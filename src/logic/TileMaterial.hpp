@@ -10,7 +10,6 @@
 typedef std::string MaterialKey;
 
 extern const MaterialKey mat_player;
-extern const MaterialKey mat_safewall_standalone;
 extern const MaterialKey mat_rock;
 
 class Metatexture;
@@ -120,11 +119,11 @@ class TileMaterial
 {
 public:
     TileMaterial(const Metatexture *const diffuse,
-                 const Metatexture *const emmission);
+                 const Metatexture *const emission);
 
 public:
     const Metatexture *const diffuse;
-    const Metatexture *const emmission;
+    const Metatexture *const emission;
 
 };
 

@@ -11,7 +11,14 @@ public:
 
 };
 
-class SafeWallObject: public GameObject
+class WallObject: public GameObject
+{
+public:
+    WallObject(ObjectInfo &info, Level *level);
+
+};
+
+class SafeWallObject: public WallObject
 {
 public:
     SafeWallObject(Level *level);
@@ -20,5 +27,11 @@ public:
     void setup_view(TileMaterialManager &matman) override;
 
 };
+
+std::unique_ptr<ObjectView> wall_view(
+    TileMaterialManager &matman,
+    Level &level,
+    const CoordPair &cell,
+    const std::string &prefix);
 
 #endif

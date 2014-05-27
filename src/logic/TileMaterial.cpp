@@ -132,9 +132,9 @@ void SimpleMetatexture::update_tile(
 
 TileMaterial::TileMaterial(
         const Metatexture *const diffuse,
-        const Metatexture *const emmission):
+        const Metatexture *const emission):
     diffuse(diffuse),
-    emmission(emmission)
+    emission(emission)
 {
 
 }

@@ -23,6 +23,10 @@ public:
 class PlaygroundMode: public Mode
 {
 public:
+    static constexpr std::size_t texw = 1024;
+    static constexpr std::size_t texh = 1024;
+
+public:
     PlaygroundMode();
 
 private:
@@ -36,12 +40,27 @@ private:
     PyEngine::GL::StreamIndexBufferHandle _fire_indicies;
     PyEngine::GL::StreamIndexBufferHandle _smoke_indicies;
     PyEngine::GL::StreamIndexBufferHandle _diffuse_indicies;
-    PyEngine::GL::StreamIndexBufferHandle _emmission_indicies;
+    PyEngine::GL::StreamIndexBufferHandle _emission_indicies;
     std::vector<PyEngine::GL::VertexIndexListHandle> _particle_verticies;
 
     std::unique_ptr<TileMaterialManager> _tilemats;
 
     PlayerObject *_player;
+
+protected:
+    void setup_texture(
+        const MaterialKey &key,
+        const PyEngine::GL::StreamIndexBufferHandle &index_buffer,
+        const float x0,
+        const float y0,
+        const float x1,
+        const float y1,
+        const float size);
+    void setup_textures();
+    void setup_materials();
+    void setup_wall_type_materials(
+        const std::string &prefix,
+        const std::string &formprefix);
 
 public:
     void disable() override;
