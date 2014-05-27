@@ -19,6 +19,7 @@ public:
 public:
     void headache(GameObject *from_object) override;
     void explode();
+    void explosion_touch() override;
     bool impact(GameObject *on_object) override;
     void setup_view(TileMaterialManager &matman) override;
 

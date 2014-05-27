@@ -46,12 +46,18 @@ void BombObject::headache(GameObject *from_object)
 void BombObject::explode()
 {
     level->add_large_explosion(cell.x, cell.y, 1, 1);
+    destruct_self();
+}
+
+void BombObject::explosion_touch()
+{
+    explode();
 }
 
 bool BombObject::impact(GameObject *on_object)
 {
     explode();
-    return true;
+    return false;
 }
 
 void BombObject::setup_view(TileMaterialManager &matman)
