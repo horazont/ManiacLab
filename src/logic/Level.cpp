@@ -29,6 +29,22 @@ authors named in the AUTHORS file.
 
 #include "CEngine/Misc/Exception.hpp"
 
+#include "ExplosionObject.hpp"
+
+/* Timer */
+
+Timer::Timer(const TickCounter trigger_at,
+             const CoordInt cellx,
+             const CoordInt celly,
+             const TimerFunc &func):
+    trigger_at(trigger_at),
+    x(cellx),
+    y(celly),
+    func(func)
+{
+
+}
+
 /* Level */
 
 #define WALL_CENTER_X 45
@@ -72,6 +88,59 @@ void Level::init_cells()
     }
 }
 
+void Level::add_explosion(const CoordInt x,
+                          const CoordInt y)
+{
+    _timers.emplace(
+        _ticks + EXPLOSION_TRIGGER_TIMEOUT,
+        x, y,
+        [x, y](Level &level, LevelCell *cell) {
+            if (cell->here) {
+                cell->here->explosion_touch();
+            }
+            if (!cell->here) {
+                ExplosionObject *obj = new ExplosionObject(&level);
+                obj->setup_view();
+                level.place_object(
+                    obj,
+                    x, y);
+            }
+        });
+
+    _physics_particles.spawn_generator(
+        4,
+        [x, y](PhysicsParticle *part) {
+            part->type = ParticleType::FIRE;
+            const float offsx = ((float)rand() / RAND_MAX)*0.5-0.25;
+            const float offsy = ((float)rand() / RAND_MAX)*0.5-0.25;
+            part->x = x + 0.5 + offsx;
+            part->y = y + 0.5 + offsy;
+            part->vx = offsx / 2;
+            part->vy = offsy / 2;
+            part->ax = 0;
+            part->ay = 0;
+            part->lifetime = (EXPLOSION_BLOCK_LIFETIME + EXPLOSION_TRIGGER_TIMEOUT) / 100.;
+        });
+}
+
+void Level::add_large_explosion(const CoordInt x0,
+                                const CoordInt y0,
+                                const CoordInt xradius,
+                                const CoordInt yradius)
+{
+    const CoordInt minx = x0 > xradius-1 ? x0 - xradius : x0;
+    const CoordInt miny = y0 > yradius-1 ? y0 - yradius : y0;
+    const CoordInt maxx = x0 < _width - xradius ? x0 + xradius : x0;
+    const CoordInt maxy = y0 < _height - yradius ? y0 + yradius : y0;
+
+    for (CoordInt x = minx; x <= maxx; x++) {
+        for (CoordInt y = miny; y <= maxy; y++) {
+            add_explosion(x, y);
+        }
+    }
+
+}
+
 void Level::cleanup_cell(LevelCell *cell)
 {
     GameObject *const obj = cell->here;
@@ -86,6 +155,7 @@ void Level::cleanup_cell(LevelCell *cell)
             obj->info.stamp);
         delete obj;
     }
+    cell->here = nullptr;
 }
 
 void Level::debug_test_stamp(const double x, const double y)
@@ -237,6 +307,18 @@ void Level::update()
     _ticks += 1;
 
     _physics.wait_for();
+
+    while (!_timers.empty() && _timers.top().trigger_at <= _ticks)
+    {
+        const Timer &timer = _timers.top();
+        LevelCell *const cell = (timer.x >= 0 && timer.y >= 0)
+            ? get_cell(timer.x, timer.y)
+            : nullptr;
+
+        _timers.top().func(*this, cell);
+        _timers.pop();
+    }
+
     for (CoordInt y = _height-1; y >= 0; y--)
     {
         LevelCell *cell = get_cell(0, y);

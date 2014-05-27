@@ -7,6 +7,7 @@
 
 #include "logic/WallObject.hpp"
 #include "logic/RockObject.hpp"
+#include "logic/BombObject.hpp"
 
 using namespace PyEngine;
 using namespace PyEngine::UI;
@@ -153,6 +154,12 @@ void PlaygroundMode::setup_textures()
         128, 1024,
         2.0);
 
+    setup_texture(
+        "bomb_diffuse",
+        _diffuse_indicies,
+        384, 64,
+        448, 128,
+        1.0);
 
 }
 
@@ -173,6 +180,11 @@ void PlaygroundMode::setup_materials()
     _tilemats->new_material(
         "rock",
         _tilemats->get_metatexture("rock_diffuse"),
+        nullptr);
+
+    _tilemats->new_material(
+        "bomb",
+        _tilemats->get_metatexture("bomb_diffuse"),
         nullptr);
 
 }
@@ -323,6 +335,18 @@ void PlaygroundMode::enable(Application *root)
     _level->get_cell(3, 14)->here->setup_view(*_tilemats);
     _level->get_cell(3, 15)->here->setup_view(*_tilemats);
 
+    obj = new BombObject(_level.get());
+    _level->place_object(
+        obj,
+        3, 13);
+    obj->setup_view(*_tilemats);
+
+    obj = new BombObject(_level.get());
+    _level->place_object(
+        obj,
+        3, 10);
+    obj->setup_view(*_tilemats);
+
     // obj = new RockObject(_level.get());
     // _level->place_object(
     //     obj,
@@ -337,7 +361,11 @@ void PlaygroundMode::enable(Application *root)
 
     for (CoordInt x = 0; x < 50; x++) {
         for (CoordInt y = 3; y < 6; y++) {
-            obj = new RockObject(_level.get());
+            if (x == 3) {
+                obj = new BombObject(_level.get());
+            } else {
+                obj = new RockObject(_level.get());
+            }
             _level->place_object(
                 obj,
                 x, y);

@@ -44,6 +44,8 @@ set(LIB_SOURCES
     "src/logic/MetatextureView.cpp"
     "src/logic/WallObject.cpp"
     "src/logic/RockObject.cpp"
+    "src/logic/BombObject.cpp"
+    "src/logic/ExplosionObject.cpp"
 )
 
 set(COMMON_SOURCES)
@@ -104,6 +106,8 @@ add_tile_render(safewallf Emission wallf-emission)
 add_tile_render(rock Diffuse rock-diffuse)
 add_tile_render(player Diffuse player-diffuse)
 add_tile_render(player Emission player-emission)
+add_tile_render(bomb Diffuse bomb-diffuse)
+
 add_custom_target(
   render-tiles
   DEPENDS ${TILESETPATH}/safewallsq0-diffuse.png
@@ -124,7 +128,9 @@ add_custom_target(
   DEPENDS ${TILESETPATH}/rock-diffuse.png
   DEPENDS ${TILESETPATH}/player-diffuse.png
   DEPENDS ${TILESETPATH}/player-emission.png
+  DEPENDS ${TILESETPATH}/bomb-diffuse.png
   )
+
 add_custom_target(
   compose-tiles
   convert -size 1024x1024 xc:none ${TILESETPATH}/atlas.png
@@ -139,6 +145,7 @@ add_custom_target(
   COMMAND composite -geometry    +192+64 ${TILESETPATH}/safewallrd0-diffuse.png ${TILESETPATH}/atlas.png ${TILESETPATH}/atlas.png
   COMMAND composite -geometry    +256+64 ${TILESETPATH}/safewallrd1-diffuse.png ${TILESETPATH}/atlas.png ${TILESETPATH}/atlas.png
   COMMAND composite -geometry    +320+64 ${TILESETPATH}/safewallrd3-diffuse.png ${TILESETPATH}/atlas.png ${TILESETPATH}/atlas.png
+  COMMAND composite -geometry    +384+64 ${TILESETPATH}/bomb-diffuse.png ${TILESETPATH}/atlas.png ${TILESETPATH}/atlas.png
 
   COMMAND composite -geometry     +0+512 ${TILESETPATH}/wallf-emission.png ${TILESETPATH}/atlas.png ${TILESETPATH}/atlas.png
   COMMAND composite -geometry   +192+512 ${TILESETPATH}/wall0-emission.png ${TILESETPATH}/atlas.png ${TILESETPATH}/atlas.png

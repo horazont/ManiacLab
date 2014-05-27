@@ -25,6 +25,7 @@ authors named in the AUTHORS file.
 #ifndef _ML_LEVEL_H
 #define _ML_LEVEL_H
 
+#include <queue>
 #include <vector>
 
 #include <sigc++/sigc++.h>
@@ -36,15 +37,34 @@ authors named in the AUTHORS file.
 #include "Physics.hpp"
 #include "Particles.hpp"
 
-struct Cell;
+static constexpr TickCounter EXPLOSION_TRIGGER_TIMEOUT = 50;
+static constexpr TickCounter EXPLOSION_BLOCK_LIFETIME = 150;
 
-class TestObject;
+struct Cell;
+class Level;
 
 struct LevelCell {
     GameObject *here, *reserved_by;
 };
 
-class Level;
+typedef std::function<void(Level&, LevelCell*)> TimerFunc;
+
+struct Timer {
+    Timer(const TickCounter trigger_at,
+          const CoordInt cellx,
+          const CoordInt celly,
+          const TimerFunc &func);
+
+    TickCounter trigger_at;
+    CoordInt x, y;
+    TimerFunc func;
+
+    inline bool operator<(const Timer &other) const
+    {
+        return trigger_at < other.trigger_at;
+    }
+
+};
 
 typedef sigc::signal<void, Level*, GameObject*> PlayerDeathEvent;
 
@@ -68,11 +88,21 @@ private:
     ParticleSystem _physics_particles;
 
     TickCounter _ticks;
+    std::priority_queue<Timer> _timers;
 
 private:
     void init_cells();
 
 public:
+    void add_explosion(const CoordInt x,
+                       const CoordInt y);
+
+    void add_large_explosion(
+        const CoordInt x0,
+        const CoordInt y0,
+        const CoordInt xradius,
+        const CoordInt yradius);
+
     void cleanup_cell(LevelCell *cell);
 
     void debug_test_stamp(const double x, const double y);

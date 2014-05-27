@@ -229,7 +229,9 @@ void GameObject::before_movement(Movement *movement)
 
 void GameObject::explosion_touch()
 {
-    destruct_self();
+    if (info.is_destructible) {
+        destruct_self();
+    }
 }
 
 void GameObject::headache(GameObject *from_object)
