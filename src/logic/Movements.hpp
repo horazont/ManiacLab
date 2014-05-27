@@ -35,7 +35,8 @@ class GameObject;
 
 class Movement {
 public:
-    Movement(GameObject *obj);
+    Movement(GameObject *obj,
+             CoordInt offset_x, CoordInt offset_y);
     virtual ~Movement();
 
 protected:
@@ -47,9 +48,12 @@ protected:
     void delete_self();
 
 public:
+    const CoordInt offset_x;
+    const CoordInt offset_y;
+
+public:
     virtual void skip() = 0;
     virtual bool update() = 0;
-    virtual CoordPair velocity_vector() = 0;
 
 };
 
@@ -62,13 +66,11 @@ public:
 
 private:
     LevelCell *_from, *_to;
-    int _offX, _offY;
     CoordInt _startX, _startY;
 
 public:
     void skip() override;
     bool update() override;
-    virtual CoordPair velocity_vector() override;
 
 public:
     static const double duration;
@@ -84,13 +86,11 @@ public:
 
 private:
     LevelCell *_from, *_via, *_to;
-    int _offX, _offY;
     CoordInt _startX, _startY;
 
 public:
     void skip() override;
     bool update() override;
-    CoordPair velocity_vector() override;
 
 };
 

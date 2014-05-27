@@ -32,9 +32,14 @@ using namespace PyEngine;
 
 /* Movement */
 
-Movement::Movement(GameObject *obj):
+Movement::Movement(
+        GameObject *obj,
+        CoordInt offset_x,
+        CoordInt offset_y):
     _time(0),
-    _obj(obj)
+    _obj(obj),
+    offset_x(offset_x),
+    offset_y(offset_y)
 {
 
 }
@@ -54,20 +59,18 @@ void Movement::delete_self()
 /* MovementStraight */
 
 MovementStraight::MovementStraight(
-    LevelCell *from,
-    LevelCell *to,
-    int offsetX, int offsetY):
-    Movement::Movement(from->here),
+        LevelCell *from,
+        LevelCell *to,
+        int offset_x, int offset_y):
+    Movement::Movement(from->here, offset_x, offset_y),
     _from(from),
     _to(to),
-    _offX(offsetX),
-    _offY(offsetY),
     _startX(_obj->x),
     _startY(_obj->y)
 {
-    if (abs(offsetX) + abs(offsetY) == 0) {
+    if (abs(offset_x) + abs(offset_y) == 0) {
         throw ProgrammingError("Cannot move zero fields.");
-    } else if (abs(offsetX) + abs(offsetY) > 1) {
+    } else if (abs(offset_x) + abs(offset_y) > 1) {
         throw ProgrammingError("Cannot move diagonally or more than one field.");
     }
 
@@ -85,8 +88,8 @@ MovementStraight::MovementStraight(
     from->here = nullptr;
     to->here = _obj;
 
-    _obj->cell = CoordPair{_startX + _offX,
-                           _startY + _offY};
+    _obj->cell = CoordPair{_startX + offset_x,
+                           _startY + offset_y};
 }
 
 MovementStraight::~MovementStraight()
@@ -96,8 +99,8 @@ MovementStraight::~MovementStraight()
 
 void MovementStraight::skip()
 {
-    _obj->x = _startX + _offX;
-    _obj->y = _startY + _offY;
+    _obj->x = _startX + offset_x;
+    _obj->y = _startY + offset_y;
     delete_self();
 }
 
@@ -115,73 +118,92 @@ bool MovementStraight::update()
 
     if (_obj->info.is_rollable)
     {
-        if (_offX != 0) {
-            _obj->phi += Level::time_slice / _obj->info.roll_radius * _offX;
+        if (offset_x != 0) {
+            _obj->phi += Level::time_slice / _obj->info.roll_radius * offset_x;
         } else {
             _obj->phi += sin(_time * Level::time_slice * 2*3.14159) / 100;
         }
     }
 
     if (_time >= 100) {
-        _obj->x = _startX + _offX;
-        _obj->y = _startY + _offY;
+        _obj->x = _startX + offset_x;
+        _obj->y = _startY + offset_y;
         _obj->view->invalidate();
         delete_self();
         return true;
     } else {
-        _obj->x = _startX + _offX * (_time * Level::time_slice / duration);
-        _obj->y = _startY + _offY * (_time * Level::time_slice / duration);
+        _obj->x = _startX + offset_x * (_time * Level::time_slice / duration);
+        _obj->y = _startY + offset_y * (_time * Level::time_slice / duration);
         _obj->view->invalidate();
         return false;
     }
-}
-
-CoordPair MovementStraight::velocity_vector()
-{
-    return CoordPair{_offX, _offY};
 }
 
 /* MovementRoll */
 
 MovementRoll::MovementRoll(
         LevelCell *from, LevelCell *via, LevelCell *to,
-        int offsetX, int offsetY):
-    Movement::Movement(from->here),
+        int offset_x, int offset_y):
+    Movement::Movement(from->here,
+                       offset_x, offset_y),
     _from(from),
     _via(via),
     _to(to),
-    _offX(offsetX),
-    _offY(offsetY),
     _startX(_obj->x),
     _startY(_obj->y)
 {
+    if (abs(offset_x) != 1 || offset_y != 1) {
+        throw ProgrammingError(
+            "Cannot roll-move with offset_y != 1 or abs(offset_x != 1)");
+    }
 
+    assert(from->here);
+    assert(!from->reserved_by);
+    assert(!to->here);
+    assert(!via->here);
+
+    from->here = nullptr;
+    from->reserved_by = _obj;
+    via->reserved_by = _obj;
+    to->here = _obj;
+
+    _obj->cell = CoordPair{_startX + offset_x,
+                           _startY + offset_y};
 }
 
 MovementRoll::~MovementRoll()
 {
-    _via->reserved_by = 0;
-    _to->reserved_by = 0;
+    _via->reserved_by = nullptr;
+    _from->reserved_by = nullptr;
 }
 
 void MovementRoll::skip()
 {
-    assert(false);
+    _obj->x = _startX + offset_x;
+    _obj->y = _startY + offset_y;
+    _obj->view->invalidate();
     delete_self();
 }
 
 bool MovementRoll::update()
 {
-    _obj->view->invalidate();
-    assert(false);
-    delete_self();
-    return true;
-}
+    _time += 1;
 
-CoordPair MovementRoll::velocity_vector()
-{
-    assert(false);
-    return CoordPair();
+    if (_time >= 100) {
+        skip();
+        return true;
+    }
+
+    if (_time >= 50) {
+        _obj->x = _startX + offset_x;
+        _obj->y = _startY + offset_y * ((_time-50) * Level::time_slice * 2);
+    } else {
+        _obj->x = _startX + offset_x * (_time * Level::time_slice * 2);
+        _obj->y = _startY;
+    }
+
+    _obj->view->invalidate();
+    return false;
 }
 
 const double MovementStraight::duration = 1.0;

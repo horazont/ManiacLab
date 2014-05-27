@@ -162,14 +162,14 @@ void Level::get_fall_channel(
         aside = nullptr;
         asidebelow = nullptr;
         return;
-    }
-    else
+    } else {
         asidebelow = &_cells[x+(y+1)*_width];
+    }
 
     if (asidebelow->here || asidebelow->reserved_by)
     {
-        aside = 0;
-        asidebelow = 0;
+        aside = nullptr;
+        asidebelow = nullptr;
     }
 }
 
@@ -237,16 +237,18 @@ void Level::update()
     _ticks += 1;
 
     _physics.wait_for();
-    LevelCell *cell = &_cells[-1];
-    for (CoordInt y = 0; y < _height; y++)
+    for (CoordInt y = _height-1; y >= 0; y--)
     {
+        LevelCell *cell = get_cell(0, y);
         for (CoordInt x = 0; x < _width; x++)
         {
-            cell++;
             GameObject *obj = cell->here;
-            if (!obj)
+            if (!obj) {
+                ++cell;
                 continue;
+            }
             obj->update();
+            ++cell;
         }
     }
 

@@ -176,7 +176,7 @@ bool GameObject::handle_gravity()
         } else {
             selected = right;
             selected_below = right_below;
-            xoffset = -1;
+            xoffset = 1;
         }
 
         if (selected) {
@@ -200,7 +200,7 @@ bool GameObject::after_movement()
     }
 
     if (cell.y < level->get_height() - 1
-        && movement->velocity_vector().y > 0)
+        && movement->offset_y > 0)
     {
         LevelCell *const cell = level->get_cell(this->cell.x,
                                                 this->cell.y+1);
