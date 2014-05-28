@@ -66,7 +66,7 @@ struct Timer {
 
     inline bool operator<(const Timer &other) const
     {
-        return trigger_at < other.trigger_at;
+        return trigger_at > other.trigger_at;
     }
 
 };
