@@ -94,6 +94,7 @@ public:
 private:
     LevelCell *_from, *_via, *_to;
     CoordInt _startX, _startY;
+    bool _cleared_from;
 
 public:
     void skip() override;

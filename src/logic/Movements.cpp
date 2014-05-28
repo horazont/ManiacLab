@@ -179,7 +179,9 @@ MovementRoll::MovementRoll(
 MovementRoll::~MovementRoll()
 {
     _via->reserved_by = nullptr;
-    _from->reserved_by = nullptr;
+    if (!_cleared_from) {
+        _from->reserved_by = nullptr;
+    }
 }
 
 void MovementRoll::skip()
@@ -204,6 +206,8 @@ bool MovementRoll::update()
     if (_time >= 50) {
         _obj->x = _startX + offset_x;
         _obj->y = _startY + offset_y * ((_time-50) * Level::time_slice * 2);
+        _cleared_from = true;
+        _from->reserved_by = nullptr;
     } else {
         _obj->x = _startX + offset_x * (_time * Level::time_slice * 2);
         _obj->y = _startY;
