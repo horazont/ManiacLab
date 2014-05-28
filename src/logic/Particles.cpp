@@ -75,7 +75,7 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
         case ParticleType::FIRE:
         {
             const uint32_t old_ctr = part->ctr;
-            const uint32_t new_ctr = part->age * 50;
+            const uint32_t new_ctr = part->age * 25;
             part->ctr = new_ctr;
 
             const uint32_t to_spawn = new_ctr - old_ctr;
