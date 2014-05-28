@@ -83,19 +83,19 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
             for (uint32_t i = 0; i < to_spawn; i++)
             {
                 Particle *const subpart = spawn();
-                subpart->type = ParticleType::SMOKE;
+                subpart->type = ParticleType::FIRE_SECONDARY;
                 subpart->lifetime = 4+((float)rand() / RAND_MAX)*2-1;
                 subpart->x = part->x - ((float)rand() / RAND_MAX) * part->vx * 0.01;
                 subpart->y = part->y - ((float)rand() / RAND_MAX) * part->vy * 0.01;
                 subpart->vx = part->vx * 0.1;
-                subpart->vy = part->vy * 0.1 - 1.5;
+                subpart->vy = part->vy * 0.1;
                 subpart->ax = 0;
                 subpart->ay = 0;
             }
 
             break;
         }
-        case ParticleType::SMOKE:
+        case ParticleType::FIRE_SECONDARY:
         {
             break;
         }
@@ -131,12 +131,12 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
             cell->heat_energy += 0.1 * cell->air_pressure;
             break;
         }
-        case ParticleType::SMOKE:
+        case ParticleType::FIRE_SECONDARY:
         {
             part->vx = part->vx * 0.995 - cell->flow[1] * 0.005;
             part->vy = part->vy * 0.995 - cell->flow[0] * 0.005;
 
-            cell->fog += 0.001;
+            // cell->fog += 0.001;
             break;
         }
         }

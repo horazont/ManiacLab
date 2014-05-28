@@ -518,7 +518,7 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
             const PyEngine::GL::GLVertexFloat green = age * 0.5 + 0.5;
             const PyEngine::GL::GLVertexFloat red = age * 0.3 + 0.7;
             const PyEngine::GL::GLVertexFloat blue = age * 0.8 + 0.1;
-            const PyEngine::GL::GLVertexFloat alpha = 1.0 - age;
+            const PyEngine::GL::GLVertexFloat alpha = (1.0 - age)*0.3;
 
             std::array<PyEngine::GL::GLVertexFloat, 16> colours({
                     red, green, blue, alpha,
@@ -532,19 +532,19 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
 
             break;
         }
-        case ParticleType::SMOKE:
+        case ParticleType::FIRE_SECONDARY:
         {
-            const PyEngine::GL::GLVertexFloat green = 0.2;
-            const PyEngine::GL::GLVertexFloat red = 0.2;
+            const PyEngine::GL::GLVertexFloat green = 0.2 + (1.0 - age) * 0.5;
+            const PyEngine::GL::GLVertexFloat red = 0.2 + (1.0 - age) * 0.8;
             const PyEngine::GL::GLVertexFloat blue = 0.2;
             const PyEngine::GL::GLVertexFloat alpha = 1.0 - age;
 
             std::array<PyEngine::GL::GLVertexFloat, 16> colours({
                     red, green, blue, alpha,
-                        red, green, blue, alpha,
-                        red, green, blue, alpha,
-                        red, green, blue, alpha
-                        });
+                    red, green, blue, alpha,
+                    red, green, blue, alpha,
+                    red, green, blue, alpha
+                    });
             buffer.getColourView()->set(&colours.front());
 
             _smoke_indicies->add(_particle_verticies[i]);
@@ -584,13 +584,14 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
     _atlas_geometry->unbind();
 
     _object_geometry->bind();
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    _object_indicies->drawUnbound(GL_QUADS);
-    _object_indicies->clear();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     _smoke_indicies->drawUnbound(GL_QUADS);
     _smoke_indicies->clear();
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    _object_indicies->drawUnbound(GL_QUADS);
+    _object_indicies->clear();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     _fire_indicies->drawUnbound(GL_QUADS);

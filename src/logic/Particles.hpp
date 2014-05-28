@@ -102,7 +102,7 @@ public:
 
 enum class ParticleType {
     FIRE,
-    SMOKE
+    FIRE_SECONDARY
 };
 
 struct PhysicsParticle
