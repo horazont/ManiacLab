@@ -299,6 +299,8 @@ void Automaton::place_object(
         dst->offs = stamp_cells[i];
         memset(&(dst->phys), 0, sizeof(Cell));
         dst->phys.heat_energy = heat_energy;
+        dst->phys.flow[0] = dst->offs.x - ((float)subdivision_count / 2);
+        dst->phys.flow[1] = dst->offs.y - ((float)subdivision_count / 2);
         dst->meta.blocked = true;
         dst->meta.obj = obj;
     }

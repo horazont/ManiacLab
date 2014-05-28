@@ -1,5 +1,7 @@
 #include "Particles.hpp"
 
+#include <CEngine/Math/Vectors.hpp>
+
 #include "Level.hpp"
 
 inline void update_coord(PyEngine::TimeFloat deltaT,
@@ -11,9 +13,60 @@ inline void update_coord(PyEngine::TimeFloat deltaT,
 
 inline void handle_collision(
     Automaton &physics,
+    Cell &current_cell,
     float &x, float &vx,
     float &y, float &vy)
 {
+    PyEngine::Vector2f posstep(-vx, -vy);
+    posstep.normalize();
+    PyEngine::Vector2f pos(x, y);
+    pos *= subdivision_count;
+    Cell *cell = &current_cell, *prev_cell = &current_cell;
+    CellMetadata *meta = nullptr;
+    for (unsigned int step = 0; step < 10; step++) {
+        pos += posstep;
+        const CoordInt cx = round(pos[PyEngine::eX]);
+        const CoordInt cy = round(pos[PyEngine::eY]);
+
+        prev_cell = cell;
+        cell = physics.safe_cell_at(cx, cy);
+        if (!cell) {
+            break;
+        }
+
+        meta = physics.meta_at(cx, cy);
+
+        if (meta->blocked) {
+            continue;
+        }
+
+        break;
+    }
+
+    x = pos[PyEngine::eX] / subdivision_count;
+    y = pos[PyEngine::eY] / subdivision_count;
+
+    if (!cell) {
+        // out of game
+        return;
+    } else {
+        if (!meta->blocked) {
+            cell = prev_cell;
+        }
+        // found end of object
+
+        posstep *= -1;
+
+        const PyEngine::Vector2f incoming_ray(vx, vy);
+        PyEngine::Vector2f new_v =
+            incoming_ray - (2*incoming_ray * posstep) * posstep;
+        const float vmag = new_v.length();
+        vx = new_v[PyEngine::eX] * 0.4;
+        vx = vx + (((float)random() / RAND_MAX) * 2.0 - 1.0)*vmag*0.3;
+        vy = new_v[PyEngine::eY] * 0.4;
+        vy = vy + (((float)random() / RAND_MAX) * 2.0 - 1.0)*vmag*0.3;
+        return;
+    }
 
 }
 
@@ -110,13 +163,6 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
         }
         Cell *cell = physics.cell_at(phy.x, phy.y);
         CellMetadata *meta = physics.meta_at(phy.x, phy.y);
-        if (meta->blocked) {
-            handle_collision(
-                physics,
-                part->x, part->y,
-                part->vx, part->vy);
-            continue;
-        }
 
         switch (part->type) {
         case ParticleType::FIRE:
@@ -128,7 +174,9 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
             part->vx = part->vx * 0.999 - cell->flow[1] * 0.001;
             part->vy = part->vy * 0.999 - cell->flow[0] * 0.001;
 
-            cell->heat_energy += 0.1 * cell->air_pressure;
+            cell->heat_energy += 0.1 * (meta->blocked ?
+                                        meta->obj->info.temp_coefficient :
+                                        cell->air_pressure);
             break;
         }
         case ParticleType::FIRE_SECONDARY:
@@ -139,6 +187,17 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
             // cell->fog += 0.001;
             break;
         }
+        }
+
+        if (meta->blocked) {
+            handle_collision(
+                physics,
+                *cell,
+                part->x,
+                part->vx,
+                part->y,
+                part->vy);
+            continue;
         }
 
     }
