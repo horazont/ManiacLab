@@ -123,6 +123,7 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
         }
         update_coord(deltaT, part->x, part->vx, part->ax);
         update_coord(deltaT, part->y, part->vy, part->ay);
+        update_coord(deltaT, part->phi, part->vphi, part->aphi);
 
         switch (part->type) {
         case ParticleType::FIRE:
@@ -144,6 +145,9 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
                 subpart->vy = part->vy * 0.1;
                 subpart->ax = 0;
                 subpart->ay = 0;
+                subpart->phi = ((float)random() / RAND_MAX)*2*3.14159;
+                subpart->vphi = part->vphi;
+                subpart->aphi = 0;
             }
 
             break;

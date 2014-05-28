@@ -148,6 +148,9 @@ void Level::add_explosion(const CoordInt x,
             part->vy = offsy / 2;
             part->ax = 0;
             part->ay = 0;
+            part->phi = ((float)rand() / RAND_MAX)*2*3.14159;
+            part->vphi = (((float)rand() / RAND_MAX)-0.5)*3.14159/5.0;
+            part->aphi = 0;
             part->lifetime = (EXPLOSION_BLOCK_LIFETIME +
                               EXPLOSION_TRIGGER_TIMEOUT) / 100.;
         });

@@ -1,5 +1,6 @@
 #include "Playground.hpp"
 
+#include <CEngine/Math/Matrices.hpp>
 #include <CEngine/GL/GeometryBufferView.hpp>
 #include <CEngine/Resources/Image.hpp>
 
@@ -430,16 +431,24 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
         const PyEngine::GL::GLVertexFloat age = part->age / part->lifetime;
         const PyEngine::GL::GLVertexFloat size = age * 0.8 + 0.2;
         const PyEngine::GL::GLVertexFloat halfsize = size/2;
-        const PyEngine::GL::GLVertexFloat x0 = part->x - halfsize;
-        const PyEngine::GL::GLVertexFloat y0 = part->y - halfsize;
+        const PyEngine::GL::GLVertexFloat x0 = part->x;
+        const PyEngine::GL::GLVertexFloat y0 = part->y;
 
-        std::array<PyEngine::GL::GLVertexFloat, 12> pos({
-                x0, y0, 0,
-                x0, y0+size, 0,
-                x0+size, y0+size, 0,
-                x0+size, y0, 0
-                    });
-        buffer.getPositionView()->set(&pos.front());
+        const Matrix3f rotmat = rotation3(eZ, part->phi);
+
+        const Vector3f offset = Vector3f(x0, y0, 0);
+
+        std::array<Vector3f, 4> position_data({
+                Vector3f(-halfsize, -halfsize, 0),
+                Vector3f(-halfsize, halfsize, 0),
+                Vector3f(halfsize, halfsize, 0),
+                Vector3f(halfsize, -halfsize, 0)});
+
+        for (auto &vec: position_data) {
+            vec = rotmat * vec + offset;
+        }
+
+        buffer.getPositionView()->set(&position_data.front()[0]);
 
         switch (part->type)
         {

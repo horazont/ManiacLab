@@ -114,6 +114,10 @@ struct PhysicsParticle
     float vx, vy;
     float ax, ay;
 
+    float phi;
+    float vphi;
+    float aphi;
+
     uint32_t ctr;
 
     ParticleType type;
