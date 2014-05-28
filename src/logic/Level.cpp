@@ -347,7 +347,7 @@ void Level::update()
             ? get_cell(timer.x, timer.y)
             : nullptr;
 
-        _timers.top().func(*this, cell);
+        timer.func(*this, cell);
         _timers.pop();
     }
 
