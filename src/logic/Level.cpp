@@ -115,6 +115,11 @@ void Level::init_cells()
 void Level::add_explosion(const CoordInt x,
                           const CoordInt y)
 {
+    LevelCell *const cell = get_cell(x, y);
+    if (cell->here && !cell->here->info.is_destructible) {
+        return;
+    }
+
     _timers.emplace(
         _ticks + EXPLOSION_TRIGGER_TIMEOUT,
         x, y,
@@ -129,6 +134,7 @@ void Level::add_explosion(const CoordInt x,
                     obj,
                     x, y);
             }
+
         });
 
     _physics_particles.spawn_generator(
@@ -143,8 +149,10 @@ void Level::add_explosion(const CoordInt x,
             part->vy = offsy / 2;
             part->ax = 0;
             part->ay = 0;
-            part->lifetime = (EXPLOSION_BLOCK_LIFETIME + EXPLOSION_TRIGGER_TIMEOUT) / 100.;
+            part->lifetime = (EXPLOSION_BLOCK_LIFETIME +
+                              EXPLOSION_TRIGGER_TIMEOUT) / 100.;
         });
+
 }
 
 void Level::add_large_explosion(const CoordInt x0,
