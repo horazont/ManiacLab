@@ -84,8 +84,6 @@ std::unique_ptr<ObjectView> wall_view(
         | (neigh_right << 1)
         | neigh_bottom;
 
-    std::cout << (uint32_t)entry << std::endl;
-
     static const char map[16] = {
         '0', // 0b0000
         '1', // 0b0001
