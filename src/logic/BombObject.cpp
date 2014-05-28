@@ -38,6 +38,12 @@ BombObject::BombObject(Level *level):
 
 }
 
+std::unique_ptr<ObjectView> BombObject::setup_view(
+    TileMaterialManager &matman)
+{
+    return std::unique_ptr<ObjectView>(new BombView(matman));
+}
+
 void BombObject::headache(GameObject *from_object)
 {
     explode();
@@ -58,10 +64,4 @@ bool BombObject::impact(GameObject *on_object)
 {
     explode();
     return false;
-}
-
-void BombObject::setup_view(TileMaterialManager &matman)
-{
-    view = std::unique_ptr<ObjectView>(
-        new BombView(matman));
 }

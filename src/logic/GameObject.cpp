@@ -103,10 +103,38 @@ void ObjectView::update(
 
 }
 
+/* ViewableObject */
+
+ViewableObject::ViewableObject():
+    _view(nullptr)
+{
+
+}
+
+ViewableObject::~ViewableObject()
+{
+
+}
+
+std::unique_ptr<ObjectView> ViewableObject::setup_view(
+    TileMaterialManager &matman)
+{
+    return nullptr;
+}
+
+ObjectView *ViewableObject::get_view(TileMaterialManager &matman)
+{
+    if (!_view) {
+        _view = setup_view(matman);
+    }
+    return _view.get();
+}
+
 /* GameObject */
 
 GameObject::GameObject(const ObjectInfo &info,
                        Level *level):
+    ViewableObject(),
     level(level),
     frame_state(),
     info(info),
@@ -115,13 +143,7 @@ GameObject::GameObject(const ObjectInfo &info,
     phi(0),
     movement(nullptr),
     phy(),
-    view(),
     ticks(0)
-{
-
-}
-
-GameObject::~GameObject()
 {
 
 }
@@ -326,11 +348,6 @@ bool GameObject::move(MoveDirection dir, bool chain_move)
 bool GameObject::projectile_impact()
 {
     return false;
-}
-
-void GameObject::setup_view(TileMaterialManager &matman)
-{
-
 }
 
 void GameObject::update()

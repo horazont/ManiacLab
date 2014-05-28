@@ -38,7 +38,7 @@ RockObject::RockObject(Level *level):
 
 }
 
-void RockObject::setup_view(TileMaterialManager &matman)
+std::unique_ptr<ObjectView> RockObject::setup_view(TileMaterialManager &matman)
 {
-    view = std::unique_ptr<ObjectView>(new RockView(matman));
+    return std::unique_ptr<ObjectView>(new RockView(matman));
 }

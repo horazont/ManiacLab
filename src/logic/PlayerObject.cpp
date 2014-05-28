@@ -48,7 +48,8 @@ bool PlayerObject::idle()
     return true;
 }
 
-void PlayerObject::setup_view(TileMaterialManager &matman)
+std::unique_ptr<ObjectView> PlayerObject::setup_view(
+    TileMaterialManager &matman)
 {
-    view = std::unique_ptr<ObjectView>(new PlayerView(matman));
+    return std::unique_ptr<ObjectView>(new PlayerView(matman));
 }

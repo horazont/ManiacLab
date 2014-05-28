@@ -123,6 +123,44 @@ public:
 
 };
 
+struct ViewableObject
+{
+public:
+    ViewableObject();
+    ViewableObject(const ViewableObject &ref) = delete;
+    ViewableObject &operator=(const ViewableObject &ref) = delete;
+    virtual ~ViewableObject();
+
+private:
+    std::unique_ptr<ObjectView> _view;
+
+protected:
+    /**
+     * Implementations should override _view with a new view object, using the
+     * given material manager.
+     *
+     * @param matman Material manager to use
+     */
+    virtual std::unique_ptr<ObjectView> setup_view(
+        TileMaterialManager &matman);
+
+public:
+    /**
+     * Return the existing view or create a new one if no view exists yet.
+     *
+     * @param matman Material manager to use if creating a new view
+     */
+    ObjectView *get_view(TileMaterialManager &matman);
+
+    inline void invalidate_view() const
+    {
+        if (_view) {
+            _view->invalidate();
+        }
+    }
+
+};
+
 enum MoveDirection {
     NONE = 0,
     MOVE_UP,
@@ -131,14 +169,13 @@ enum MoveDirection {
     MOVE_LEFT
 };
 
-struct GameObject
+struct GameObject: public ViewableObject
 {
 public:
     explicit GameObject(const ObjectInfo &info,
                         Level *level);
     GameObject(const GameObject &ref) = delete;
     GameObject& operator=(const GameObject &ref) = delete;
-    virtual ~GameObject();
 
 public:
     Level *const level;
@@ -148,7 +185,6 @@ public:
     double x, y, phi;
     std::unique_ptr<Movement> movement;
     CoordPair phy;
-    std::unique_ptr<ObjectView> view;
 
     /**
      * Stores the tick of the last full update. This is used to manage
@@ -256,16 +292,6 @@ public:
      * @return true if the object was destructed, false otherwise.
      */
     virtual bool projectile_impact();
-
-    /**
-     * This is called once for each GameObject, upon instanciation in the game
-     * view.
-     *
-     * For objects being present from the beginning, this is called after all
-     * starting objects have been placed. For objects being created during
-     * runtime, this method is called right after the object has been created.
-     */
-    virtual void setup_view(TileMaterialManager &matman);
 
     /**
      * Update the objects state by advancing by one tick.

@@ -24,7 +24,8 @@ public:
     SafeWallObject(Level *level);
 
 public:
-    void setup_view(TileMaterialManager &matman) override;
+    std::unique_ptr<ObjectView> setup_view(
+        TileMaterialManager &matman) override;
 
 };
 

@@ -280,98 +280,27 @@ void PlaygroundMode::enable(Application *root)
     _player = new PlayerObject(_level.get());
     _level->place_player(
         _player,
-        2, 15);
-    _player->setup_view(*_tilemats);
+        7, 48);
 
-    GameObject *obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        2, 12);
-    obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        1, 12);
-    obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        0, 12);
-    obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        1, 13);
-    obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        1, 14);
-    obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        0, 14);
-    obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        2, 14);
-    obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        1, 15);
-    obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        3, 14);
-    obj = new SafeWallObject(_level.get());
-    _level->place_object(
-        obj,
-        3, 15);
-
-    _level->get_cell(0, 12)->here->setup_view(*_tilemats);
-    _level->get_cell(1, 12)->here->setup_view(*_tilemats);
-    _level->get_cell(2, 12)->here->setup_view(*_tilemats);
-    _level->get_cell(1, 13)->here->setup_view(*_tilemats);
-    _level->get_cell(1, 14)->here->setup_view(*_tilemats);
-    _level->get_cell(0, 14)->here->setup_view(*_tilemats);
-    _level->get_cell(2, 14)->here->setup_view(*_tilemats);
-    _level->get_cell(1, 15)->here->setup_view(*_tilemats);
-    _level->get_cell(3, 14)->here->setup_view(*_tilemats);
-    _level->get_cell(3, 15)->here->setup_view(*_tilemats);
-
-    obj = new BombObject(_level.get());
-    _level->place_object(
-        obj,
-        3, 13);
-    obj->setup_view(*_tilemats);
-
-    obj = new BombObject(_level.get());
-    _level->place_object(
-        obj,
-        3, 10);
-    obj->setup_view(*_tilemats);
-
-    // obj = new RockObject(_level.get());
-    // _level->place_object(
-    //     obj,
-    //     2, 10);
-    // obj->setup_view(*_tilemats);
-
-    // obj = new RockObject(_level.get());
-    // _level->place_object(
-    //     obj,
-    //     2, 9);
-    // obj->setup_view(*_tilemats);
+    GameObject *obj = nullptr;
 
     for (CoordInt x = 0; x < 50; x++) {
-        for (CoordInt y = 3; y < 6; y++) {
-            if (x == 3) {
-                obj = new BombObject(_level.get());
-            } else {
-                obj = new RockObject(_level.get());
-            }
+        for (CoordInt y = 49; y >= (x == 10 || x == 8 ? 30 : 49); y--) {
+            obj = new SafeWallObject(_level.get());
             _level->place_object(
                 obj,
                 x, y);
-            obj->phi = ((float)rand() / RAND_MAX) * 2 * 3.14159;
-            obj->setup_view(*_tilemats);
         }
+    }
+
+    for (CoordInt y = 30; y < 49; y++) {
+        if (y == 45) {
+            continue;
+        }
+        obj = new BombObject(_level.get());
+        _level->place_object(
+            obj,
+            9, y);
     }
 
     glGenTextures(1, &_debug_tex);
@@ -478,8 +407,9 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
             continue;
         }
 
-        if (obj->view) {
-            obj->view->update(*obj, deltaT);
+        ObjectView *const view = obj->get_view(*_tilemats);
+        if (view) {
+            view->update(*obj, deltaT);
         }
 
         ++cell;

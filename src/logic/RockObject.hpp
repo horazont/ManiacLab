@@ -16,8 +16,8 @@ class RockObject: public GameObject
 public:
     RockObject(Level *level);
 
-public:
-    void setup_view(TileMaterialManager &matman) override;
+protected:
+    std::unique_ptr<ObjectView> setup_view(TileMaterialManager &matman) override;
 
 };
 

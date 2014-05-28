@@ -19,9 +19,12 @@ public:
 public:
     MoveDirection acting;
 
+protected:
+    std::unique_ptr<ObjectView> setup_view(
+        TileMaterialManager &matman) override;
+
 public:
     bool idle() override;
-    void setup_view(TileMaterialManager &matman) override;
 
 };
 

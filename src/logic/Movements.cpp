@@ -134,12 +134,12 @@ bool MovementStraight::update()
     if (_time >= 100) {
         _obj->x = _startX + offset_x;
         _obj->y = _startY + offset_y;
-        _obj->view->invalidate();
+        _obj->invalidate_view();
         return finalize();
     } else {
         _obj->x = _startX + offset_x * (_time * Level::time_slice / duration);
         _obj->y = _startY + offset_y * (_time * Level::time_slice / duration);
-        _obj->view->invalidate();
+        _obj->invalidate_view();
         return true;
     }
 }
@@ -188,7 +188,7 @@ void MovementRoll::skip()
 {
     _obj->x = _startX + offset_x;
     _obj->y = _startY + offset_y;
-    _obj->view->invalidate();
+    _obj->invalidate_view();
     delete_self();
 }
 
@@ -199,7 +199,7 @@ bool MovementRoll::update()
     if (_time >= 100) {
         _obj->x = _startX + offset_x;
         _obj->y = _startY + offset_y;
-        _obj->view->invalidate();
+        _obj->invalidate_view();
         return finalize();
     }
 
@@ -213,7 +213,7 @@ bool MovementRoll::update()
         _obj->y = _startY;
     }
 
-    _obj->view->invalidate();
+    _obj->invalidate_view();
     return true;
 }
 

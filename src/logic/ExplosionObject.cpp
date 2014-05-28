@@ -46,13 +46,3 @@ void ExplosionObject::update()
         destruct_self();
     }
 }
-
-void ExplosionObject::setup_view()
-{
-    view = std::unique_ptr<ObjectView>(new ObjectView());
-}
-
-void ExplosionObject::setup_view(TileMaterialManager &matman)
-{
-    setup_view();
-}

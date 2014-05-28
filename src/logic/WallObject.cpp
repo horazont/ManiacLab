@@ -144,9 +144,10 @@ SafeWallObject::SafeWallObject(Level *level):
 
 }
 
-void SafeWallObject::setup_view(TileMaterialManager &matman)
+std::unique_ptr<ObjectView> SafeWallObject::setup_view(
+    TileMaterialManager &matman)
 {
-    view = wall_view(matman,
+    return wall_view(matman,
                      *level,
                      cell,
                      "safewallsq");

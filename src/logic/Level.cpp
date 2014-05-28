@@ -129,7 +129,6 @@ void Level::add_explosion(const CoordInt x,
             }
             if (!cell->here) {
                 ExplosionObject *obj = new ExplosionObject(&level);
-                obj->setup_view();
                 level.place_object(
                     obj,
                     x, y);

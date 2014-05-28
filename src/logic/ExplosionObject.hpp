@@ -20,8 +20,6 @@ private:
 
 public:
     void update() override;
-    void setup_view();
-    void setup_view(TileMaterialManager &matman) override;
 
 };
 
