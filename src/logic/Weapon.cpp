@@ -32,8 +32,8 @@ void Flamethrower::fire(Level *level,
 
     PhysicsParticle *const part = level->particles().spawn();
     part->type = ParticleType::FIRE;
-    part->x = user.x + 0.5 + direction.x * 0.49;
-    part->y = user.y + 0.5 + direction.y * 0.49;
+    part->x = user.x + 0.5 + direction.x * 0.6;
+    part->y = user.y + 0.5 + direction.y * 0.6;
     part->vx = 8. * direction.x + ((float)random() / RAND_MAX)*0.6 - 0.3;
     part->vy = 8. * direction.y + ((float)random() / RAND_MAX)*0.6 - 0.3;
     part->ax = 0;
