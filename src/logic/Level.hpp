@@ -53,7 +53,12 @@ struct Timer {
     Timer(const TickCounter trigger_at,
           const CoordInt cellx,
           const CoordInt celly,
-          const TimerFunc &func);
+          TimerFunc func);
+    Timer(const Timer &ref) = delete;
+    Timer &operator=(const Timer &ref) = delete;
+    Timer(Timer &&ref);
+    Timer &operator=(Timer &&ref);
+    ~Timer();
 
     TickCounter trigger_at;
     CoordInt x, y;

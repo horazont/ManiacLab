@@ -36,13 +36,37 @@ authors named in the AUTHORS file.
 Timer::Timer(const TickCounter trigger_at,
              const CoordInt cellx,
              const CoordInt celly,
-             const TimerFunc &func):
+             TimerFunc func):
     trigger_at(trigger_at),
     x(cellx),
     y(celly),
     func(func)
 {
+    // std::cout << "+1 [con]" << std::endl;
+}
 
+Timer::Timer(Timer &&ref):
+    trigger_at(ref.trigger_at),
+    x(ref.x),
+    y(ref.y),
+    func(std::move(ref.func))
+{
+    // std::cout << " 0 [movecon]" << std::endl;
+}
+
+Timer &Timer::operator=(Timer &&ref)
+{
+    // std::cout << " 0 [moveassign]" << std::endl;
+    trigger_at = ref.trigger_at;
+    x = ref.x;
+    y = ref.y;
+    func = std::move(ref.func);
+    return *this;
+}
+
+Timer::~Timer()
+{
+//     std::cout << "-1 [dest]" << std::endl;
 }
 
 /* Level */
