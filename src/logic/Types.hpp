@@ -30,6 +30,7 @@ authors named in the AUTHORS file.
 #include <cmath>
 
 typedef int32_t CoordInt;
+typedef uint32_t TickCounter;
 
 struct CoordPair {
     CoordPair(): x(-1), y(-1) {};

@@ -473,8 +473,9 @@ void PlaygroundMode::frame_unsynced(TimeFloat deltaT)
         }
         case ParticleType::FIRE_SECONDARY:
         {
-            const PyEngine::GL::GLVertexFloat green = 0.2 + (1.0 - age) * 0.5;
-            const PyEngine::GL::GLVertexFloat red = 0.2 + (1.0 - age) * 0.8;
+            const float smoke_decay = (1.0 - age) + 0.2;
+            const PyEngine::GL::GLVertexFloat green = (0.1 + (1.0 - age) * 0.3) * smoke_decay + 0.2;
+            const PyEngine::GL::GLVertexFloat red = (0.3 + (1.0 - age) * 0.5) * smoke_decay + 0.2;
             const PyEngine::GL::GLVertexFloat blue = 0.2;
             const PyEngine::GL::GLVertexFloat alpha = 1.0 - age;
 

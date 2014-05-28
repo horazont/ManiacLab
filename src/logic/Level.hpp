@@ -37,9 +37,6 @@ authors named in the AUTHORS file.
 #include "Physics.hpp"
 #include "Particles.hpp"
 
-static constexpr TickCounter EXPLOSION_TRIGGER_TIMEOUT = 50;
-static constexpr TickCounter EXPLOSION_BLOCK_LIFETIME = 150;
-
 struct Cell;
 class Level;
 

@@ -281,7 +281,7 @@ void Automaton::move_stamp(
 
 void Automaton::place_object(
     const CoordInt dx, const CoordInt dy,
-    const GameObject *obj,
+    GameObject *obj,
     const double initial_temperature)
 {
     assert(!_resumed);

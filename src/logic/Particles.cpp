@@ -144,7 +144,7 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
                 subpart->vx = part->vx * 0.1;
                 subpart->vy = part->vy * 0.1;
                 subpart->ax = 0;
-                subpart->ay = 0;
+                subpart->ay = -0.2;
                 subpart->phi = ((float)random() / RAND_MAX)*2*3.14159;
                 subpart->vphi = part->vphi;
                 subpart->aphi = 0;
@@ -178,9 +178,14 @@ void ParticleSystem::update(PyEngine::TimeFloat deltaT)
             part->vx = part->vx * 0.999 - cell->flow[1] * 0.001;
             part->vy = part->vy * 0.999 - cell->flow[0] * 0.001;
 
-            cell->heat_energy += 0.1 * (meta->blocked ?
-                                        meta->obj->info.temp_coefficient :
-                                        cell->air_pressure);
+            cell->heat_energy += FIRE_PARTICLE_TEMPERATURE_RISE * (
+                meta->blocked ?
+                meta->obj->info.temp_coefficient :
+                cell->air_pressure);
+
+            if (meta->blocked) {
+                meta->obj->ignition_touch();
+            }
             break;
         }
         case ParticleType::FIRE_SECONDARY:

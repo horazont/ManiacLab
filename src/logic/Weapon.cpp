@@ -37,7 +37,7 @@ void Flamethrower::fire(Level *level,
     part->vx = 8. * direction.x + ((float)random() / RAND_MAX)*0.6 - 0.3;
     part->vy = 8. * direction.y + ((float)random() / RAND_MAX)*0.6 - 0.3;
     part->ax = 0;
-    part->ay = 0;
+    part->ay = 1.1;
     part->phi = ((float)random() / RAND_MAX)*2*3.14159;
     part->vphi = (((float)random() / RAND_MAX)-0.5)*3.14159/5.0;
     part->aphi = 0;

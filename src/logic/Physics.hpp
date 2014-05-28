@@ -47,7 +47,7 @@ struct Cell {
 
 struct CellMetadata {
     bool blocked;
-    const GameObject *obj;
+    GameObject *obj;
 };
 
 typedef Cell PhysicsCellStamp[cell_stamp_length];
@@ -57,8 +57,6 @@ struct CellInfo {
     Cell phys;
     CellMetadata meta;
 };
-
-typedef uint32_t TickCounter;
 
 class AutomatonThread;
 
@@ -171,7 +169,7 @@ public:
 
     void place_object(
         const CoordInt x, const CoordInt y,
-        const GameObject *obj,
+        GameObject *obj,
         const double initial_temperature);
 
     void place_stamp(
