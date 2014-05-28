@@ -328,44 +328,36 @@ bool PlaygroundMode::ev_key_down(Key::Key key,
     case Key::Right:
     {
         if (modifiers == 0) {
-            switch (key) {
-            case Key::Up:
-            {
-                _player->acting = MOVE_UP;
-                break;
-            }
-            case Key::Down:
-            {
-                _player->acting = MOVE_DOWN;
-                break;
-            }
-            case Key::Right:
-            {
-                _player->acting = MOVE_RIGHT;
-                break;
-            }
-            case Key::Left:
-            {
-                _player->acting = MOVE_LEFT;
-                break;
-            }
-            default: {}
-            }
-
+            _player->action = ACTION_MOVE;
         } else {
-            _level->particles().spawn_generator(
-                4,
-                [this] (PhysicsParticle *part) {
-                    part->type = ParticleType::FIRE;
-                    part->x = _player->x + 1.0 + ((float)random() / RAND_MAX)*0.2 - 0.05;
-                    part->y = _player->y + 0.5 + ((float)random() / RAND_MAX)*0.1 - 0.05;
-                    part->vx = 8 + ((float)random() / RAND_MAX)*0.2 - 0.1;
-                    part->vy = ((float)random() / RAND_MAX)*0.5 - 0.25;
-                    part->ax = 0;
-                    part->ay = 0;
-                    part->lifetime = 1;
-                });
+            _player->action = ACTION_FIRE_WEAPON;
+            _player->active_weapon = &_player->flamethrower;
         }
+
+        switch (key) {
+        case Key::Up:
+        {
+            _player->move_direction = MOVE_UP;
+            break;
+        }
+        case Key::Down:
+        {
+            _player->move_direction = MOVE_DOWN;
+            break;
+        }
+        case Key::Right:
+        {
+            _player->move_direction = MOVE_RIGHT;
+            break;
+        }
+        case Key::Left:
+        {
+            _player->move_direction = MOVE_LEFT;
+            break;
+        }
+        default: {}
+        }
+
         return true;
     }
     default: {}
@@ -377,6 +369,14 @@ bool PlaygroundMode::ev_key_up(Key::Key key,
                                KeyModifiers modifiers)
 {
     switch (key) {
+    case Key::Up:
+    case Key::Down:
+    case Key::Left:
+    case Key::Right:
+    {
+        _player->action = ACTION_NONE;
+        return true;
+    }
     case Key::q:
     case Key::Escape:
     {

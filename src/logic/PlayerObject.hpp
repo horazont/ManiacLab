@@ -3,6 +3,13 @@
 
 #include "GameObject.hpp"
 #include "MetatextureView.hpp"
+#include "Weapon.hpp"
+
+enum Action {
+    ACTION_NONE,
+    ACTION_MOVE,
+    ACTION_FIRE_WEAPON
+};
 
 struct PlayerView: public MetatextureView
 {
@@ -17,7 +24,10 @@ public:
     PlayerObject(Level *level);
 
 public:
-    MoveDirection acting;
+    Action action;
+    MoveDirection move_direction;
+    Weapon *active_weapon;
+    Flamethrower flamethrower;
 
 protected:
     std::unique_ptr<ObjectView> setup_view(

@@ -162,7 +162,6 @@ public:
 };
 
 enum MoveDirection {
-    NONE = 0,
     MOVE_UP,
     MOVE_DOWN,
     MOVE_RIGHT,
@@ -302,5 +301,7 @@ public:
     virtual void update();
 
 };
+
+CoordPair move_direction_to_vector(MoveDirection dir);
 
 #endif

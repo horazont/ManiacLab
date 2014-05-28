@@ -35,16 +35,36 @@ PlayerView::PlayerView(TileMaterialManager &matman):
 
 PlayerObject::PlayerObject(Level *level):
     GameObject(player_object_info, level),
-    acting(NONE)
+    action(ACTION_NONE),
+    move_direction(MOVE_LEFT),
+    active_weapon(nullptr),
+    flamethrower()
 {
 
 }
 
 bool PlayerObject::idle()
 {
-    move(acting, true);
-    acting = NONE;
-
+    switch (action) {
+    case ACTION_MOVE:
+    {
+        move(move_direction, true);
+        return true;
+    }
+    case ACTION_FIRE_WEAPON:
+    {
+        if (active_weapon) {
+            active_weapon->fire(level,
+                                cell,
+                                move_direction_to_vector(move_direction));
+        }
+        return true;
+    }
+    default:
+    {
+        return true;
+    }
+    }
     return true;
 }
 

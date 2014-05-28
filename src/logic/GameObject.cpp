@@ -289,7 +289,7 @@ bool GameObject::impact(GameObject *on_object)
 
 bool GameObject::move(MoveDirection dir, bool chain_move)
 {
-    if (!info.is_movable || movement || dir == NONE) {
+    if (!info.is_movable || movement) {
         return false;
     }
 
@@ -315,9 +315,6 @@ bool GameObject::move(MoveDirection dir, bool chain_move)
     {
         offsx = 1;
         break;
-    }
-    default: {
-        return false;
     }
     }
 
@@ -381,4 +378,31 @@ void GameObject::update()
     if (!movement) {
         idle();
     }
+}
+
+/* free functions */
+
+CoordPair move_direction_to_vector(MoveDirection dir)
+{
+    switch (dir)
+    {
+    case MOVE_UP:
+    {
+        return CoordPair{0, -1};
+    }
+    case MOVE_DOWN:
+    {
+        return CoordPair{0, 1};
+    }
+    case MOVE_LEFT:
+    {
+        return CoordPair{-1, 0};
+    }
+    case MOVE_RIGHT:
+    {
+        return CoordPair{1, 0};
+    }
+    }
+
+    return CoordPair();
 }

@@ -46,6 +46,7 @@ set(LIB_SOURCES
     "src/logic/RockObject.cpp"
     "src/logic/BombObject.cpp"
     "src/logic/ExplosionObject.cpp"
+    "src/logic/Weapon.cpp"
 )
 
 set(COMMON_SOURCES)
