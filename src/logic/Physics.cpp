@@ -489,22 +489,23 @@ void Automaton::to_gl_texture(
         _rgba_buffer = (uint32_t*)malloc(_width*_height*4);
     }
 
-    const CoordInt half = _width / 2;
+    // const CoordInt half = _width / 2;
 
     uint32_t *target = _rgba_buffer;
     Cell *source = _backbuffer;
     CellMetadata *meta_source = _metadata;
     for (CoordInt i = 0; i < _width*_height; i++) {
-        if (meta_source->blocked) {
-            *target = 0x0000FF;
-        } else {
-            const bool right = (i % _height) >= half;
-            const unsigned char press_color = (unsigned char)(clamp((source->air_pressure - min) / (max - min), 0.0, 1.0) * 255.0);
-            // const double temperature = (meta_source->blocked ? source->heat_energy / meta_source->obj->info.temp_coefficient : source->heat_energy / (source->air_pressure * airtempcoeff_per_pressure));
-            const double fog = (meta_source->blocked ? 0 : source->fog);
-            // const unsigned char temp_color = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
-            const unsigned char fog_color = (unsigned char)(clamp((fog - min) / (max - min), 0.0, 1.0) *255.0);
-            const unsigned char b = (right ? fog_color : press_color);
+        // if (meta_source->blocked) {
+        //     *target = 0x0000FF;
+        // } else {
+            // const bool right = (i % _height) >= half;
+            // const unsigned char press_color = (unsigned char)(clamp((source->air_pressure - min) / (max - min), 0.0, 1.0) * 255.0);
+            const double temperature = (meta_source->blocked ? source->heat_energy / meta_source->obj->info.temp_coefficient : source->heat_energy / (source->air_pressure * airtempcoeff_per_pressure));
+            // const double fog = (meta_source->blocked ? 0 : source->fog);
+            const unsigned char temp_color = (unsigned char)(clamp((temperature - min) / (max - min), 0.0, 1.0) * 255.0);
+            // const unsigned char fog_color = (unsigned char)(clamp((fog - min) / (max - min), 0.0, 1.0) *255.0);
+            // const unsigned char b = (right ? fog_color : press_color);
+            const unsigned char b = temp_color;
             const unsigned char r = b;
             if (thread_regions) {
                 const unsigned char g = (unsigned char)((double)(int)(((double)(i / _width)) / _height * _thread_count) / _thread_count * 255.0);
@@ -513,7 +514,7 @@ void Automaton::to_gl_texture(
             } else {
                 *target = r | (b << 8) | (b << 16);
             }
-        }
+        // }
         target++;
         source++;
         meta_source++;

@@ -294,7 +294,7 @@ void PlaygroundMode::enable(Application *root)
         }
     }
 
-    for (CoordInt y = 30; y < 49; y++) {
+    for (CoordInt y = 30; y < 48; y++) {
         if (y == 45) {
             continue;
         }
