@@ -137,7 +137,7 @@ void Level::add_explosion(const CoordInt x,
         });
 
     _physics_particles.spawn_generator(
-        4,
+        6,
         [x, y](PhysicsParticle *part) {
             part->type = ParticleType::FIRE;
             const float offsx = ((float)rand() / RAND_MAX)*0.5-0.25;
