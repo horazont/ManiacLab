@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>shaders/debug/physics.frag</file>
+        <file>shaders/debug/physics.vert</file>
+        <file>shaders/lib/inv_matrix_block.glsl</file>
+        <file>shaders/lib/matrix_block.glsl</file>
+        <file>shaders/lib/unproject.glsl</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,3 @@
+[submodule "ffengine"]
+	path = ffengine
+	url = https://github.com/horazont/ffengine
