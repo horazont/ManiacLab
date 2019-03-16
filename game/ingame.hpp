@@ -10,14 +10,14 @@ namespace Ui {
 class InGame;
 }
 
-class InGameScene;
+struct InGameScene;
 
 class InGame: public ApplicationMode
 {
     Q_OBJECT
 
 public:
-    explicit InGame(Application &app, QWidget *parent = 0);
+    explicit InGame(Application &app, QWidget *parent = nullptr);
     ~InGame() override;
 
 private:
@@ -32,6 +32,15 @@ private:
     std::unique_ptr<Level> m_level;
     std::unique_ptr<InGameScene> m_scene;
 
+    bool m_single_step;
+
+    int m_mouse_pos_x;
+    int m_mouse_pos_y;
+
+protected:
+    Vector2f widget_pos_to_level_pos(const float x, const float y);
+    void update_probe(const CoordPair phy_probe_pos);
+
 public slots:
     void advance(ffe::TimeInterval dt);
     void after_gl_sync();
@@ -42,6 +51,11 @@ public:
     void activate(QWidget &parent) override;
     void deactivate() override;
 
+
+    // QWidget interface
+protected:
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 };
 
 #endif // MAINMENU_HPP

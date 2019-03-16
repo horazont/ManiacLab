@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+message Text {
+    map<string, string> translations = 1;
+};
+
+message LevelHeader {
+    Text title = 1;
+    Text description = 2;
+    repeated string authors = 3;
+    Text license = 4;
+};
+
+message LevelCollectionHeader {
+    Text title = 1;
+    Text description = 2;
+    repeated string authors = 3;
+    Text default_license = 4;
+    repeated LevelHeader levels = 5;
+};
+
+message TilesetRef {
+    bytes uuid = 1;
+};
+
+message LevelCell {
+    uint32 tileset = 1;
+    bytes tile = 2;
+};
+
+message Level {
+    repeated TilesetRef tilesets = 1;
+    repeated LevelCell cells = 2;
+    uint32 startx = 3;
+    uint32 starty = 4;
+    uint32 preview_startx = 5;
+    uint32 preview_starty = 6;
+};
+
+
+/*message TilesetHeader {
+    bytes uuid = 1;
+};
+
+message TileEvent {
+    enum Type {
+        HEADACHE = 1;
+        IMPACT = 2;
+    };
+    Type type = 1;
+    uint32 other_tileset = 2;
+    bytes uuid = 3;
+};
+
+message MeasurementEvent {
+    uint32 measurement
+};
+
+message LogicDetect {
+    enum SimpleEvent {
+        EXPLOSION_TOUCH = 1;
+        IGNITION = 2;
+        PLAYER_TOUCH = 3;
+    };
+    oneof detect_cfg {
+        SimpleEvent simple_event = 1;
+        TileEvent tile_event = 2;
+        MeasurementEvent measurement_event = 3;
+    };
+};
+
+message LogicEntry {
+    oneof contents {
+        LogicDetect detect = 1;
+        LogicMeasurement measurement = 2;
+    }
+};
+
+message Tile {
+    bytes uuid = 1;
+
+    *//* only used in editor *//*
+    Text display_name = 2;
+    Text notes = 3;
+
+    *//* info section *//*
+    bool is_destructible = 4;
+    bool is_blocking = 5;
+    bool is_destructible = 6;
+    bool is_gravity_affected = 7;
+    bool is_movable = 8;
+    bool is_round = 9;
+    bool is_sticky = 10;
+
+    float roll_radius = 11;
+    float temp_coefficient = 12;
+
+    repeated bool stamp = 13;
+
+    *//* visual info *//*
+
+    *//* logic info *//*
+
+};
+
+message PixmapResource {
+    enum Type {
+        ALBEDO = 0;
+        NORMAL = 1;
+    }
+    Type type = 1;
+    bytes raw = 2;
+};
+
+message Tileset {
+    Text title = 1;
+    Text description = 2;
+    repeated string authors = 3;
+    Text license = 4;
+    repeated Tile tiles = 5;
+    repeated PixmapResource pixmaps = 6;
+};
+*/

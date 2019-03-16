@@ -5,5 +5,9 @@
         <file>shaders/lib/inv_matrix_block.glsl</file>
         <file>shaders/lib/matrix_block.glsl</file>
         <file>shaders/lib/unproject.glsl</file>
+        <file>shaders/debug/physics_particle.vert</file>
+        <file>shaders/debug/physics_particle.frag</file>
+        <file>shaders/debug/physics_flow.vert</file>
+        <file>shaders/debug/physics_flow.frag</file>
     </qresource>
 </RCC>
