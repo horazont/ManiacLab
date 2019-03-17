@@ -63,9 +63,10 @@ LevelCell::LevelCell():
 /* Level */
 
 Level::Level(CoordInt width, CoordInt height):
+    m_rnge(std::random_device()()),
     m_width(width),
     m_height(height),
-    m_cells(m_width*m_height),
+    m_cells(coord_int_to_unsigned(m_width)*coord_int_to_unsigned(m_height)),
     m_physics(
         m_width*subdivision_count,
         m_height*subdivision_count,
@@ -102,23 +103,29 @@ void Level::add_explosion(const CoordInt x,
 
         });
 
+    auto &rnge = m_rnge;
+
+    std::uniform_real_distribution<float> phi_dist(0.f, M_2_PIf32);
+    std::uniform_real_distribution<float> vphi_dist(-M_2_PIf32 / 10.f, M_2_PIf32 / 10.f);
+    std::uniform_real_distribution<float> offs_dist(-0.2f, 0.2f);
+
     m_physics_particles.spawn_generator(
         6,
-        [x, y](std::size_t, PhysicsParticle *part) {
+        [x, y, &rnge, &phi_dist, &vphi_dist, &offs_dist](std::size_t, PhysicsParticle *part) {
             part->type = ParticleType::FIRE;
-            const float offsx = ((float)rand() / RAND_MAX)*0.4-0.2;
-            const float offsy = ((float)rand() / RAND_MAX)*0.4-0.2;
-            part->x = x + 0.5 + offsx;
-            part->y = y + 0.5 + offsy;
+            const float offsx = offs_dist(rnge);
+            const float offsy = offs_dist(rnge);
+            part->x = x + 0.5f + offsx;
+            part->y = y + 0.5f + offsy;
             part->vx = offsx / 2;
             part->vy = offsy / 2;
             part->ax = 0;
             part->ay = 0;
-            part->phi = ((float)rand() / RAND_MAX)*2*3.14159;
-            part->vphi = (((float)rand() / RAND_MAX)-0.5)*3.14159/5.0;
+            part->phi = phi_dist(rnge);
+            part->vphi = vphi_dist(rnge);
             part->aphi = 0;
             part->lifetime = (EXPLOSION_BLOCK_LIFETIME +
-                              EXPLOSION_TRIGGER_TIMEOUT) * time_slice;
+                              EXPLOSION_TRIGGER_TIMEOUT) * static_cast<float>(time_slice);
         });
 
 }
@@ -156,19 +163,23 @@ void Level::add_large_particle_explosion(const CoordInt x0,
                                          const CoordInt xradius,
                                          const CoordInt yradius)
 {
+    auto &rnge = m_rnge;
+
+    std::uniform_real_distribution<float> phi_dist(0.f, M_2_PIf32);
+    std::uniform_real_distribution<float> vphi_dist(-M_2_PIf32 / 10.f, M_2_PIf32 / 10.f);
+
     const CoordInt minx = x0 > xradius-1 ? x0 - xradius : x0;
     const CoordInt miny = y0 > yradius-1 ? y0 - yradius : y0;
     const CoordInt maxx = x0 < m_width - xradius ? x0 + xradius : x0;
     const CoordInt maxy = y0 < m_height - yradius ? y0 + yradius : y0;
 
     for (CoordInt x = minx; x <= maxx; x++) {
-        const double dx = double(x - x0) / (xradius+1);
+        const float dx = static_cast<float>(x - x0) / (xradius+1);
         for (CoordInt y = miny; y <= maxy; y++) {
-            const double dy = double(y - y0) / (yradius+1);
-            std::cout << dx << " " << dy << std::endl;
+            const float dy = static_cast<float>(y - y0) / (yradius+1);
             m_physics_particles.spawn_generator(
                 8,
-                [x0, y0, x, y, dx, dy, xradius, yradius](std::size_t i, PhysicsParticle *part) {
+                [&rnge, &phi_dist, &vphi_dist, x0, y0, dx, dy, xradius, yradius](std::size_t i, PhysicsParticle *part) {
 
                     part->type = ParticleType::FIRE;
                     /*const float offsx = dx / 2;
@@ -178,14 +189,14 @@ void Level::add_large_particle_explosion(const CoordInt x0,
                     const float offsy = dy / 2 + PARTICLE_SPAWN_MAP[i_mod].y / 4.f;
                     //const float offsx = ((float)rand() / RAND_MAX)*0.5-0.25;
                     //const float offsy = ((float)rand() / RAND_MAX)*0.5-0.25;
-                    part->x = x0 + 0.5 + offsx;
-                    part->y = y0 + 0.5 + offsy;
+                    part->x = x0 + 0.5f + offsx;
+                    part->y = y0 + 0.5f + offsy;
                     part->vx = dx * (xradius+1) + offsx;
                     part->vy = dy * (yradius+1) + offsy;
                     part->ax = 0;
                     part->ay = 0;
-                    part->phi = ((float)rand() / RAND_MAX)*2*3.14159;
-                    part->vphi = (((float)rand() / RAND_MAX)-0.5)*3.14159/5.0;
+                    part->phi = phi_dist(rnge);
+                    part->vphi = vphi_dist(rnge);
                     part->aphi = 0;
                     part->lifetime = (EXPLOSION_BLOCK_LIFETIME +
                                       EXPLOSION_TRIGGER_TIMEOUT) / 100.;
@@ -278,9 +289,9 @@ void Level::debug_output(const double x, const double y)
         }
         LabCellMeta &meta = m_physics.meta_at(cx, cy);
 
-        const double tc = (meta.blocked
-                           ? meta.obj->info.temp_coefficient
-                           : airtempcoeff_per_pressure * cell->air_pressure);
+        const float tc = (meta.blocked
+                          ? meta.obj->info.temp_coefficient
+                          : airtempcoeff_per_pressure * cell->air_pressure);
 
         if (meta.blocked) {
             std::cout << "  blocked with " << meta.obj << std::endl;

@@ -25,11 +25,18 @@ authors named in the AUTHORS file.
 #ifndef _ML_TYPES_H
 #define _ML_TYPES_H
 
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <ostream>
 
 typedef int32_t CoordInt;
+
+static inline uint32_t coord_int_to_unsigned(CoordInt i) {
+    assert(i >= 0);
+    return static_cast<uint32_t>(i);
+}
+
 typedef uint32_t TickCounter;
 
 struct CoordPair {

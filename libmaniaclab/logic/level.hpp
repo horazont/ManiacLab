@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <vector>
+#include <random>
 
 #include <sigc++/sigc++.h>
 
@@ -106,6 +107,8 @@ public:
     Level(CoordInt width, CoordInt height);
 
 private:
+    std::mt19937 m_rnge;
+
     CoordInt m_width, m_height;
     std::vector<LevelCell> m_cells;
     NativeLabSim m_physics;
