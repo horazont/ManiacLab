@@ -737,6 +737,30 @@ void NativeLabSim::apply_pressure_stamp(
     }
 }
 
+void NativeLabSim::reset_unblocked_cells(const SimFloat pressure,
+                                         const SimFloat temperature,
+                                         const SimFloat fog_density)
+{
+    assert(!m_running);
+
+    const SimFloat heat_energy = temperature * airtempcoeff_per_pressure * pressure;
+
+    LabCellMeta *meta = &m_meta_cells[0];
+    for (LabCell &cell: m_back_cells) {
+        if (meta->blocked) {
+            meta++;
+            continue;
+        }
+
+        cell.flow = Vector2f();
+        cell.fog_density = fog_density;
+        cell.heat_energy = heat_energy;
+        cell.air_pressure = pressure;
+
+        meta++;
+    }
+}
+
 void NativeLabSim::apply_flow_stamp(
         const CoordInt x, const CoordInt y,
         const Stamp &stamp,

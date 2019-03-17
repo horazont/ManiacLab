@@ -202,6 +202,11 @@ public:
             const Stamp &stamp,
             const float new_pressure);
 
+    void reset_unblocked_cells(
+            const SimFloat pressure = default_pressure,
+            const SimFloat temperature = default_temperature,
+            const SimFloat fog_density = 0.f);
+
     inline CoordInt width() const
     {
         return m_width;

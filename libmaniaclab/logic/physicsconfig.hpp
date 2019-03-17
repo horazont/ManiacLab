@@ -16,5 +16,6 @@ static constexpr float FIRE_PARTICLE_TEMPERATURE_RISE = 1.f;
 static constexpr float KELVIN_TO_CELSIUS = 273.15;
 
 const float default_temperature = KELVIN_TO_CELSIUS + 25;
+const float default_pressure = 1.f;
 
 #endif

@@ -656,6 +656,8 @@ void InGame::activate(QWidget &parent)
     m_level->emplace_object<SafeWallObject>(24, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(3e-4).set_heater_target_temperature(0.8);
     m_level->emplace_object<SafeWallObject>(26, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.4); */
 
+    m_level->physics().reset_unblocked_cells();
+
     m_advance_conn = connect(
                 m_gl_scene,
                 &OpenGLScene::advance,
@@ -708,6 +710,9 @@ void InGame::keyPressEvent(QKeyEvent *event)
         m_time_buffer += Level::time_slice;
     } else if (event->key() == Qt::Key_Space) {
         m_single_step = !m_single_step;
+    } else if (event->key() == Qt::Key_R) {
+        m_level->physics().wait_for_frame();
+        m_level->physics().reset_unblocked_cells();
     } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
         if (!m_level->get_cell(18, 18)->here) {
             m_level->emplace_object<BombObject>(25, 15, default_temperature);
