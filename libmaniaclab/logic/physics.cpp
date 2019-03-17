@@ -1203,10 +1203,10 @@ void NativeLabSim::data_to_gl_texture()
                     meta->blocked ? 1 : 0
                                     );*/
         *dest++ = Vector4f(
-                    meta->blocked ? meta->obj->info.temp_coefficient : source->air_pressure,
+                    meta->blocked ? meta->obj->info.temp_coefficient : source->air_pressure * airtempcoeff_per_pressure,
                     source->fog_density,
                     source->heat_energy,
-                    meta->blocked ? 1 : 0
+                    meta->blocked ? -1 : source->air_pressure
                                     );
         ++source;
         ++meta;
