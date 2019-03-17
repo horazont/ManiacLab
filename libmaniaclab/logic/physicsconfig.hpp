@@ -2,6 +2,7 @@
 #define _ML_PHYSICS_CONFIG_H
 
 #include "logic/types.hpp"
+
 const CoordInt subdivision_count = 5;
 const CoordInt half_offset = 2;
 const CoordInt cell_stamp_length = subdivision_count*subdivision_count;
@@ -11,14 +12,14 @@ const CoordInt level_height = 52;
 static constexpr TickCounter EXPLOSION_TRIGGER_TIMEOUT = 50;
 static constexpr TickCounter EXPLOSION_BLOCK_LIFETIME = 150;
 
-static constexpr float FIRE_PARTICLE_TEMPERATURE_RISE = 1.f;
-static constexpr float KELVIN_TO_CELSIUS = 273.15;
+static constexpr SimFloat FIRE_PARTICLE_TEMPERATURE_RISE = 1.;
+static constexpr SimFloat KELVIN_TO_CELSIUS = 273.15;
 
-const float default_temperature = KELVIN_TO_CELSIUS + 25;
-const float default_pressure = 1.f;
+static constexpr SimFloat default_temperature = KELVIN_TO_CELSIUS + 25;
+static constexpr SimFloat default_pressure = 1.;
 
-static inline float air_thermal_capacity(const float pressure) {
-    return pressure * 1.f;
+static inline SimFloat air_thermal_capacity(const SimFloat pressure) {
+    return pressure * SimFloat(1.);
 }
 
 #endif

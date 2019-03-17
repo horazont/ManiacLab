@@ -32,6 +32,8 @@ authors named in the AUTHORS file.
 
 typedef int32_t CoordInt;
 
+typedef float SimFloat;
+
 static inline uint32_t coord_int_to_unsigned(CoordInt i) {
     assert(i >= 0);
     return static_cast<uint32_t>(i);

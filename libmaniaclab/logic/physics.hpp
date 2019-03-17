@@ -17,10 +17,6 @@
 
 class GameObject;
 
-
-typedef float SimFloat;
-
-
 class ILabSim {
 public:
     static const SimFloat air_diffusion_factor;
