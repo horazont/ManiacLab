@@ -560,14 +560,14 @@ void InGame::activate(QWidget &parent)
     m_level->emplace_object<BombObject>(26, 19, default_temperature);
     m_level->emplace_object<BombObject>(26, 18, default_temperature);*/
 
-    for (CoordInt x = 20; x < 30; ++x) {
+    /* for (CoordInt x = 20; x < 30; ++x) {
         if (x == 25) {
             // m_level->emplace_object<RoundSafeWallObject>(x, 20, default_temperature);
         } else {
             m_level->emplace_object<SafeWallObject>(x, 20, default_temperature);
         }
         m_level->emplace_object<SafeWallObject>(x, 22, default_temperature);
-    }
+    } */
 
     /*for (CoordInt y = 0; y < level_height; ++y) {
         m_level->emplace_object<SafeWallObject>(24, y, 1.);
@@ -577,7 +577,7 @@ void InGame::activate(QWidget &parent)
         }
     }*/
 
-    for (CoordInt x = 0; x < level_width; ++x) {
+    /* for (CoordInt x = 0; x < level_width; ++x) {
         m_level->emplace_object<SafeWallObject>(x, 0, default_temperature);
         m_level->emplace_object<SafeWallObject>(x, level_height-1, default_temperature);
     }
@@ -585,7 +585,7 @@ void InGame::activate(QWidget &parent)
     for (CoordInt y = 0; y < level_height; ++y) {
         m_level->emplace_object<SafeWallObject>(0, y, default_temperature);
         m_level->emplace_object<SafeWallObject>(level_width-1, y, default_temperature);
-    }
+    } */
 
     /* m_level->emplace_object<FogObject>(30, 21, default_temperature, 0.6, 1.0);
     m_level->emplace_object<VertFanObject>(24, 20, default_temperature, 1.f, 0.8f);
@@ -655,6 +655,12 @@ void InGame::activate(QWidget &parent)
     m_level->emplace_object<RoundSafeWallObject>(25, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.6);
     m_level->emplace_object<SafeWallObject>(24, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(3e-4).set_heater_target_temperature(0.8);
     m_level->emplace_object<SafeWallObject>(26, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.4); */
+
+    for (CoordInt y = 0; y < level_height; ++y) {
+        for (CoordInt x = 0; x < level_width; ++x) {
+            m_level->emplace_object<SafeWallObject>(x, y, default_temperature);
+        }
+    }
 
     m_level->physics().reset_unblocked_cells();
 
