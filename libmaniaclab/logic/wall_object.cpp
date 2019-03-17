@@ -65,13 +65,13 @@ WallObject &WallObject::set_heater_enabled(bool new_value)
     return *this;
 }
 
-WallObject &WallObject::set_heater_target_temperature(float new_value)
+WallObject &WallObject::set_heater_target_temperature(SimFloat new_value)
 {
     m_target_temperature = new_value;
     return *this;
 }
 
-WallObject &WallObject::set_heater_energy_rate(float new_value)
+WallObject &WallObject::set_heater_energy_rate(SimFloat new_value)
 {
     m_energy_rate = new_value;
     return *this;

@@ -12,25 +12,25 @@ public:
 
 private:
     bool m_heater_enabled;
-    float m_target_temperature;
-    float m_energy_rate;
+    SimFloat m_target_temperature;
+    SimFloat m_energy_rate;
 
 public:
     inline bool heater_enabled() const {
         return m_heater_enabled;
     }
 
-    inline bool heater_target_temperature() const {
+    inline SimFloat heater_target_temperature() const {
         return m_target_temperature;
     }
 
-    inline bool heater_energy_rate() const {
+    inline SimFloat heater_energy_rate() const {
         return m_energy_rate;
     }
 
     WallObject &set_heater_enabled(bool new_value);
-    WallObject &set_heater_target_temperature(float new_value);
-    WallObject &set_heater_energy_rate(float new_value);
+    WallObject &set_heater_target_temperature(SimFloat new_value);
+    WallObject &set_heater_energy_rate(SimFloat new_value);
 
 
     // GameObject interface
