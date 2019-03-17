@@ -181,7 +181,7 @@ void ParticleSystem::update(ffe::TimeInterval deltaT)
             cell.heat_energy += FIRE_PARTICLE_TEMPERATURE_RISE * (
                 meta.blocked ?
                 meta.obj->info.temp_coefficient :
-                cell.air_pressure);
+                air_thermal_capacity(cell.air_pressure));
 
             if (meta.blocked) {
                 meta.obj->ignition_touch();

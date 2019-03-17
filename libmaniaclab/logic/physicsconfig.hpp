@@ -5,7 +5,6 @@
 const CoordInt subdivision_count = 5;
 const CoordInt half_offset = 2;
 const CoordInt cell_stamp_length = subdivision_count*subdivision_count;
-const float airtempcoeff_per_pressure = 1.0f;
 const CoordInt level_width = 52;
 const CoordInt level_height = 52;
 
@@ -17,5 +16,9 @@ static constexpr float KELVIN_TO_CELSIUS = 273.15;
 
 const float default_temperature = KELVIN_TO_CELSIUS + 25;
 const float default_pressure = 1.f;
+
+static inline float air_thermal_capacity(const float pressure) {
+    return pressure * 1.f;
+}
 
 #endif

@@ -291,7 +291,7 @@ void Level::debug_output(const double x, const double y)
 
         const float tc = (meta.blocked
                           ? meta.obj->info.temp_coefficient
-                          : airtempcoeff_per_pressure * cell->air_pressure);
+                          : air_thermal_capacity(cell->air_pressure));
 
         if (meta.blocked) {
             std::cout << "  blocked with " << meta.obj << std::endl;

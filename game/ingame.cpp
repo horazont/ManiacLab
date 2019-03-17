@@ -482,7 +482,7 @@ void InGame::update_probe(const CoordPair phy_probe_pos)
         m_ui->probe_fog->setText("N/A");
         temperature_coefficient = meta.obj->info.temp_coefficient;
     } else {
-        temperature_coefficient = cell->air_pressure;
+        temperature_coefficient = air_thermal_capacity(cell->air_pressure);
         m_ui->probe_fog->setText(QString::number(static_cast<double>(cell->fog_density)));
         m_ui->probe_pressure->setText(QString::number(static_cast<double>(cell->air_pressure)));
         const auto flow = cell->flow;

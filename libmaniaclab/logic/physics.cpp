@@ -104,7 +104,7 @@ NativeLabSim::NativeLabSim(
 {
     m_null_cell.air_pressure = m_config.initial_air_pressure;
     m_null_cell.fog_density = m_config.initial_fog_density;
-    m_null_cell.heat_energy = m_config.initial_temperature;
+    m_null_cell.heat_energy = m_config.initial_temperature * air_thermal_capacity(m_config.initial_air_pressure);
 
     for (CoordInt y = 0; y < m_height; y++) {
         for (CoordInt x = 0; x < m_width; x++) {
@@ -265,7 +265,7 @@ static inline SimFloat air_flow(
     const SimFloat dpressure = front.air_pressure - neigh_front.air_pressure;
     const SimFloat dtemp = (dir == 1
                             ? (neigh_front.air_pressure > 1e-17f && front.air_pressure > 1e-17f
-                               ? front.heat_energy/front.air_pressure - neigh_front.heat_energy/neigh_front.air_pressure
+                               ? front.heat_energy/air_thermal_capacity(front.air_pressure) - neigh_front.heat_energy/air_thermal_capacity(neigh_front.air_pressure)
                                : 0)
                             : 0);
     const SimFloat temp_flow = flow_sign*(dtemp < 0 ? dtemp * ILabSim::convection_factor : 0);
@@ -292,11 +292,13 @@ static inline SimFloat air_flow(
         return applicable_flow;
     }
 
-    const SimFloat tc_flow = applicable_flow;
+    const SimFloat tc_flow = air_thermal_capacity(applicable_flow);
+    const SimFloat tc_here = air_thermal_capacity(front.air_pressure);
+    const SimFloat tc_neigh = air_thermal_capacity(neigh_front.air_pressure);
     const SimFloat energy_flow = (
                 applicable_flow > 0
-                ? front.heat_energy / front.air_pressure * tc_flow
-                : neigh_front.heat_energy / neigh_front.air_pressure * tc_flow);
+                ? front.heat_energy / tc_here * tc_flow
+                : neigh_front.heat_energy / tc_neigh * tc_flow);
 
     if (std::isnan(energy_flow)) {
         std::cout << applicable_flow
@@ -309,8 +311,8 @@ static inline SimFloat air_flow(
 
     const SimFloat fog_flow = (
                 applicable_flow > 0
-                ? front.fog_density / front.air_pressure * tc_flow
-                : neigh_front.fog_density / neigh_front.air_pressure * tc_flow);
+                ? front.fog_density / tc_here * tc_flow
+                : neigh_front.fog_density / tc_neigh * tc_flow);
 
     assert(!std::isnan(fog_flow));
 
@@ -330,11 +332,11 @@ static inline void temperature_flow(
     const SimFloat tc = (
                 meta.blocked
                 ? meta.obj->info.temp_coefficient
-                : front.air_pressure * airtempcoeff_per_pressure);
+                : air_thermal_capacity(front.air_pressure));
     const SimFloat neigh_tc = (
                 neigh_meta.blocked
                 ? neigh_meta.obj->info.temp_coefficient
-                : neigh_front.air_pressure * airtempcoeff_per_pressure);
+                : air_thermal_capacity(neigh_front.air_pressure));
 
     if (tc < 1e-17 || neigh_tc < 1e-17) {
         return;
@@ -612,8 +614,7 @@ void NativeLabSim::init_cell(
 {
     LabCell &cell = buffer[x+m_width*y];
     cell.air_pressure = air_pressure;
-    cell.heat_energy = temperature * (
-                airtempcoeff_per_pressure * cell.air_pressure);
+    cell.heat_energy = temperature * air_thermal_capacity(cell.air_pressure);
     cell.flow = Vector2f(0, 0);
     cell.fog_density = fog_density;
 }
@@ -667,8 +668,7 @@ void NativeLabSim::apply_temperature_stamp(
         if (meta.blocked) {
             cell->heat_energy = temperature * meta.obj->info.temp_coefficient;
         } else {
-            cell->heat_energy = temperature * (
-                        airtempcoeff_per_pressure*cell->air_pressure);
+            cell->heat_energy = temperature * air_thermal_capacity(cell->air_pressure);
         }
     }
 }
@@ -743,7 +743,7 @@ void NativeLabSim::reset_unblocked_cells(const SimFloat pressure,
 {
     assert(!m_running);
 
-    const SimFloat heat_energy = temperature * airtempcoeff_per_pressure * pressure;
+    const SimFloat heat_energy = temperature * air_thermal_capacity(pressure);
 
     LabCellMeta *meta = &m_meta_cells[0];
     for (LabCell &cell: m_back_cells) {
@@ -1203,7 +1203,7 @@ void NativeLabSim::data_to_gl_texture()
                     meta->blocked ? 1 : 0
                                     );*/
         *dest++ = Vector4f(
-                    meta->blocked ? meta->obj->info.temp_coefficient : source->air_pressure * airtempcoeff_per_pressure,
+                    meta->blocked ? meta->obj->info.temp_coefficient : air_thermal_capacity(source->air_pressure),
                     source->fog_density,
                     source->heat_energy,
                     meta->blocked ? -1 : source->air_pressure
