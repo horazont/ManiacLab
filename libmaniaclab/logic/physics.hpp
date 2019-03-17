@@ -197,6 +197,11 @@ public:
             const Stamp &stamp, const Vector2f flow,
             const SimFloat blend = 1.0);
 
+    void apply_pressure_stamp(
+            const CoordInt x, const CoordInt y,
+            const Stamp &stamp,
+            const float new_pressure);
+
     inline CoordInt width() const
     {
         return m_width;

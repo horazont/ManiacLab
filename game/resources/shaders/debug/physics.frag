@@ -36,7 +36,7 @@ void main() {
     /* if (data.w > 0.5) {
         colour = vec4(0, 0, 0, 1);
     } else { */
-        float temp_input = (data.z / data.x - 0.5) / 1;
+        float temp_input = (data.z / data.x - 198) / 200;
         float press_input = (data.w > 0.5 ? 0.5 : data.x);
         colour = vec4(cubehelix(temp_input, 3.14159/12, -1, press_input), 1);
         colour = mix(colour, vec4(vec3(0.8), 1), min(data.y / 2, 0.9));

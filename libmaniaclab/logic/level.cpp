@@ -69,7 +69,7 @@ Level::Level(CoordInt width, CoordInt height):
     m_physics(
         m_width*subdivision_count,
         m_height*subdivision_count,
-        SimulationConfig{1.0, 1.0, 0.0}
+        SimulationConfig{1.0, default_temperature, 0.0}
     ),
     m_objects(),
     m_player(nullptr),

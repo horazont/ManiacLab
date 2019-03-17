@@ -12,7 +12,9 @@ const CoordInt level_height = 52;
 static constexpr TickCounter EXPLOSION_TRIGGER_TIMEOUT = 50;
 static constexpr TickCounter EXPLOSION_BLOCK_LIFETIME = 150;
 
-static constexpr float FIRE_PARTICLE_TEMPERATURE_RISE = 0.01;
+static constexpr float FIRE_PARTICLE_TEMPERATURE_RISE = 1.f;
+static constexpr float KELVIN_TO_CELSIUS = 273.15;
 
+const float default_temperature = KELVIN_TO_CELSIUS + 25;
 
 #endif

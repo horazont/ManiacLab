@@ -38,7 +38,7 @@ const SimFloat ILabSim::fog_flow_factor = 0.01f;
 const SimFloat ILabSim::heat_flow_factor = 0.05f;
 */
 
-const SimFloat ILabSim::convection_factor = 0.01f;
+const SimFloat ILabSim::convection_factor = 1e-5f;
 const SimFloat ILabSim::air_diffusion_factor = 0.5f;
 const SimFloat ILabSim::air_flow_factor = 0.8f;
 const SimFloat ILabSim::fog_diffusion_factor = 0.05f;
@@ -703,6 +703,37 @@ void NativeLabSim::apply_fog_effect_stamp(
         cell->fog_density = clamp(cell->fog_density + intensity,
                                   SimFloat(0),
                                   SimFloat(1));
+    }
+}
+
+void NativeLabSim::apply_pressure_stamp(
+        const CoordInt x, const CoordInt y,
+        const Stamp &stamp,
+        const float new_pressure)
+{
+    assert(!m_running);
+
+    uintptr_t stamp_cells_len = 0;
+    const CoordPair *cell_coord = stamp.get_map_coords(&stamp_cells_len);
+    cell_coord--;
+
+    for (uintptr_t i = 0; i < stamp_cells_len; i++) {
+        cell_coord++;
+
+        const CoordInt cx = x + cell_coord->x;
+        const CoordInt cy = y + cell_coord->y;
+
+        LabCell *cell = safe_writable_cell_at(cx, cy);
+        if (!cell) {
+            continue;
+        }
+
+        const LabCellMeta &meta = meta_at(cx, cy);
+        if (meta.blocked) {
+            continue;
+        }
+
+        cell->air_pressure = new_pressure;
     }
 }
 

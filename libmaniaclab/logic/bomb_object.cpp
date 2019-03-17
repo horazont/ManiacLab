@@ -76,4 +76,4 @@ void BombObject::update()
     GameObject::update();
 }
 
-const SimFloat BombObject::temperature_threshold = 1.3;
+const SimFloat BombObject::temperature_threshold = 390;

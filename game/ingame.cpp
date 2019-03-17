@@ -462,6 +462,7 @@ void InGame::update_probe(const CoordPair phy_probe_pos)
     const LabCell *cell = physics.safe_front_cell_at(phy_probe_pos.x, phy_probe_pos.y);
     if (!cell) {
         m_ui->probe_temperature->setText("??");
+        m_ui->probe_temperature_celsius->setText("??");
         m_ui->probe_temperature_coefficient->setText("??");
         m_ui->probe_flow_x->setText("??");
         m_ui->probe_flow_y->setText("??");
@@ -490,7 +491,9 @@ void InGame::update_probe(const CoordPair phy_probe_pos)
     }
     m_ui->probe_temperature_coefficient->setText(QString::number(static_cast<double>(temperature_coefficient)));
     m_ui->probe_heat_energy->setText(QString::number(static_cast<double>(cell->heat_energy)));
-    m_ui->probe_temperature->setText(QString::number(static_cast<double>(cell->heat_energy / temperature_coefficient)));
+    const double temperature = static_cast<double>(cell->heat_energy / temperature_coefficient);
+    m_ui->probe_temperature->setText(QString("%1 K").arg(temperature));
+    m_ui->probe_temperature_celsius->setText(QString("%1 °C").arg(temperature - KELVIN_TO_CELSIUS));
 }
 
 void InGame::advance(ffe::TimeInterval dt)
@@ -549,22 +552,22 @@ void InGame::activate(QWidget &parent)
         }
     }*/
 
-    /*m_level->emplace_object<BombObject>(23, 19, 1.0);
-    m_level->emplace_object<BombObject>(24, 19, 1.0);
-    m_level->emplace_object<BombObject>(24, 18, 1.0);
+    /*m_level->emplace_object<BombObject>(23, 19, default_temperature);
+    m_level->emplace_object<BombObject>(24, 19, default_temperature);
+    m_level->emplace_object<BombObject>(24, 18, default_temperature);
 
-    m_level->emplace_object<BombObject>(27, 19, 1.0);
-    m_level->emplace_object<BombObject>(26, 19, 1.0);
-    m_level->emplace_object<BombObject>(26, 18, 1.0);*/
+    m_level->emplace_object<BombObject>(27, 19, default_temperature);
+    m_level->emplace_object<BombObject>(26, 19, default_temperature);
+    m_level->emplace_object<BombObject>(26, 18, default_temperature);*/
 
-    /* for (CoordInt x = 20; x < 30; ++x) {
+    for (CoordInt x = 20; x < 30; ++x) {
         if (x == 25) {
-            // m_level->emplace_object<RoundSafeWallObject>(x, 20, 1.0);
+            // m_level->emplace_object<RoundSafeWallObject>(x, 20, default_temperature);
         } else {
-            m_level->emplace_object<SafeWallObject>(x, 20, 1.0);
+            m_level->emplace_object<SafeWallObject>(x, 20, default_temperature);
         }
-        m_level->emplace_object<SafeWallObject>(x, 22, 1.0);
-    } */
+        m_level->emplace_object<SafeWallObject>(x, 22, default_temperature);
+    }
 
     /*for (CoordInt y = 0; y < level_height; ++y) {
         m_level->emplace_object<SafeWallObject>(24, y, 1.);
@@ -574,35 +577,35 @@ void InGame::activate(QWidget &parent)
         }
     }*/
 
-    /* for (CoordInt x = 0; x < level_width; ++x) {
-        m_level->emplace_object<SafeWallObject>(x, 0, 1.);
-        m_level->emplace_object<SafeWallObject>(x, level_height-1, 1.);
+    for (CoordInt x = 0; x < level_width; ++x) {
+        m_level->emplace_object<SafeWallObject>(x, 0, default_temperature);
+        m_level->emplace_object<SafeWallObject>(x, level_height-1, default_temperature);
     }
 
     for (CoordInt y = 0; y < level_height; ++y) {
-        m_level->emplace_object<SafeWallObject>(0, y, 1.);
-        m_level->emplace_object<SafeWallObject>(level_width-1, y, 1.);
-    } */
+        m_level->emplace_object<SafeWallObject>(0, y, default_temperature);
+        m_level->emplace_object<SafeWallObject>(level_width-1, y, default_temperature);
+    }
 
-    /* m_level->emplace_object<FogObject>(30, 21, 1.0, 0.6, 1.0);
-    m_level->emplace_object<VertFanObject>(24, 20, 1.0, 1.f, 0.8f);
-    m_level->emplace_object<VertFanObject>(24, 22, 1.0, 1.f, 0.8f);
-    m_level->emplace_object<HorizFanObject>(19, 21, 1.0, -3.0, 0.8);
-    m_level->emplace_object<HorizFanObject>(29, 21, 1.0, -3.0, 0.8);
+    /* m_level->emplace_object<FogObject>(30, 21, default_temperature, 0.6, 1.0);
+    m_level->emplace_object<VertFanObject>(24, 20, default_temperature, 1.f, 0.8f);
+    m_level->emplace_object<VertFanObject>(24, 22, default_temperature, 1.f, 0.8f);
+    m_level->emplace_object<HorizFanObject>(19, 21, default_temperature, -3.0, 0.8);
+    m_level->emplace_object<HorizFanObject>(29, 21, default_temperature, -3.0, 0.8);
 
     for (CoordInt y = 16; y < 26; ++y) {
         if (y == 21) {
             continue;
         }
-        m_level->emplace_object<SafeWallObject>(19, y, 1.0f);
-        m_level->emplace_object<SafeWallObject>(29, y, 1.0f);
+        m_level->emplace_object<SafeWallObject>(19, y, default_temperature);
+        m_level->emplace_object<SafeWallObject>(29, y, default_temperature);
     }
 
     for (CoordInt x = 20; x < 29; ++x) {
         if (x == 24) {
             continue;
         }
-        m_level->emplace_object<SafeWallObject>(x, 16, 1.0f);
+        m_level->emplace_object<SafeWallObject>(x, 16, default_temperature);
     }
 
     {
@@ -610,48 +613,48 @@ void InGame::activate(QWidget &parent)
         const float cooler_temp = 0.5f;
         const float heater_rate = 5e-4f;
         const float cooler_rate = 5e-4f;
-        m_level->emplace_object<SafeWallObject>(25, 45, 1.0f)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp);
-        m_level->emplace_object<SafeWallObject>(26, 45, 1.0f)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp);
+        m_level->emplace_object<SafeWallObject>(25, 45, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp);
+        m_level->emplace_object<SafeWallObject>(26, 45, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp);
 
-        m_level->emplace_object<SafeWallObject>(25, 47, 1.0f)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
-        m_level->emplace_object<SafeWallObject>(26, 47, 1.0f)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
+        m_level->emplace_object<SafeWallObject>(25, 47, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
+        m_level->emplace_object<SafeWallObject>(26, 47, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
     } */
 
     {
-        const float heater_temp = 1.4f;
+        /* const float heater_temp = 400;
         const float heater_rate = 5e-15f;
-        m_level->emplace_object<SafeWallObject>(25, 20, heater_temp)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp);
-        /* m_level->emplace_object<SafeWallObject>(26, 20, 1.0f)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp); */
+        m_level->emplace_object<SafeWallObject>(25, 20, heater_temp)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp); */
+        /* m_level->emplace_object<SafeWallObject>(26, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp); */
 
         /*const float cooler_temp = 0.5f;
         const float cooler_rate = 5e-4f;
-        m_level->emplace_object<SafeWallObject>(25, 20, 1.0f)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
-        m_level->emplace_object<SafeWallObject>(26, 20, 1.0f)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp); */
+        m_level->emplace_object<SafeWallObject>(25, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
+        m_level->emplace_object<SafeWallObject>(26, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp); */
     }
 
-    m_level->emplace_object<BombObject>(25, 19, 1.f);
-    m_level->emplace_object<HorizFanObject>(27, 19, 1.f, -0.6f, 0.4f);
+    /* m_level->emplace_object<BombObject>(25, 19, default_temperature);
+    m_level->emplace_object<HorizFanObject>(27, 19, default_temperature, -0.6f, 0.4f);
 
     for (CoordInt y = 15; y < 25; ++y) {
-        const float cooler_temp = 0.7f;
+        const float cooler_temp = 270;
         const float cooler_rate = 5e-15f;
 
         m_level->emplace_object<SafeWallObject>(29, y, cooler_temp)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
         if (y == 19) {
             continue;
         }
-        m_level->emplace_object<SafeWallObject>(27, y, 1.f)->set_heater_enabled(true).set_heater_energy_rate(1e-6f).set_heater_target_temperature(1.f);
-    }
+        m_level->emplace_object<SafeWallObject>(27, y, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(1e-6f).set_heater_target_temperature(1.f);
+    }*/
 
-    /* m_level->emplace_object<FogObject>(25, 25, 1.0, 0.6, 1.0);
-    m_level->emplace_object<FogObject>(25, 26, 1.0, 0.6, 1.0);
-    m_level->emplace_object<FogObject>(26, 26, 1.0, 0.6, 1.0);
-    m_level->emplace_object<FogObject>(26, 25, 1.0, 0.6, 1.0); */
+    /* m_level->emplace_object<FogObject>(25, 25, default_temperature, 0.6, 1.0);
+    m_level->emplace_object<FogObject>(25, 26, default_temperature, 0.6, 1.0);
+    m_level->emplace_object<FogObject>(26, 26, default_temperature, 0.6, 1.0);
+    m_level->emplace_object<FogObject>(26, 25, default_temperature, 0.6, 1.0); */
 
-    /* m_level->emplace_object<BombObject>(25, 19, 1.0);
-    m_level->emplace_object<RoundSafeWallObject>(25, 20, 1.0)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.6);
-    m_level->emplace_object<SafeWallObject>(24, 18, 1.0)->set_heater_enabled(true).set_heater_energy_rate(3e-4).set_heater_target_temperature(0.8);
-    m_level->emplace_object<SafeWallObject>(26, 18, 1.0)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.4); */
+    /* m_level->emplace_object<BombObject>(25, 19, default_temperature);
+    m_level->emplace_object<RoundSafeWallObject>(25, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.6);
+    m_level->emplace_object<SafeWallObject>(24, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(3e-4).set_heater_target_temperature(0.8);
+    m_level->emplace_object<SafeWallObject>(26, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.4); */
 
     m_advance_conn = connect(
                 m_gl_scene,
@@ -707,7 +710,7 @@ void InGame::keyPressEvent(QKeyEvent *event)
         m_single_step = !m_single_step;
     } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
         if (!m_level->get_cell(18, 18)->here) {
-            m_level->emplace_object<BombObject>(25, 15, 1.0);
+            m_level->emplace_object<BombObject>(25, 15, default_temperature);
         }
     } else {
         ApplicationMode::keyPressEvent(event);

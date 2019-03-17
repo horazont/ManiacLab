@@ -33,7 +33,7 @@ static ObjectInfo safewallsq_object_info(
     false,
     true,
     0.0,
-    1.0,
+    10.0,
     squarewall_object_stamp);
 
 static ObjectInfo safewallrd_object_info(
@@ -45,7 +45,7 @@ static ObjectInfo safewallrd_object_info(
     true,
     true,
     0.5,
-    1.0,
+    10.0,
     roundwall_object_stamp);
 
 /* WallObject */

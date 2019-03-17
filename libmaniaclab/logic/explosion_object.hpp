@@ -17,6 +17,7 @@ public:
 
 private:
     TickCounter die_at;
+    TickCounter ctr;
 
 public:
     void update() override;
