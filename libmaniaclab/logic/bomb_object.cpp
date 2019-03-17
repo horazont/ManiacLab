@@ -21,7 +21,7 @@ const ObjectInfo BombObject::INFO(
     true,
     false,
     0.5,
-    1.0,
+    heat_capacity_metal,
     bomb_object_stamp);
 
 

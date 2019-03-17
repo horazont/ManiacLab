@@ -18,6 +18,9 @@ static constexpr SimFloat KELVIN_TO_CELSIUS = 273.15;
 static constexpr SimFloat default_temperature = KELVIN_TO_CELSIUS + 25;
 static constexpr SimFloat default_pressure = 1.;
 
+static constexpr SimFloat heat_capacity_stone = 0.75e3; // J/K
+static constexpr SimFloat heat_capacity_metal = 0.49e3; // J/K
+
 static inline SimFloat air_thermal_capacity(const SimFloat pressure) {
     return pressure * SimFloat(1.);
 }

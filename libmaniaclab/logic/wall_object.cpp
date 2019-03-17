@@ -33,7 +33,7 @@ static ObjectInfo safewallsq_object_info(
     false,
     true,
     0.0,
-    10.0,
+    heat_capacity_stone,
     squarewall_object_stamp);
 
 static ObjectInfo safewallrd_object_info(
@@ -45,7 +45,7 @@ static ObjectInfo safewallrd_object_info(
     true,
     true,
     0.5,
-    10.0,
+    heat_capacity_stone,
     roundwall_object_stamp);
 
 /* WallObject */
