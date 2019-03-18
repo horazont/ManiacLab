@@ -45,6 +45,9 @@ struct LabCellMeta {
 
 struct LabCell {
     LabCell();
+    explicit LabCell(const SimFloat air_pressure,
+                     const SimFloat heat_energy,
+                     const SimFloat fog_density);
 
     SimFloat air_pressure;
     SimFloat heat_energy;
@@ -112,8 +115,8 @@ private:
     const std::size_t m_block_count;
     const unsigned int m_worker_count;
 
-    LabCell m_null_cell;
-    LabCellMeta m_null_cell_meta;
+    const LabCell m_null_cell;
+    const LabCellMeta m_null_cell_meta;
 
     std::vector<LabCellMeta> m_meta_cells;
     std::vector<LabCell> m_front_cells;

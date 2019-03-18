@@ -87,6 +87,9 @@ NativeLabSim::NativeLabSim(
     m_height(height),
     m_block_count((coord_int_to_unsigned(m_height) + ROWS_PER_BLOCK-1) / ROWS_PER_BLOCK),
     m_worker_count(std::thread::hardware_concurrency()),
+    m_null_cell(config.initial_air_pressure,
+                config.initial_temperature * air_thermal_capacity(config.initial_air_pressure),
+                config.initial_fog_density),
     m_meta_cells(coord_int_to_unsigned(m_width)*coord_int_to_unsigned(m_height)),
     m_front_cells(coord_int_to_unsigned(m_width)*coord_int_to_unsigned(m_height)),
     m_back_cells(coord_int_to_unsigned(m_width)*coord_int_to_unsigned(m_height)),
@@ -102,10 +105,6 @@ NativeLabSim::NativeLabSim(
     m_coordinator_thread(std::bind(&NativeLabSim::coordinator_impl,
                                    this))
 {
-    m_null_cell.air_pressure = m_config.initial_air_pressure;
-    m_null_cell.fog_density = m_config.initial_fog_density;
-    m_null_cell.heat_energy = m_config.initial_temperature * air_thermal_capacity(m_config.initial_air_pressure);
-
     for (CoordInt y = 0; y < m_height; y++) {
         for (CoordInt x = 0; x < m_width; x++) {
             init_metadata(m_meta_cells, x, y);
@@ -1235,6 +1234,17 @@ LabCell::LabCell():
     heat_energy(0),
     flow{0, 0},
     fog_density(0)
+{
+
+}
+
+LabCell::LabCell(const SimFloat air_pressure,
+                 const SimFloat heat_energy,
+                 const SimFloat fog_density):
+    air_pressure(air_pressure),
+    heat_energy(heat_energy),
+    flow{0, 0},
+    fog_density(fog_density)
 {
 
 }
