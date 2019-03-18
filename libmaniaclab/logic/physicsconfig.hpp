@@ -42,8 +42,10 @@ static inline float air_thermal_conductivity(const SimFloat pressure) {
  * @param pressure Absolute pressure P in bar.
  * @return thermal capacity in Joule per Kelvin
  */
-static inline float air_thermal_capacity(const SimFloat pressure)
+static inline SimFloat air_thermal_capacity(const SimFloat pressure)
 {
+    return 1e-3f * pressure;
+
     // this is mostly accurate for low pressures (<10 bar)
     static constexpr SimFloat air_specific_heat = 1.07e-3;  // J/(K kg)
     // we assume a constant temperature; we reserve the second argument for
