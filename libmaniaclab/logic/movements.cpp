@@ -75,7 +75,6 @@ MovementStraight::MovementStraight(
 
 MovementStraight::~MovementStraight()
 {
-    std::cout << "delete straight" << std::endl;
     m_from->reserved_by = nullptr;
 }
 
