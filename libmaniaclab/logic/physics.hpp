@@ -54,6 +54,7 @@ struct LabCell {
     SimFloat heat_energy;
 
     SimFloat heat_capacity_cache;
+    SimFloat temperature_cache;
 
     Vector<SimFloat, 2> flow;
     SimFloat fog_density;

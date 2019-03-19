@@ -264,7 +264,7 @@ static inline SimFloat air_flow(
     const SimFloat dpressure = front.air_pressure - neigh_front.air_pressure;
     const SimFloat dtemp = (dir == 1
                             ? (neigh_front.air_pressure > 1e-17f && front.air_pressure > 1e-17f
-                               ? front.heat_energy/front.heat_capacity_cache - neigh_front.heat_energy/neigh_front.heat_capacity_cache
+                               ? front.temperature_cache - neigh_front.temperature_cache
                                : 0)
                             : 0);
     const SimFloat temp_flow = flow_sign*(dtemp < 0 ? dtemp * ILabSim::convection_factor : 0);
@@ -292,12 +292,10 @@ static inline SimFloat air_flow(
     }
 
     const SimFloat tc_flow = air_thermal_capacity(applicable_flow);
-    const SimFloat tc_here = front.heat_capacity_cache;
-    const SimFloat tc_neigh = neigh_front.heat_capacity_cache;
     const SimFloat energy_flow = (
                 applicable_flow > 0
-                ? front.heat_energy / tc_here * tc_flow
-                : neigh_front.heat_energy / tc_neigh * tc_flow);
+                ? front.temperature_cache * tc_flow
+                : neigh_front.temperature_cache * tc_flow);
 
     if (std::isnan(energy_flow)) {
         std::cout << applicable_flow
@@ -341,8 +339,8 @@ static inline void temperature_flow(
         return;
     }
 
-    const SimFloat temp = front.heat_energy / tc;
-    const SimFloat neigh_temp = neigh_front.heat_energy / neigh_tc;
+    const SimFloat temp = front.temperature_cache;
+    const SimFloat neigh_temp = neigh_front.temperature_cache;
 
     const SimFloat dtemp = neigh_temp - temp;
 
@@ -1247,6 +1245,7 @@ LabCell::LabCell():
     air_pressure(0),
     heat_energy(0),
     heat_capacity_cache(NAN),
+    temperature_cache(NAN),
     flow{0, 0},
     fog_density(0)
 {
@@ -1260,6 +1259,7 @@ LabCell::LabCell(const SimFloat air_pressure,
     air_pressure(air_pressure),
     heat_energy(heat_energy),
     heat_capacity_cache(NAN),
+    temperature_cache(NAN),
     flow{0, 0},
     fog_density(fog_density)
 {
@@ -1272,6 +1272,11 @@ void LabCell::update_caches(const GameObject *obj)
         heat_capacity_cache = obj->info.temp_coefficient;
     } else {
         heat_capacity_cache = air_thermal_capacity(air_pressure);
+    }
+    if (heat_energy > 0 && heat_capacity_cache > 1e-17f) {
+        temperature_cache = heat_energy / heat_capacity_cache;
+    } else {
+        temperature_cache = 0.f;
     }
 }
 
