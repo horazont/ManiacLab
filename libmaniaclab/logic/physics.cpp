@@ -345,10 +345,7 @@ static inline void temperature_flow(
 
     const SimFloat dtemp = neigh_temp - temp;
 
-    const SimFloat energy_flow_raw = (
-                dtemp > 0
-                ? neigh_tc * dtemp
-                : tc * dtemp);
+    const SimFloat energy_flow_raw = dtemp * (dtemp > 0 ? neigh_tc : tc);
 
     const SimFloat energy_flow = clamp(
                 energy_flow_raw * ILabSim::heat_diffusion_factor,
