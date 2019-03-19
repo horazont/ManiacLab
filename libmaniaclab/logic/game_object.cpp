@@ -151,8 +151,8 @@ bool GameObject::handle_gravity()
 
     if (info.is_round && below->here && below->here->info.is_round)
     {
-        LevelCell *left = 0, *left_below = 0;
-        LevelCell *right = 0, *right_below = 0;
+        LevelCell *left = nullptr, *left_below = nullptr;
+        LevelCell *right = nullptr, *right_below = nullptr;
         if (cell.x > 0) {
             level.get_fall_channel(cell.x-1, cell.y, left, left_below);
         }
@@ -161,14 +161,14 @@ bool GameObject::handle_gravity()
         }
 
         if (left && right) {
-            if ((float)rand() / RAND_MAX >= 0.5) {
+            if ((float)rand() / RAND_MAX >= 0.5f) {
                 left = nullptr;
             } else {
                 right = nullptr;
             }
         }
 
-        LevelCell *selected = 0, *selected_below = 0;
+        LevelCell *selected = nullptr, *selected_below = nullptr;
         CoordInt xoffset = 0;
         if (left) {
             selected = left;
@@ -284,8 +284,8 @@ bool GameObject::move(MoveDirection dir, bool chain_move)
     }
 
     const CoordPair offs = move_direction_to_vector(dir);
-    const CoordInt neighx = offs.x + x;
-    const CoordInt neighy = offs.y + y;
+    const CoordInt neighx = static_cast<CoordInt>(offs.x + x);
+    const CoordInt neighy = static_cast<CoordInt>(offs.y + y);
 
     if ((offs.x != 0 || offs.y != 0)
         && neighx >= 0 && neighx < level.get_width()

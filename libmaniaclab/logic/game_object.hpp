@@ -251,6 +251,7 @@ public:
      * movement initiation worked.
      *
      * @param dir Direction to move to
+     * @param chain_move Whether to allow moving a blocking object.
      * @return true if the object is now moving, false otherwise.
      */
     bool move(MoveDirection dir, bool chain_move);
