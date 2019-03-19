@@ -306,10 +306,11 @@ static inline SimFloat air_flow(
 
     back.heat_energy -= energy_flow;
 
+    const SimFloat fog_coefficient_flow = applicable_flow;
     const SimFloat fog_flow = (
                 applicable_flow > 0
-                ? front.fog_density / tc_here * tc_flow
-                : neigh_front.fog_density / tc_neigh * tc_flow);
+                ? front.fog_density / front.air_pressure * fog_coefficient_flow
+                : neigh_front.fog_density / neigh_front.air_pressure * fog_coefficient_flow);
 
     assert(!std::isnan(fog_flow));
 
