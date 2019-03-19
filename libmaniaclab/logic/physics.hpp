@@ -47,13 +47,22 @@ struct LabCell {
     LabCell();
     explicit LabCell(const SimFloat air_pressure,
                      const SimFloat heat_energy,
-                     const SimFloat fog_density);
+                     const SimFloat fog_density,
+                     const GameObject *obj = nullptr);
 
     SimFloat air_pressure;
     SimFloat heat_energy;
 
+    SimFloat heat_capacity_cache;
+
     Vector<SimFloat, 2> flow;
     SimFloat fog_density;
+
+    void update_caches(const GameObject *obj);
+
+    inline void update_caches(const LabCellMeta &meta) {
+        update_caches(meta.blocked ? meta.obj : nullptr);
+    }
 };
 
 

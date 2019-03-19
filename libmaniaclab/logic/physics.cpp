@@ -264,7 +264,7 @@ static inline SimFloat air_flow(
     const SimFloat dpressure = front.air_pressure - neigh_front.air_pressure;
     const SimFloat dtemp = (dir == 1
                             ? (neigh_front.air_pressure > 1e-17f && front.air_pressure > 1e-17f
-                               ? front.heat_energy/air_thermal_capacity(front.air_pressure) - neigh_front.heat_energy/air_thermal_capacity(neigh_front.air_pressure)
+                               ? front.heat_energy/front.heat_capacity_cache - neigh_front.heat_energy/neigh_front.heat_capacity_cache
                                : 0)
                             : 0);
     const SimFloat temp_flow = flow_sign*(dtemp < 0 ? dtemp * ILabSim::convection_factor : 0);
@@ -292,8 +292,8 @@ static inline SimFloat air_flow(
     }
 
     const SimFloat tc_flow = air_thermal_capacity(applicable_flow);
-    const SimFloat tc_here = air_thermal_capacity(front.air_pressure);
-    const SimFloat tc_neigh = air_thermal_capacity(neigh_front.air_pressure);
+    const SimFloat tc_here = front.heat_capacity_cache;
+    const SimFloat tc_neigh = neigh_front.heat_capacity_cache;
     const SimFloat energy_flow = (
                 applicable_flow > 0
                 ? front.heat_energy / tc_here * tc_flow
@@ -331,11 +331,11 @@ static inline void temperature_flow(
     const SimFloat tc = (
                 meta.blocked
                 ? meta.obj->info.temp_coefficient
-                : air_thermal_capacity(front.air_pressure));
+                : front.heat_capacity_cache);
     const SimFloat neigh_tc = (
                 neigh_meta.blocked
                 ? neigh_meta.obj->info.temp_coefficient
-                : air_thermal_capacity(neigh_front.air_pressure));
+                : neigh_front.heat_capacity_cache);
 
     if (tc < 1e-17 || neigh_tc < 1e-17) {
         return;
@@ -531,6 +531,8 @@ void NativeLabSim::update_cell(const CoordInt x, const CoordInt y)
                     *left, *left_meta,
                     *right, *right_meta);
     }
+
+    back.update_caches(meta);
 }
 
 void NativeLabSim::update_active_block(const CoordInt y0, const CoordInt y1)
@@ -616,6 +618,7 @@ void NativeLabSim::init_cell(
     cell.heat_energy = temperature * air_thermal_capacity(cell.air_pressure);
     cell.flow = Vector2f(0, 0);
     cell.fog_density = fog_density;
+    cell.update_caches(nullptr);
 }
 
 void NativeLabSim::clear_cells(
@@ -669,6 +672,7 @@ void NativeLabSim::apply_temperature_stamp(
         } else {
             cell->heat_energy = temperature * air_thermal_capacity(cell->air_pressure);
         }
+        cell->update_caches(meta);
     }
 }
 
@@ -702,6 +706,7 @@ void NativeLabSim::apply_fog_effect_stamp(
         cell->fog_density = clamp(cell->fog_density + intensity,
                                   SimFloat(0),
                                   SimFloat(1));
+        cell->update_caches(meta);
     }
 }
 
@@ -733,6 +738,7 @@ void NativeLabSim::apply_pressure_stamp(
         }
 
         cell->air_pressure = new_pressure;
+        cell->update_caches(meta);
     }
 }
 
@@ -755,6 +761,7 @@ void NativeLabSim::reset_unblocked_cells(const SimFloat pressure,
         cell.fog_density = fog_density;
         cell.heat_energy = heat_energy;
         cell.air_pressure = pressure;
+        cell.update_caches(*meta);
 
         meta++;
     }
@@ -790,6 +797,7 @@ void NativeLabSim::apply_flow_stamp(
         }
 
         cell->flow = flow * blend + cell->flow * inv_blend;
+        cell->update_caches(meta);
     }
 }
 
@@ -929,10 +937,15 @@ void NativeLabSim::place_stamp(
             fog_to_distribute += curr_cell->fog_density;
         }
         memcpy(curr_cell, &cells[i].phys, sizeof(LabCell));
-        /* this is an ugly hack; we also set the frontbuffer data of the cell
-         * here; this is needed so that newly placed objects can see their
-         * actual values instead of what was in the frontbuffer before. */
-        memcpy(&writable_front_cell_at(x, y), &cells[i].phys, sizeof(LabCell));
+        curr_cell->update_caches(cells[i].meta);
+        {
+            LabCell &writable_front_cell = writable_front_cell_at(x, y);
+            /* this is an ugly hack; we also set the frontbuffer data of the cell
+             * here; this is needed so that newly placed objects can see their
+             * actual values instead of what was in the frontbuffer before. */
+            memcpy(&writable_front_cell, &cells[i].phys, sizeof(LabCell));
+            writable_front_cell.update_caches(cells[i].meta);
+        }
         memcpy(&curr_meta, &cells[i].meta, sizeof(LabCellMeta));
 
         for (uintptr_t j = 0; j < 4; j++) {
@@ -1017,6 +1030,7 @@ void NativeLabSim::place_stamp(
         (*neigh_cell)->air_pressure += air_per_cell * cell_weight;
         (*neigh_cell)->heat_energy += heat_per_cell * cell_weight;
         (*neigh_cell)->fog_density += fog_per_cell * cell_weight;
+        (*neigh_cell)->update_caches(nullptr);
 
         assert(!std::isnan((*neigh_cell)->heat_energy));
         j++;
@@ -1232,6 +1246,7 @@ LabCellMeta::LabCellMeta():
 LabCell::LabCell():
     air_pressure(0),
     heat_energy(0),
+    heat_capacity_cache(NAN),
     flow{0, 0},
     fog_density(0)
 {
@@ -1240,13 +1255,24 @@ LabCell::LabCell():
 
 LabCell::LabCell(const SimFloat air_pressure,
                  const SimFloat heat_energy,
-                 const SimFloat fog_density):
+                 const SimFloat fog_density,
+                 const GameObject *obj):
     air_pressure(air_pressure),
     heat_energy(heat_energy),
+    heat_capacity_cache(NAN),
     flow{0, 0},
     fog_density(fog_density)
 {
+    update_caches(obj);
+}
 
+void LabCell::update_caches(const GameObject *obj)
+{
+    if (obj) {
+        heat_capacity_cache = obj->info.temp_coefficient;
+    } else {
+        heat_capacity_cache = air_thermal_capacity(air_pressure);
+    }
 }
 
 ILabSim::~ILabSim()
