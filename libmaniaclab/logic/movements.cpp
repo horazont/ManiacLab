@@ -185,8 +185,8 @@ bool MovementRoll::update()
     if (m_time >= half_duration_ticks) {
         m_obj->x = m_start_x + offset_x;
         m_obj->y = m_start_y + offset_y * ((m_time-half_duration_ticks) * Level::time_slice * 2);
-        /* m_cleared_from = true;
-        m_from->reserved_by = nullptr; */
+        m_cleared_from = true;
+        m_from->reserved_by = nullptr;
     } else {
         m_obj->x = m_start_x + offset_x * (m_time * Level::time_slice * 2);
         m_obj->y = m_start_y;
