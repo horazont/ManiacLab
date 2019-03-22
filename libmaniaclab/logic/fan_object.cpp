@@ -53,7 +53,6 @@ static ObjectInfo horiz_fan_info(
     false,
     false,
     0.0,
-    1.0,
     horiz_fan_stamp);
 
 static ObjectInfo vert_fan_info(
@@ -65,7 +64,6 @@ static ObjectInfo vert_fan_info(
     false,
     false,
     0.0,
-    1.0,
     vert_fan_stamp);
 
 FanObject::FanObject(const ObjectInfo &info,
@@ -74,7 +72,7 @@ FanObject::FanObject(const ObjectInfo &info,
                      float intensity,
                      float turbulence_magnitude,
                      float turbulence_offset):
-    GameObject(info, level),
+    GameObject(info, level, 2.f),
     m_effect_stamp(effect_stamp),
     m_turbulence_distribution(-turbulence_magnitude * M_PI_4f32, turbulence_magnitude * M_PI_4f32),
     m_intensity(intensity),

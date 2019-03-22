@@ -22,40 +22,24 @@ void FrameState::reset()
 /* ObjectInfo */
 
 ObjectInfo::ObjectInfo(
-        bool is_blocking_,
-        bool is_destructible_,
-        bool is_edible_,
-        bool is_gravity_affected_,
-        bool is_movable_,
-        bool is_rollable_,
-        bool is_sticky_,
-        float roll_radius_,
-        float temp_coefficient_,
+        bool is_blocking,
+        bool is_destructible,
+        bool is_collectable,
+        bool is_gravity_affected,
+        bool is_movable,
+        bool is_round,
+        bool is_sticky,
+        float roll_radius,
         const CellStamp &stamp):
-    TileData(),
+    is_blocking(is_blocking),
+    is_destructible(is_destructible),
+    is_collectable(is_collectable),
+    is_gravity_affected(is_gravity_affected),
+    is_movable(is_movable),
+    is_round(is_round),
+    is_sticky(is_sticky),
+    roll_radius(roll_radius),
     stamp(stamp)
-{
-    is_blocking = is_blocking_;
-    is_destructible = is_destructible_;
-    is_collectable = is_edible_;
-    is_gravity_affected = is_gravity_affected_;
-    is_movable = is_movable_;
-    is_round = is_rollable_;
-    is_sticky = is_sticky_;
-    roll_radius = roll_radius_;
-    temp_coefficient = temp_coefficient_;
-}
-
-ObjectInfo::ObjectInfo(const CellStamp &stamp):
-    TileData(),
-    stamp(stamp)
-{
-    TileData::stamp = stamp;
-}
-
-ObjectInfo::ObjectInfo(const TileData &src):
-    TileData(src),
-    stamp(src.stamp)
 {
 
 }
@@ -112,7 +96,7 @@ ObjectView *ViewableObject::get_view(TileMaterialManager &matman)
 /* GameObject */
 
 GameObject::GameObject(const ObjectInfo &info,
-                       Level &level):
+                       Level &level, const SimFloat heat_capacity):
     ViewableObject(),
     level(level),
     frame_state(),
@@ -122,6 +106,7 @@ GameObject::GameObject(const ObjectInfo &info,
     phi(0),
     movement(nullptr),
     phy(),
+    heat_capacity(heat_capacity),
     ticks(0)
 {
 

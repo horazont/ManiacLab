@@ -323,18 +323,10 @@ template <unsigned int dir, int flow_sign>
 static inline void temperature_flow(
         LabCell &back,
         const LabCell &front,
-        const LabCellMeta &meta,
-        const LabCell &neigh_front,
-        const LabCellMeta &neigh_meta)
+        const LabCell &neigh_front)
 {
-    const SimFloat tc = (
-                meta.blocked
-                ? meta.obj->info.temp_coefficient
-                : front.heat_capacity_cache);
-    const SimFloat neigh_tc = (
-                neigh_meta.blocked
-                ? neigh_meta.obj->info.temp_coefficient
-                : neigh_front.heat_capacity_cache);
+    const SimFloat tc = front.heat_capacity_cache;
+    const SimFloat neigh_tc = neigh_front.heat_capacity_cache;
 
     if (tc < 1e-17 || neigh_tc < 1e-17) {
         return;
@@ -453,7 +445,7 @@ static inline void full_flow(
             incoming_weight -= applicable_flow;
         }
     }
-    temperature_flow<dir, -1>(back, front, meta, left_front, left_meta);
+    temperature_flow<dir, -1>(back, front, left_front);
     //fog_flow<dir, -1>(back, front, meta, left_front, left_meta);
 
     {
@@ -475,7 +467,7 @@ static inline void full_flow(
         back.flow[dir] = (1-mixing_factor)*applicable_flow
                 + (back.air_pressure > 1e-17f ? incoming_flow / back.air_pressure : 0);
     }
-    temperature_flow<dir, 1>(back, front, meta, right_front, right_meta);
+    temperature_flow<dir, 1>(back, front, right_front);
     //fog_flow<dir, 1>(back, front, meta, right_front, right_meta);
 }
 
@@ -645,7 +637,7 @@ void NativeLabSim::clear_cells(
 
 void NativeLabSim::apply_temperature_stamp(
         const CoordInt x, const CoordInt y,
-        const Stamp &stamp, const double temperature)
+        const Stamp &stamp, const SimFloat temperature)
 {
     uintptr_t stamp_cells_len = 0;
     const CoordPair *cell_coord = stamp.get_map_coords(&stamp_cells_len);
@@ -663,11 +655,7 @@ void NativeLabSim::apply_temperature_stamp(
         }
 
         const LabCellMeta &meta = meta_at(cx, cy);
-        if (meta.blocked) {
-            cell->heat_energy = temperature * meta.obj->info.temp_coefficient;
-        } else {
-            cell->heat_energy = temperature * air_thermal_capacity(cell->air_pressure);
-        }
+        cell->heat_energy = temperature * cell->heat_capacity_cache;
         cell->update_caches(meta);
     }
 }
@@ -845,7 +833,8 @@ void NativeLabSim::move_stamp(
 void NativeLabSim::place_object(
         const CoordInt dx, const CoordInt dy,
         GameObject *obj,
-        const double initial_temperature)
+        const SimFloat initial_temperature,
+        const SimFloat initial_heat_capacity)
 {
     assert(!m_running);
 
@@ -855,7 +844,7 @@ void NativeLabSim::place_object(
     const CoordPair *stamp_cells = obj->info.stamp.get_map_coords(
                 &stamp_cells_len);
 
-    double heat_energy = initial_temperature * obj->info.temp_coefficient;
+    const SimFloat heat_energy = initial_temperature * initial_heat_capacity;
 
     for (uintptr_t i = 0; i < stamp_cells_len; i++) {
         CellInfo *const dst = &cells[i];
@@ -1212,7 +1201,7 @@ void NativeLabSim::data_to_gl_texture()
                     meta->blocked ? 1 : 0
                                     );*/
         *dest++ = Vector4f(
-                    meta->blocked ? meta->obj->info.temp_coefficient : air_thermal_capacity(source->air_pressure),
+                    source->heat_capacity_cache,
                     source->fog_density,
                     source->heat_energy,
                     meta->blocked ? -1 : source->air_pressure
@@ -1267,7 +1256,7 @@ LabCell::LabCell(const SimFloat air_pressure,
 void LabCell::update_caches(const GameObject *obj)
 {
     if (obj) {
-        heat_capacity_cache = obj->info.temp_coefficient;
+        heat_capacity_cache = obj->heat_capacity;
     } else {
         heat_capacity_cache = air_thermal_capacity(air_pressure);
     }

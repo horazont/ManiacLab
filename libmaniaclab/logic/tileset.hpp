@@ -21,7 +21,6 @@ public:
 public:
     virtual std::unique_ptr<GameObject> construct_tile(const QUuid &uuid,
                                                        Level &level) = 0;
-    virtual const TileData &get_tile_info(const QUuid &uuid) = 0;
 
 };
 

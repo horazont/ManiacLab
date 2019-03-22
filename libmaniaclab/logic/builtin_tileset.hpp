@@ -28,7 +28,6 @@ public:
     std::unique_ptr<GameObject> construct_tile(
             const QUuid &uuid,
             Level &level) override;
-    const TileData &get_tile_info(const QUuid &uuid) override;
 
 };
 

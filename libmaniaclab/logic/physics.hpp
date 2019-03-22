@@ -194,9 +194,8 @@ private:
     }
 
 public:
-    void apply_temperature_stamp(
-        const CoordInt x, const CoordInt y,
-        const Stamp &stamp, const double temperature);
+    void apply_temperature_stamp(const CoordInt x, const CoordInt y,
+        const Stamp &stamp, const SimFloat temperature);
 
     void apply_fog_effect_stamp(const CoordInt x, const CoordInt y,
         const Stamp &stamp, const SimFloat intensity);
@@ -272,10 +271,9 @@ public:
         const Stamp &stamp,
         const CoordPair *const vel = nullptr);
 
-    void place_object(
-        const CoordInt x, const CoordInt y,
+    void place_object(const CoordInt x, const CoordInt y,
         GameObject *obj,
-        const double initial_temperature);
+        const SimFloat initial_temperature, const SimFloat initial_heat_capacity);
 
     void place_stamp(
         const CoordInt atx, const CoordInt aty,

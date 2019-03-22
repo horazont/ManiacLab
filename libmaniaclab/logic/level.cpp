@@ -289,9 +289,7 @@ void Level::debug_output(const double x, const double y)
         }
         LabCellMeta &meta = m_physics.meta_at(cx, cy);
 
-        const float tc = (meta.blocked
-                          ? meta.obj->info.temp_coefficient
-                          : air_thermal_capacity(cell->air_pressure));
+        const float tc = cell->heat_capacity_cache;
 
         if (meta.blocked) {
             std::cout << "  blocked with " << meta.obj << std::endl;
@@ -341,10 +339,19 @@ SimFloat Level::measure_object_avg(
         const std::function<SimFloat(const LabCell &)> &sensor) const
 {
     assert(&obj.level == this);
+    return measure_stamp_avg(obj.phy.x, obj.phy.y, obj.info.stamp,
+                             sensor);
+}
+
+SimFloat Level::measure_stamp_avg(
+        const CoordInt x,
+        const CoordInt y,
+        const Stamp &stamp,
+        const std::function<SimFloat (const LabCell &)> &sensor) const
+{
     uintptr_t stamp_len = 0;
-    const CoordPair *stamp_coords = obj.info.stamp.get_map_coords(&stamp_len);
-    return m_physics.measure_stamp_avg(obj.phy.x,
-                                       obj.phy.y,
+    const CoordPair *stamp_coords = stamp.get_map_coords(&stamp_len);
+    return m_physics.measure_stamp_avg(x, y,
                                        stamp_coords,
                                        stamp_len,
                                        sensor,
@@ -438,7 +445,7 @@ void Level::place_object(
     obj->phy = get_physics_coords(x, y);
     m_physics.place_object(
         obj->phy.x, obj->phy.y,
-        obj.get(), initial_temperature);
+        obj.get(), initial_temperature, obj->heat_capacity);
 
     dest->here = std::move(obj);
 }

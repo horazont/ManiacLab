@@ -3,8 +3,6 @@
 
 #include <ffengine/common/types.hpp>
 
-#include "io/tileset_data.hpp"
-
 #include "logic/movements.hpp"
 #include "logic/stamp.hpp"
 #include "logic/physics.hpp"
@@ -47,23 +45,31 @@ struct FrameState
     void reset();
 };
 
-struct ObjectInfo: public TileData
+struct ObjectInfo
 {
     ObjectInfo(
-        bool is_blocking,
-        bool is_destructible,
-        bool is_collectable,
-        bool is_gravity_affected,
-        bool is_movable,
-        bool is_round,
-        bool is_sticky,
-        float roll_radius,
-        float temp_coefficient,
-        const CellStamp &stamp);
-    explicit ObjectInfo(const CellStamp &stamp);
-    explicit ObjectInfo(const TileData &src_data);
+            bool is_blocking,
+            bool is_destructible,
+            bool is_collectable,
+            bool is_gravity_affected,
+            bool is_movable,
+            bool is_round,
+            bool is_sticky,
+            float roll_radius,
+            const CellStamp &stamp);
     ObjectInfo(const ObjectInfo &ref) = default;
     ObjectInfo &operator=(const ObjectInfo &ref) = default;
+
+    bool is_actor;
+    bool is_blocking;
+    bool is_destructible;
+    bool is_collectable;
+    bool is_gravity_affected;
+    bool is_movable;
+    bool is_round;
+    bool is_sticky;
+
+    float roll_radius;
 
     Stamp stamp;
 };
@@ -140,7 +146,8 @@ struct GameObject: public ViewableObject
 {
 public:
     explicit GameObject(const ObjectInfo &info,
-                        Level &level);
+                        Level &level,
+                        const SimFloat heat_capacity);
     GameObject(const GameObject &ref) = delete;
     GameObject& operator=(const GameObject &ref) = delete;
 
@@ -152,6 +159,7 @@ public:
     double x, y, phi;
     std::unique_ptr<Movement> movement;
     CoordPair phy;
+    SimFloat heat_capacity;
 
     /**
      * Stores the tick of the last full update. This is used to manage

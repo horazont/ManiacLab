@@ -1,7 +1,9 @@
 #ifndef _ML_STAMP_H
 #define _ML_STAMP_H
 
+#include <array>
 #include <initializer_list>
+#include <vector>
 
 #include "logic/types.hpp"
 #include "logic/physicsconfig.hpp"
@@ -97,14 +99,16 @@ public:
 struct Stamp {
 public:
     explicit Stamp(const CellStamp &stamp);
-    Stamp(const Stamp& ref);
-    Stamp& operator =(const Stamp& other);
-    ~Stamp();
+    Stamp(const std::initializer_list<bool> &blocking_ref);
+    Stamp(const Stamp& ref) = default;
+    Stamp(Stamp &&src) = default;
+    Stamp& operator=(const Stamp& other) = default;
+    Stamp& operator=(Stamp &&src) = default;
 
 private:
-    CoordPair *_map_coords, *_border;
-    uintptr_t _map_coords_len, _border_len;
-    bool _map[cell_stamp_length];
+    std::vector<CoordPair> m_map_coords;
+    std::vector<CoordPair> m_border;
+    std::array<bool, cell_stamp_length> m_map;
 
 private:
     /**
@@ -128,22 +132,28 @@ public:
         //~ return _map;
     //~ }
     inline const CoordPair* get_map_coords(uintptr_t *map_coords_len) const {
-        *map_coords_len = _map_coords_len;
-        return _map_coords;
+        *map_coords_len = m_map_coords.size();
+        if (m_map_coords.empty()) {
+            return nullptr;
+        }
+        return &m_map_coords.front();
     }
 
     inline const CoordPair* get_border(uintptr_t *border_len) const {
-        *border_len = _border_len;
-        return _border;
+        *border_len = m_border.size();
+        if (m_border.empty()) {
+            return nullptr;
+        }
+        return &m_border.front();
     }
 
 public:
     inline bool non_empty() const {
-        return _map_coords_len != 0;
+        return !m_map_coords.empty();
     }
 
     inline uintptr_t popcount() const {
-        return _map_coords_len;
+        return m_map_coords.size();
     }
 
 };

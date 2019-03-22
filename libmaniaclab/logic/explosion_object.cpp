@@ -82,7 +82,6 @@ static ObjectInfo explosion_object_info(
     false,
     false,
     0.5,
-    1.0,
     explosion_object_stamp);
 
 
@@ -97,7 +96,7 @@ ExplosionView::ExplosionView():
 /* ExplosionObject */
 
 ExplosionObject::ExplosionObject(Level &level):
-    GameObject(explosion_object_info, level),
+    GameObject(explosion_object_info, level, 1.f),
     die_at(level.get_ticks() + EXPLOSION_BLOCK_LIFETIME),
     ctr(0)
 {

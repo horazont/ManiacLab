@@ -39,12 +39,11 @@ static ObjectInfo fog_object_info(
     false,
     false,
     0.0,
-    2.0,
     fog_object_stamp);
 
 
 FogObject::FogObject(Level &level, SimFloat intensity, SimFloat temperature):
-    GameObject(fog_object_info, level),
+    GameObject(fog_object_info, level, 2.f),
     m_intensity(intensity),
     m_temperature(temperature),
     m_effect_stamp(fog_effect_stamp),

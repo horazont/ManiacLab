@@ -21,14 +21,13 @@ const ObjectInfo BombObject::INFO(
     true,
     false,
     0.5,
-    heat_capacity_metal,
     bomb_object_stamp);
 
 
 /* BombObject */
 
 BombObject::BombObject(Level &level):
-    GameObject(BombObject::INFO, level)
+    GameObject(BombObject::INFO, level, heat_capacity_metal)
 {
 
 }
@@ -64,7 +63,7 @@ void BombObject::update()
             info.stamp.get_map_coords(&len);*/
     const SimFloat temperature = level.measure_object_avg(
                 *this,
-                [this](const LabCell &cell){return cell.heat_energy / info.temp_coefficient;});
+                [](const LabCell &cell){return cell.heat_energy / cell.heat_capacity_cache;});
     /*const SimFloat pressure =
             level->measure_border_avg(cell.x, cell.y, [](const LabCell &cell){return cell.air_pressure;}, true);*/
     // std::cout << "bomb temperature = " << temperature << std::endl; // << "; pressure = " << pressure << std::endl;

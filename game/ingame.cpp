@@ -474,15 +474,13 @@ void InGame::update_probe(const CoordPair phy_probe_pos)
 
     const LabCellMeta &meta = physics.meta_at(phy_probe_pos.x, phy_probe_pos.y);
 
-    float temperature_coefficient = 0;
+    const SimFloat temperature_coefficient = cell->heat_capacity_cache;
     if (meta.blocked) {
         m_ui->probe_pressure->setText("N/A");
         m_ui->probe_flow_x->setText("N/A");
         m_ui->probe_flow_y->setText("N/A");
         m_ui->probe_fog->setText("N/A");
-        temperature_coefficient = meta.obj->info.temp_coefficient;
     } else {
-        temperature_coefficient = air_thermal_capacity(cell->air_pressure);
         m_ui->probe_fog->setText(QString::number(static_cast<double>(cell->fog_density)));
         m_ui->probe_pressure->setText(QString::number(static_cast<double>(cell->air_pressure)));
         const auto flow = cell->flow;

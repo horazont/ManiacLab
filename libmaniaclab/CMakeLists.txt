@@ -25,8 +25,6 @@ set(MANIACLIB_SRC
     logic/tileset.cpp
     logic/builtin_tileset.cpp
 
-    io/tileset_data.cpp
-
     render/visual_object.cpp
     )
 

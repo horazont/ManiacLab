@@ -187,6 +187,10 @@ public:
             const std::function<SimFloat(const LabCell&)> &sensor
             ) const;
 
+    SimFloat measure_stamp_avg(const CoordInt x, const CoordInt y, const Stamp &stamp,
+            const std::function<SimFloat(const LabCell&)> &sensor
+            ) const;
+
     SimFloat measure_border_avg(
             const double x, const double y,
             const std::function<SimFloat(const LabCell&)> &sensor
