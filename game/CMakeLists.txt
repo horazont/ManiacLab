@@ -24,6 +24,13 @@ set(GAME_SRC
 
 set(GAME_HEADERS
   fixups.hpp
+  application.hpp
+  mainmenu.hpp
+  mode.hpp
+  openglscene.hpp
+  actionbutton.hpp
+  ingame.hpp
+  editor.hpp
   )
 
 set(GAME_UIS
