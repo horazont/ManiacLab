@@ -35,8 +35,8 @@ public:
     };
 
 public:
-    explicit Application(QWidget *parent = 0);
-    ~Application();
+    explicit Application(QWidget *parent = nullptr);
+    ~Application() override;
 
 private:
     Ui::Application *m_ui;
