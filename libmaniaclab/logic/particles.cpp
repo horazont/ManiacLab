@@ -61,10 +61,10 @@ inline void handle_collision(
         Vector2f new_v =
             incoming_ray - (2*incoming_ray * posstep) * posstep;
         const float vmag = new_v.length();
-        vx = new_v[eX] * 0.4;
-        vx = vx + (((float)random() / RAND_MAX) * 2.0 - 1.0)*vmag*0.3;
-        vy = new_v[eY] * 0.4;
-        vy = vy + (((float)random() / RAND_MAX) * 2.0 - 1.0)*vmag*0.3;
+        vx = new_v[eX] * 0.4f;
+        vx = vx + (((float)random() / RAND_MAX) * 2.0f - 1.0f)*vmag*0.3f;
+        vy = new_v[eY] * 0.4f;
+        vy = vy + (((float)random() / RAND_MAX) * 2.0f - 1.0f)*vmag*0.3f;
         return;
     }
 
@@ -111,6 +111,11 @@ void ParticleSystem::update(ffe::TimeInterval deltaT)
     NativeLabSim &physics = _level.physics();
     // const SimulationConfig &config = physics.config();
 
+    static constexpr SimFloat fire_primary_cell_flow_influence = SimFloat(1e-1);
+    static constexpr SimFloat inv_fire_primary_cell_flow_influence = SimFloat(1)-fire_primary_cell_flow_influence;
+    static constexpr SimFloat fire_secondary_cell_flow_influence = SimFloat(5e-1);
+    static constexpr SimFloat inv_fire_secondary_cell_flow_influence = SimFloat(1)-fire_secondary_cell_flow_influence;
+
     for (auto it = _active.begin();
          it != _active.end();
          it++)
@@ -129,7 +134,7 @@ void ParticleSystem::update(ffe::TimeInterval deltaT)
         case ParticleType::FIRE:
         {
             const uint32_t old_ctr = part->ctr;
-            const uint32_t new_ctr = part->age * 25;
+            const uint32_t new_ctr = part->age * 25.f;
             part->ctr = new_ctr;
 
             const uint32_t to_spawn = new_ctr - old_ctr;
@@ -138,16 +143,16 @@ void ParticleSystem::update(ffe::TimeInterval deltaT)
             {
                 Particle *const subpart = spawn();
                 subpart->type = ParticleType::FIRE_SECONDARY;
-                subpart->lifetime = 4+((float)rand() / RAND_MAX)*2-1;
-                subpart->x = part->x - ((float)rand() / RAND_MAX) * part->vx * 0.01;
-                subpart->y = part->y - ((float)rand() / RAND_MAX) * part->vy * 0.01;
-                subpart->vx = part->vx * 0.1;
-                subpart->vy = part->vy * 0.1;
-                subpart->ax = 0;
-                subpart->ay = -0.2;
-                subpart->phi = ((float)random() / RAND_MAX)*2*3.14159;
+                subpart->lifetime = 4+((float)rand() / RAND_MAX)*2.f-1.f;
+                subpart->x = part->x - ((float)rand() / RAND_MAX) * part->vx * 0.01f;
+                subpart->y = part->y - ((float)rand() / RAND_MAX) * part->vy * 0.01f;
+                subpart->vx = part->vx * 0.1f;
+                subpart->vy = part->vy * 0.1f;
+                subpart->ax = 0.f;
+                subpart->ay = -0.2f;
+                subpart->phi = ((float)random() / RAND_MAX)*2.f*M_PIf32;
                 subpart->vphi = part->vphi;
-                subpart->aphi = 0;
+                subpart->aphi = 0.f;
             }
 
             break;
@@ -175,8 +180,10 @@ void ParticleSystem::update(ffe::TimeInterval deltaT)
             // const double prev_vy = part->vy;
             // cell->flow[0] = cell->flow[0] * config.flow_damping - prev_vy * (1.0 - config.flow_damping);
             // cell->flow[1] = cell->flow[1] * config.flow_damping - prev_vx * (1.0 - config.flow_damping);
-            part->vx = part->vx * 0.999 - cell.flow[1] * 0.001;
-            part->vy = part->vy * 0.999 - cell.flow[0] * 0.001;
+            if (!meta.blocked) {
+                part->vx = part->vx * inv_fire_primary_cell_flow_influence - cell.flow[eX] * fire_primary_cell_flow_influence;
+                part->vy = part->vy * inv_fire_primary_cell_flow_influence - cell.flow[eY] * fire_primary_cell_flow_influence;
+            }
 
             cell.heat_energy += FIRE_PARTICLE_TEMPERATURE_RISE * cell.heat_capacity_cache;
 
@@ -187,8 +194,10 @@ void ParticleSystem::update(ffe::TimeInterval deltaT)
         }
         case ParticleType::FIRE_SECONDARY:
         {
-            part->vx = part->vx * 0.995 - cell.flow[1] * 0.005;
-            part->vy = part->vy * 0.995 - cell.flow[0] * 0.005;
+            if (!meta.blocked) {
+                part->vx = part->vx * inv_fire_secondary_cell_flow_influence - cell.flow[eX] * fire_secondary_cell_flow_influence;
+                part->vy = part->vy * inv_fire_secondary_cell_flow_influence - cell.flow[eY] * fire_secondary_cell_flow_influence;
+            }
 
             // cell->fog += 0.001;
             break;
