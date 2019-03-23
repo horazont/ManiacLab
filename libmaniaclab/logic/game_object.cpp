@@ -5,7 +5,6 @@
 
 #include <ffengine/io/log.hpp>
 
-#include "errors.hpp"
 #include "physics.hpp"
 
 static io::Logger &logger = io::logging().get_logger("maniaclab.game_object");

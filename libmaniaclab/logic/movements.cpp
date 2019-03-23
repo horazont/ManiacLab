@@ -3,8 +3,6 @@
 #include <cassert>
 #include <iostream>
 
-#include "errors.hpp"
-
 /* Movement */
 
 Movement::Movement(

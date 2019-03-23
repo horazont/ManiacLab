@@ -7,23 +7,43 @@ find_package(SIGC++ REQUIRED)
 set(INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 set(MANIACLIB_HEADERS
+    logic/level.hpp
+    logic/movements.hpp
+    logic/particles.hpp
+    logic/physics.hpp
+    logic/physicsconfig.hpp
+    logic/sensor.hpp
+    logic/stamp.hpp
+    logic/tileset.hpp
+    logic/types.hpp
+
+    logic/bomb_object.hpp
+    logic/builtin_tileset.hpp
+    logic/explosion_object.hpp
+    logic/fan_object.hpp
+    logic/fog_object.hpp
+    logic/game_object.hpp
+    logic/wall_object.hpp
+
+    render/visual_object.hpp
   )
 
 set(MANIACLIB_SRC
-    logic/physics.cpp
     logic/level.cpp
-    logic/stamp.cpp
-    logic/game_object.cpp
-    logic/explosion_object.cpp
-    logic/bomb_object.cpp
     logic/movements.cpp
     logic/particles.cpp
-    logic/wall_object.cpp
-    logic/fog_object.cpp
-    logic/fan_object.cpp
+    logic/physics.cpp
     logic/sensor.cpp
+    logic/stamp.cpp
     logic/tileset.cpp
+
+    logic/bomb_object.cpp
     logic/builtin_tileset.cpp
+    logic/explosion_object.cpp
+    logic/fan_object.cpp
+    logic/fog_object.cpp
+    logic/game_object.cpp
+    logic/wall_object.cpp
 
     render/visual_object.cpp
     )

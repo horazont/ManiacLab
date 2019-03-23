@@ -5,7 +5,7 @@
 #include "logic/level.hpp"
 
 struct LevelCell;
-class GameObject;
+struct GameObject;
 
 class Movement {
 public:
