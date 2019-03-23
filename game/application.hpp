@@ -22,7 +22,7 @@ class Application;
 
 class MainMenu;
 class InGame;
-
+class Editor;
 
 class Application : public QMainWindow
 {
@@ -31,6 +31,7 @@ public:
     enum Mode {
         MAIN_MENU,
         INGAME,
+        EDITOR,
     };
 
 public:
@@ -42,6 +43,7 @@ private:
 
     std::unique_ptr<MainMenu> m_main_menu;
     std::unique_ptr<InGame> m_ingame;
+    std::unique_ptr<Editor> m_editor;
 
     ApplicationMode *m_curr_mode;
     std::unordered_map<QMdiSubWindow*, QMetaObject::Connection> m_mdi_connections;

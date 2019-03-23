@@ -35,3 +35,8 @@ void MainMenu::on_action_mainmenu_singleplayer_triggered()
 {
     m_app.enter_mode(Application::INGAME);
 }
+
+void MainMenu::on_action_mainmenu_map_editor_triggered()
+{
+    m_app.enter_mode(Application::EDITOR);
+}

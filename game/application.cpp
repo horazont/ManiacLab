@@ -8,6 +8,7 @@
 
 #include "mainmenu.hpp"
 #include "ingame.hpp"
+#include "editor.hpp"
 
 
 static io::Logger &logger = io::logging().get_logger("app");
@@ -50,6 +51,7 @@ void Application::initialise_modes()
 {
     m_main_menu = std::make_unique<MainMenu>(*this);
     m_ingame = std::make_unique<InGame>(*this);
+    m_editor = std::make_unique<Editor>(*this);
 }
 
 void Application::subdialog_done(QMdiSubWindow *wnd)
@@ -101,6 +103,11 @@ void Application::enter_mode(Mode mode)
     case INGAME:
     {
         enter_mode(m_ingame.get());
+        break;
+    }
+    case EDITOR:
+    {
+        enter_mode(m_editor.get());
         break;
     }
     }

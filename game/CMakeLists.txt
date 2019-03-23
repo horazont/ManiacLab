@@ -19,6 +19,7 @@ set(GAME_SRC
   openglscene.cpp
   actionbutton.cpp
   ingame.cpp
+  editor.cpp
   )
 
 set(GAME_HEADERS
@@ -29,7 +30,8 @@ set(GAME_UIS
     ui/ingame.ui
     ui/application.ui
     ui/openglscene.ui
-    ui/mainmenu.ui)
+    ui/mainmenu.ui
+    ui/editor.ui)
 
 QT5_WRAP_UI(GAME_UI_HDRS ${GAME_UIS})
 

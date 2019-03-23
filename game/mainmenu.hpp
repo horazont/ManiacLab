@@ -22,6 +22,8 @@ private slots:
 
     void on_action_mainmenu_singleplayer_triggered();
 
+    void on_action_mainmenu_map_editor_triggered();
+
 private:
     Ui::MainMenu *m_ui;
 
