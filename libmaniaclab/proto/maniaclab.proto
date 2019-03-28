@@ -1,5 +1,62 @@
 syntax = "proto3";
 
+package mlio;
+
+enum TileArgType {
+    /* 0..127 reserved for ManiacLab */
+    INITIAL_TEMPERATURE = 0; /* float */
+    INITIAL_HEAT_CAPACITY = 1; /* float */
+    FLOW_INTENSITY = 2; /* float */
+    FLOW_TURBULENCE = 3; /* float */
+    FOG_RATE = 4; /* float */
+    HEATER_TARGET_TEMPERATURE = 5; /* float */
+    HEATER_RATE = 6; /* float */
+    VISUAL_VARIATION_SELECTOR = 7; /* uint64 */
+    LINKED_CELL = 8; /* CoordPair */
+    ENABLED = 9; /* bool */
+
+    /* 64..79 can be freely used by tilesets */
+    TILESET_DEFINED_0 = 64;
+    TILESET_DEFINED_1 = 65;
+    TILESET_DEFINED_2 = 66;
+    TILESET_DEFINED_3 = 67;
+    TILESET_DEFINED_4 = 68;
+    TILESET_DEFINED_5 = 69;
+    TILESET_DEFINED_6 = 70;
+    TILESET_DEFINED_7 = 71;
+    TILESET_DEFINED_8 = 72;
+    TILESET_DEFINED_9 = 73;
+    TILESET_DEFINED_10 = 74;
+    TILESET_DEFINED_11 = 75;
+    TILESET_DEFINED_12 = 76;
+    TILESET_DEFINED_13 = 77;
+    TILESET_DEFINED_14 = 78;
+    TILESET_DEFINED_15 = 79;
+
+    /* 80..127 are again reserved for ManiacLab internally */
+
+    /* 128..infty reserved for future use */
+};
+
+message CoordPair {
+    uint32 x = 1;
+    uint32 y = 2;
+};
+
+message TileArg {
+    TileArgType type = 1;
+    oneof value {
+        string sval = 16;
+        float fval = 17;
+        double dval = 18;
+        sint64 ival = 19;
+        uint64 uival = 20;
+        bool bval = 21;
+        bytes binval = 22;
+        CoordPair pval = 23;
+    }
+};
+
 message Text {
     map<string, string> translations = 1;
 };
@@ -26,15 +83,14 @@ message TilesetRef {
 message LevelCell {
     uint32 tileset = 1;
     bytes tile = 2;
+    repeated TileArg argv = 3;
 };
 
 message Level {
     repeated TilesetRef tilesets = 1;
     repeated LevelCell cells = 2;
-    uint32 startx = 3;
-    uint32 starty = 4;
-    uint32 preview_startx = 5;
-    uint32 preview_starty = 6;
+    CoordPair start = 3;
+    CoordPair preview_start = 4;
 };
 
 

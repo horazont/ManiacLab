@@ -1,33 +1,38 @@
 #ifndef ML_BUILTIN_TILESET_H
 #define ML_BUILTIN_TILESET_H
 
+#include <functional>
+
 #include "logic/tileset.hpp"
 
+class Level;
 
-namespace std {
-template<>
-struct hash<::QUuid> {
-    std::size_t operator()(const ::QUuid &value) const
-    {
-        return qHash(value);
-    }
-};
-
-}
-
-
-class BuiltInTileset: public AbstractTileset
+class BuiltInTileset: public Tileset
 {
 private:
-    using TileConstructor = std::function<std::unique_ptr<GameObject>(Level &level)>;
-    static const std::unordered_map<QUuid, const TileData*> m_tile_info;
-    static const std::unordered_map<QUuid, TileConstructor> m_tile_constructors;
+    using TileConstructor = std::function<std::unique_ptr<GameObject>(Level &level, const TileArgv &argv)>;
 
-    // AbstractTileset interface
+protected:
+    BuiltInTileset();
+
+private:
+    std::unordered_map<QUuid, TileConstructor> m_constructors;
+
+    template <typename... arg_ts>
+    TilesetTileInfo &emplace_tile(QUuid id, TileConstructor constructor, arg_ts... args)
+    {
+        TilesetTileInfo &tile = Tileset::emplace_tile<TilesetTileInfo>(id, std::forward<arg_ts>(args)...);
+        m_constructors.emplace(id, std::move(constructor));
+        return tile;
+    }
+
+protected:
+    std::unique_ptr<GameObject> construct_tile(const TilesetTileInfo &tile,
+                                               Level &level,
+                                               const TileArgv &argv) override;
+
 public:
-    std::unique_ptr<GameObject> construct_tile(
-            const QUuid &uuid,
-            Level &level) override;
+    static const BuiltInTileset &instance();
 
 };
 

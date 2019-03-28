@@ -3,11 +3,16 @@
         <file>shaders/debug/physics.frag</file>
         <file>shaders/debug/physics.vert</file>
         <file>shaders/lib/inv_matrix_block.glsl</file>
+        <file>shaders/lib/hsluv.glsl</file>
         <file>shaders/lib/matrix_block.glsl</file>
         <file>shaders/lib/unproject.glsl</file>
         <file>shaders/debug/physics_particle.vert</file>
         <file>shaders/debug/physics_particle.frag</file>
         <file>shaders/debug/physics_flow.vert</file>
         <file>shaders/debug/physics_flow.frag</file>
+        <file>shaders/editor/grid.vert</file>
+        <file>shaders/editor/grid.frag</file>
+        <file>shaders/effects/fullscreenquad.vert</file>
+        <file>shaders/effects/ghostplane.frag</file>
     </qresource>
 </RCC>

@@ -52,6 +52,10 @@ set(GAME_SHADER_RESOURCES
     resources/shaders/debug/physics_flow.frag
     resources/shaders/debug/physics_particle.vert
     resources/shaders/debug/physics_particle.frag
+    resources/shaders/editor/grid.vert
+    resources/shaders/editor/grid.frag
+    resources/shaders/effects/fullscreenquad.vert
+    resources/shaders/effects/ghostplane.frag
     resources/shaders/lib/matrix_block.glsl
     resources/shaders/lib/inv_matrix_block.glsl
     resources/shaders/lib/unproject.glsl
