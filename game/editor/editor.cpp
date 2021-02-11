@@ -665,9 +665,10 @@ void Editor::mouseReleaseEvent(QMouseEvent *event)
 
 void Editor::wheelEvent(QWheelEvent *event)
 {
-    if (event->orientation() == Qt::Vertical) {
+    const int dy = event->angleDelta().y();
+    if (dy != 0) {
         float dist = m_scene->m_camera.controller().distance();
-        dist = clamp(dist - event->delta() / 50.f, 1.f,
+        dist = clamp(dist - dy / 50.f, 1.f,
                      static_cast<float>(std::max(level_width, level_height)));
         m_scene->m_camera.controller().set_distance(dist);
     }
