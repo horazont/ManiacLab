@@ -4,6 +4,8 @@
 #include "mode.hpp"
 
 #include "logic/level.hpp"
+#include "logic/player_object.hpp"
+#include "logic/server.hpp"
 
 
 namespace Ui {
@@ -29,7 +31,10 @@ private:
     QMetaObject::Connection m_after_gl_sync_conn;
     QMetaObject::Connection m_before_gl_sync_conn;
 
-    std::unique_ptr<Level> m_level;
+    PlayerController m_player_controller;
+
+    PlayerObject *m_player;
+    std::unique_ptr<Server> m_server;
     std::unique_ptr<InGameScene> m_scene;
 
     bool m_single_step;
@@ -56,6 +61,7 @@ public:
 protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
 };
 
 #endif // MAINMENU_HPP

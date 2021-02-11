@@ -1,7 +1,12 @@
 <RCC>
     <qresource prefix="/">
-<file>tileset/core/bomb-diffuse.png</file>
-<file>tileset/core/player-diffuse.png</file>
-<file>tileset/core/rock-diffuse.png</file>
-</qresource>
+        <file>tileset/wall_pillar.png</file>
+        <file>tileset/wall_pillar_v.png</file>
+        <file>tileset/wall_pillar_h.png</file>
+        <file>tileset/player.png</file>
+        <file>tileset/bg4.png</file>
+        <file>tileset/fog_noise.png</file>
+        <file>tileset/dirt.png</file>
+        <file>tileset/rock.png</file>
+    </qresource>
 </RCC>

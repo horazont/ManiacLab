@@ -1,5 +1,5 @@
-#ifndef _ML_LEVEL_H
-#define _ML_LEVEL_H
+#ifndef ML_LEVEL_H
+#define ML_LEVEL_H
 
 #include <queue>
 #include <vector>
@@ -97,11 +97,25 @@ public:
 };
 
 
-typedef sigc::signal<void, Level*, GameObject*> PlayerDeathEvent;
+class LevelOperator
+{
+public:
+    virtual ~LevelOperator();
+
+public:
+    virtual void operator()(Level &level) = 0;
+
+};
+
+using LevelOperatorPtr = std::unique_ptr<LevelOperator>;
+
+
+typedef sigc::signal<void(Level&, GameObject*)> PlayerDeathEvent;
+typedef sigc::signal<void(Level&, GameObject&)> ObjectSpawnEvent;
 
 class Level {
 public:
-    static constexpr double time_slice = 0.002;
+    static constexpr double time_slice = 0.004;
 
 public:
     Level(CoordInt width, CoordInt height);
@@ -109,13 +123,13 @@ public:
 private:
     std::mt19937 m_rnge;
 
-    CoordInt m_width, m_height;
+    const CoordInt m_width, m_height;
     std::vector<LevelCell> m_cells;
     NativeLabSim m_physics;
-    std::vector<GameObject*> m_objects;
 
     GameObject *m_player;
     PlayerDeathEvent m_on_player_death;
+    ObjectSpawnEvent m_on_object_spawn;
 
     ParticleSystem m_physics_particles;
 
@@ -133,10 +147,10 @@ public:
             const CoordInt yradius);
 
     void add_large_particle_explosion(
-        const CoordInt x0,
-        const CoordInt y0,
-        const CoordInt xradius,
-        const CoordInt yradius);
+            const CoordInt x0,
+            const CoordInt y0,
+            const CoordInt xradius,
+            const CoordInt yradius);
 
     void cleanup_cell(LevelCell *cell);
 
@@ -156,7 +170,7 @@ public:
         LevelCell *&aside,
         LevelCell *&asidebelow);
 
-    inline CoordInt get_height() const
+    inline CoordInt height() const
     {
         return m_height;
     }
@@ -168,7 +182,7 @@ public:
         return m_ticks;
     }
 
-    inline CoordInt get_width() const
+    inline CoordInt width() const
     {
         return m_width;
     }
@@ -224,12 +238,27 @@ public:
         return obj_ptr;
     }
 
-    void update();
+    template <typename T, typename... arg_ts>
+    inline T *emplace_player(const CoordInt x, const CoordInt y,
+                             arg_ts&&... args)
+    {
+        auto obj = std::make_unique<T>(*this, args...);
+        T *obj_ptr = obj.get();
+        place_player(std::move(obj), x, y);
+        return obj_ptr;
+    }
+
+    void step_singlebuffered_simulation();
 
 public:
     inline PlayerDeathEvent &on_player_death()
     {
         return m_on_player_death;
+    }
+
+    inline ObjectSpawnEvent &on_object_spawn()
+    {
+        return m_on_object_spawn;
     }
 
 };

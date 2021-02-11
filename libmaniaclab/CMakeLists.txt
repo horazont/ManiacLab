@@ -19,11 +19,16 @@ set(MANIACLIB_HEADERS
 
     logic/bomb_object.hpp
     logic/builtin_tileset.hpp
+    logic/dirt_object.hpp
     logic/explosion_object.hpp
     logic/fan_object.hpp
     logic/fog_object.hpp
     logic/game_object.hpp
+    logic/player_object.hpp
+    logic/rock_object.hpp
     logic/wall_object.hpp
+
+    logic/server.hpp
 
     render/visual_object.hpp
   )
@@ -39,11 +44,16 @@ set(MANIACLIB_SRC
 
     logic/bomb_object.cpp
     logic/builtin_tileset.cpp
+    logic/dirt_object.cpp
     logic/explosion_object.cpp
     logic/fan_object.cpp
     logic/fog_object.cpp
     logic/game_object.cpp
+    logic/player_object.cpp
+    logic/rock_object.cpp
     logic/wall_object.cpp
+
+    logic/server.cpp
 
     render/visual_object.cpp
     )
@@ -63,6 +73,7 @@ setup_scc_target(maniaclib)
 target_link_libraries(
   maniaclib
   ffengine-core
+  ffengine-render
   sigc++
   ${OPENGL_LIBRARIES}
   ${OPENGL_glu_LIBRARY}

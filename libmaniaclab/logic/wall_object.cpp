@@ -4,6 +4,8 @@
 
 #include <ffengine/math/algo.hpp>
 
+#include "level.hpp"
+
 static const CellStamp squarewall_object_stamp(
     {
         true, true, true, true, true,

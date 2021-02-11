@@ -5,62 +5,53 @@
 
 #include "logic/bomb_object.hpp"
 #include "logic/wall_object.hpp"
+#include "logic/rock_object.hpp"
+#include "logic/fan_object.hpp"
+#include "logic/fog_object.hpp"
 
-static std::unique_ptr<GameObject> construct_bomb(
-        Level &level,
-        const TileArgv &argv)
+
+template <typename T>
+std::function<std::unique_ptr<GameObject>(Level&)> make_simple_ctor()
 {
-    return std::make_unique<BombObject>(level);
+    return [](Level &level){ return std::make_unique<T>(level); };
 }
 
-static std::unique_ptr<GameObject> construct_safe_wall_square(
-        Level &level,
-        const TileArgv &argv)
+
+BuiltInTile::BuiltInTile(std::function<std::unique_ptr<GameObject> (Level &)> ctor, QUuid id, std::string_view display_name):
+    TilesetTile(id, display_name),
+    m_ctor(ctor)
 {
-    return std::make_unique<SafeWallObject>(level);
+
 }
 
-static std::unique_ptr<GameObject> construct_safe_wall_round(
-        Level &level,
-        const TileArgv &argv)
+std::unique_ptr<GameObject> BuiltInTile::instantiate(Level &level, const TileArgv&) const
 {
-    return std::make_unique<RoundSafeWallObject>(level);
+    return m_ctor(level);
 }
 
-BuiltInTileset::BuiltInTileset()
+
+std::unique_ptr<SimpleTileset> make_builtin_tileset()
 {
-    emplace_tile(
+    auto result = std::make_unique<SimpleTileset>();
+    result->emplace_tile<BuiltInTile>(
+                make_simple_ctor<BombObject>(),
                 QUuid("{4695311f-834b-4a04-9c4b-f8efac161d31}"),
-                construct_bomb,
-                "Bomb", ""
+                "Bomb"
                 );
-    emplace_tile(
-                QUuid("{d0586ef6-4feb-43ed-8a83-63c2bb0b5bcb}"),
-                construct_safe_wall_square,
-                "Wall (square, massive)", ""
+    result->emplace_tile<BuiltInTile>(
+                make_simple_ctor<RockObject>(),
+                QUuid("{31a2aba1-609e-4a4d-9246-4aaca26c8749}"),
+                "Rock"
                 );
-    emplace_tile(
-                QUuid("{b93e0aea-ef07-4c43-a045-9b4c982e5c74}"),
-                construct_safe_wall_round,
-                "Wall (round, massive)", ""
+    result->emplace_tile<BuiltInTile>(
+                make_simple_ctor<SafeWallObject>(),
+                QUuid("{1868c6b6-c535-4d6a-9a09-823903c5a4e3}"),
+                "Safe wall (square)"
                 );
-}
-
-std::unique_ptr<GameObject> BuiltInTileset::construct_tile(
-        const TilesetTileInfo &tile,
-        Level &level,
-        const TileArgv &argv)
-{
-    auto iter = m_constructors.find(tile.id);
-    if (iter == m_constructors.end()) {
-        return nullptr;
-    }
-
-    return iter->second(level, argv);
-}
-
-const BuiltInTileset &BuiltInTileset::instance()
-{
-    static const BuiltInTileset tileset;
-    return tileset;
+    result->emplace_tile<BuiltInTile>(
+                make_simple_ctor<RoundSafeWallObject>(),
+                QUuid("{a02b52d3-0cf0-4847-8808-2dca7143d170}"),
+                "Safe wall (round)"
+                );
+    return result;
 }

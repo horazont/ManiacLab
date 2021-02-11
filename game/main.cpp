@@ -73,6 +73,8 @@ int main(int argc, char *argv[])
     QResource::registerResource("textures.rcc");
     QResource::registerResource("shaders.rcc");
     QResource::registerResource("stylesheets.rcc");
+    QResource::registerResource("tileset-core.rcc");
+    QResource::registerResource("intro.rcc");
     io::logging().log(io::LOG_INFO) << "Resource packs registered" << io::submit;
 
     {

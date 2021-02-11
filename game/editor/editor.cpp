@@ -17,6 +17,12 @@
 
 #include "logic/physicsconfig.hpp"
 #include "logic/level.hpp"
+#include "logic/wall_object.hpp"
+#include "logic/rock_object.hpp"
+
+#include "render/visual_object.hpp"
+
+#include "materials.hpp"
 
 
 class GridNode: public ffe::scenegraph::Node
@@ -140,7 +146,7 @@ static void compute_blur_vector_to_texture_1d(const unsigned size)
     std::vector<float> buffer(size);
     float sum = 0.f;
     for (unsigned int x = 0; x < size; ++x) {
-        const float xf = (2.f * static_cast<float>(x) / size - 1.f) * 1.5f;
+        const float xf = (2.f * static_cast<float>(x) / size - 1.f) * 1.f;
         buffer[x] = gauss(xf, 0.2f);
         sum += buffer[x];
     }
@@ -221,15 +227,19 @@ struct EditorScene
         m_camera.controller().set_pos(Vector3f(level_width/2, level_height/2, 0));
 
         m_main_pass.set_clear_mask(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-        m_main_pass.set_clear_colour(Vector4f(0.f, 0.f, 0.f, 0.f));
+        m_main_pass.set_clear_colour(Vector4f(0.4f, 0.3f, 0.2f, 1.f));
 
         m_solid_colour.bind();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
         m_ghost_h_colour.bind();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
         m_blur_vector.bind();
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -265,6 +275,7 @@ struct EditorScene
             }
 
             pass.set_depth_test(false);
+            pass.set_order(10000);
         }
 
         const std::array<std::tuple<ffe::MaterialPass&, const char*, ffe::Texture2D*>, 2> ghost_passes{{{m_ghost_h_shader, "H", &m_solid_colour}, {m_ghost_v_shader, "V", &m_ghost_h_colour}}};
@@ -300,6 +311,12 @@ struct EditorScene
             glUniform1f(pass.shader().uniform_location("scale"), 1.f/window_size.width());
         }
 
+        create_fallback_material(m_resources, m_main_pass);
+        create_simple_material(m_resources, m_main_pass, "safe_wall",
+                               ":/tileset/wall_pillar.png");
+        create_simple_material(m_resources, m_main_pass, "rock",
+                               ":/tileset/rock.png");
+
         m_rendergraph.resort();
 
         m_solid_buffer.attach(GL_COLOR_ATTACHMENT0, &m_solid_colour);
@@ -307,6 +324,8 @@ struct EditorScene
 
         m_ghost_h_buffer.attach(GL_COLOR_ATTACHMENT0, &m_ghost_h_colour);
         m_ghost_h_buffer.make_depth_buffer();
+
+        m_scenegraph.root().emplace<LevelView>(m_resources, level, true);
     }
 
     void update_size(const QSize &new_size)
@@ -330,10 +349,22 @@ struct EditorScene
                 fbo.attach(GL_COLOR_ATTACHMENT0, &texture);
             }
 
+            const Vector2f fetch_scale(new_size.width(),
+                                       new_size.height());
+
+            const Vector2f fetch_offset(1.f/new_size.width(),
+                                        1.f/new_size.height());
+
             m_ghost_h_shader.shader().bind();
-            glUniform1f(m_ghost_h_shader.shader().uniform_location("scale"), 1.f/new_size.width());
+            glUniform2fv(m_ghost_h_shader.shader().uniform_location("fetch_scale"), 1,
+                         fetch_scale.as_array);
+            glUniform2fv(m_ghost_h_shader.shader().uniform_location("fetch_offset"), 1,
+                         fetch_offset.as_array);
             m_ghost_v_shader.shader().bind();
-            glUniform1f(m_ghost_v_shader.shader().uniform_location("scale"), 1.f/new_size.height());
+            glUniform2fv(m_ghost_v_shader.shader().uniform_location("fetch_scale"), 1,
+                         fetch_scale.as_array);
+            glUniform2fv(m_ghost_h_shader.shader().uniform_location("fetch_offset"), 1,
+                         fetch_offset.as_array);
 
         }
     }
@@ -365,24 +396,66 @@ QVariant TilesetModel::data(const QModelIndex &index, int role) const
         return QVariant();
     }
 
-    const TilesetTileInfo &info = *m_tiles[index.row()];
+    const TilesetTile &info = *m_tiles[index.row()];
 
     switch (role)
     {
     case Qt::DisplayRole:
-        return QString::fromStdString(info.display_name);
-    case Qt::ToolTipRole:
-        return QString::fromStdString(info.description);
+        return QString::fromStdString(std::string(info.display_name()));
+    case ROLE_TILE_UUID:
+        return info.id();
     default:
         return QVariant();
     }
 }
 
 
+class CameraDrag: public WorldToolDrag
+{
+public:
+    CameraDrag(ffe::OrthogonalCamera &camera,
+               const Vector2f &viewport_size,
+               const Vector2f &start_scene_pos);
+
+private:
+    ffe::CameraController &m_controller;
+    const Vector2f m_start_scene_pos;
+
+private:
+    void drag_camera(const Vector2f &viewport_pos,
+                     const Vector2f &world_pos);
+
+};
+
+CameraDrag::CameraDrag(ffe::OrthogonalCamera &camera,
+                       const Vector2f &viewport_size,
+                       const Vector2f &start_scene_pos):
+    WorldToolDrag(camera, viewport_size,
+                  std::bind(&CameraDrag::drag_camera,
+                            this,
+                            std::placeholders::_1,
+                            std::placeholders::_2),
+                  nullptr),
+    m_controller(camera.controller()),
+    m_start_scene_pos(start_scene_pos)
+{
+
+}
+
+void CameraDrag::drag_camera(const Vector2f&, const Vector2f &world_pos)
+{
+    const Vector2f diff = m_start_scene_pos - world_pos;
+    const Vector2f new_pos = Vector2f(m_controller.pos()) + diff;
+    m_controller.set_pos(Vector3f(new_pos, 0.f));
+}
+
+
 Editor::Editor(Application &app, QWidget *parent):
     ApplicationMode(app, parent),
     m_ui(new Ui::Editor()),
-    m_model(std::make_unique<TilesetModel>(BuiltInTileset::instance())),
+    m_tileset(make_builtin_tileset()),
+    m_model(std::make_unique<TilesetModel>(*m_tileset)),
+    m_mouse_mode(MM_NONE),
     m_distort_t(0)
 {
     m_ui->setupUi(this);
@@ -393,6 +466,38 @@ Editor::Editor(Application &app, QWidget *parent):
 Editor::~Editor()
 {
 
+}
+
+Vector2f Editor::mouse_to_scene(const QPoint p)
+{
+    if (!m_scene) {
+        return Vector2f(NAN, NAN);
+    }
+
+    const Matrix4f inv_proj = std::get<1>(m_scene->m_camera.render_projection(
+                m_scene->m_window.width(),
+                m_scene->m_window.height()
+                ));
+    const Matrix4f inv_view = m_scene->m_camera.calc_inv_view();
+    Vector2f mouse(p.x(), p.y());
+    mouse *= window()->devicePixelRatioF();
+    const Vector3f ndc(2.f * mouse[eX] / m_scene->m_window.width() - 1.f,
+                       -(2.f * mouse[eY] / m_scene->m_window.height() - 1.f),
+                       0.f);
+    const Vector4f scene_pos = inv_view * inv_proj * Vector4f(ndc, 1.f);
+    return Vector2f(scene_pos[eX], scene_pos[eY]);
+}
+
+std::pair<bool, CoordPair> Editor::scene_to_world(const Vector2f p)
+{
+    const CoordPair v(std::floor(p[eX]), std::floor(p[eY]));
+    /* we do the validity check on the floating point values to avoid issues
+     * with over/underflow when flooring to int */
+    const bool valid = (p[eX] >= 0 &&
+                        p[eY] >= 0 &&
+                        p[eX] < level_width &&
+                        p[eY] < level_height);
+    return std::make_pair(valid, v);
 }
 
 void Editor::advance(ffe::TimeInterval dt)
@@ -410,44 +515,27 @@ void Editor::before_gl_sync()
     const QSize size = window()->size() * window()->devicePixelRatioF();
     if (!m_scene) {
         m_scene = std::make_unique<EditorScene>(*m_level, size);
-    } else {
-        m_scene->update_size(size);
     }
+    m_scene->update_size(size);
     m_scene->m_window.set_fbo_id(m_gl_scene->defaultFramebufferObject());
 
     const float mix = static_cast<float>(m_ui->ghost_mix->value()) / m_ui->ghost_mix->maximum();
 
     m_scene->m_camera.sync();
 
-    Matrix4f proj, inv_proj;
-    std::tie(proj, inv_proj) = m_scene->m_camera.render_projection(
-                m_scene->m_window.width(),
-                m_scene->m_window.height()
-                );
-    const Matrix4f view = m_scene->m_camera.calc_view();
-    const Matrix4f inv_view = m_scene->m_camera.calc_inv_view();
-    Vector2f mouse(m_local_mouse_pos.x(), m_local_mouse_pos.y());
-    mouse *= window()->devicePixelRatioF();
-    const Vector3f ndc(2.f * mouse[eX] / m_scene->m_window.width() - 1.f,
-                       -(2.f * mouse[eY] / m_scene->m_window.height() - 1.f),
-                       0.f);
-    const float clip_w = proj.component(3, 2) / (ndc[eZ]-proj.component(2, 2)/proj.component(2, 3));
-    const Vector4f clipspace(ndc * clip_w, clip_w);
-    const Vector4f scene_pos = inv_view * inv_proj * Vector4f(ndc, 1.f);
+    const Vector2f scene_pos = mouse_to_scene(m_local_mouse_pos);
     m_scene->m_grid.set_highlight(
                 CoordPair(std::floor(scene_pos[eX]),
                           std::floor(scene_pos[eY])));
 
-    Vector2f blur_scale_vector;
-    /* this will need fixing once the camera does proper zooming … */
-    const float blur_size = 3.f;
-    if (size.width() > size.height()) {
-        blur_scale_vector[eY] = blur_size / (level_height * subdivision_count);
-        blur_scale_vector[eX] = blur_scale_vector[eY] * size.height() / size.width();
-    } else {
-        blur_scale_vector[eX] = blur_size / (level_width * subdivision_count);
-        blur_scale_vector[eY] = blur_scale_vector[eX] * size.width() / size.height();
-    }
+    Vector2f blur_scale_vector(1.f/subdivision_count, 1.f/subdivision_count);
+    /* this is essentially the projection matrix used forward */
+    blur_scale_vector *= std::min(size.width(), size.height());
+    blur_scale_vector[eX] /= size.width();
+    blur_scale_vector[eY] /= size.height();
+
+    /* and this is the view matrix used forward ... */
+    blur_scale_vector /= m_scene->m_camera.controller().distance();
 
     const std::array<std::tuple<ffe::ShaderProgram&, unsigned int>, 2> shaders{{{m_scene->m_ghost_h_shader.shader(), 0}, {m_scene->m_ghost_v_shader.shader(), 1}}};
     for (auto shader_info: shaders) {
@@ -515,4 +603,79 @@ void Editor::deactivate()
 void Editor::mouseMoveEvent(QMouseEvent *event)
 {
     m_local_mouse_pos = event->pos();
+    switch (m_mouse_mode) {
+    case MM_TOOL_DRAG:
+    {
+        m_active_mouse_drag->drag(Vector2f(m_local_mouse_pos.x(),
+                                           m_local_mouse_pos.y()) * window()->devicePixelRatioF());
+        break;
+    }
+    default:;
+    }
+}
+
+
+void Editor::mousePressEvent(QMouseEvent *event)
+{
+    if (m_mouse_mode != MM_NONE) {
+        return;
+    }
+
+    if (event->button() == Qt::MiddleButton) {
+        m_drag_button = event->button();
+        m_mouse_mode = MM_TOOL_DRAG;
+        m_active_mouse_drag = std::make_unique<CameraDrag>(
+                    m_scene->m_camera,
+                    m_viewport_size,
+                    mouse_to_scene(event->pos()));
+        m_drag_button = event->button();
+    } else if (event->button() ==Qt::LeftButton) {
+        bool valid;
+        CoordPair p;
+        std::tie(valid, p) = scene_to_world(mouse_to_scene(event->pos()));
+        if (!valid) {
+            return;
+        }
+        QModelIndex current = m_ui->listView->selectionModel()->currentIndex();
+        if (!current.isValid()) {
+            return;
+        }
+        QUuid id = current.data(ROLE_TILE_UUID).toUuid();
+        auto tile = m_tileset->make_tile(id, *m_level, TileArgv());
+        m_level->place_object(std::move(tile), p.x, p.y, 1.0f);
+    }
+}
+
+void Editor::mouseReleaseEvent(QMouseEvent *event)
+{
+    switch (m_mouse_mode) {
+    case MM_TOOL_DRAG:
+    {
+        if (event->button() == m_drag_button) {
+            m_mouse_mode = MM_NONE;
+            m_active_mouse_drag->done(Vector2f(event->pos().x(),
+                                               event->pos().y()) * window()->devicePixelRatioF());
+            m_active_mouse_drag = nullptr;
+        }
+    }
+    default:;
+    }
+}
+
+
+void Editor::wheelEvent(QWheelEvent *event)
+{
+    if (event->orientation() == Qt::Vertical) {
+        float dist = m_scene->m_camera.controller().distance();
+        dist = clamp(dist - event->delta() / 50.f, 1.f,
+                     static_cast<float>(std::max(level_width, level_height)));
+        m_scene->m_camera.controller().set_distance(dist);
+    }
+}
+
+void Editor::resizeEvent(QResizeEvent *event)
+{
+    ApplicationMode::resizeEvent(event);
+    const QSize size = m_gl_scene->size() * window()->devicePixelRatioF();
+    m_viewport_size = Vector2f(size.width(), size.height());
 }

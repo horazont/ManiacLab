@@ -6,6 +6,7 @@
 #include <ffengine/io/log.hpp>
 
 #include "physics.hpp"
+#include "level.hpp"
 
 static io::Logger &logger = io::logging().get_logger("maniaclab.game_object");
 
@@ -46,7 +47,7 @@ ObjectInfo::ObjectInfo(
 /* ObjectView */
 
 ObjectView::ObjectView():
-    _invalidated(false)
+    m_object_view_invalidated(true)
 {
 
 }
@@ -58,18 +59,13 @@ ObjectView::~ObjectView()
 
 void ObjectView::invalidate()
 {
-    _invalidated = true;
-}
-
-void ObjectView::update(GameObject&, ffe::TimeInterval)
-{
-
+    m_object_view_invalidated = true;
 }
 
 /* ViewableObject */
 
 ViewableObject::ViewableObject():
-    _view(nullptr)
+    m_view(nullptr)
 {
 
 }
@@ -79,17 +75,9 @@ ViewableObject::~ViewableObject()
 
 }
 
-std::unique_ptr<ObjectView> ViewableObject::setup_view(TileMaterialManager&)
+void ViewableObject::set_view(std::unique_ptr<ObjectView> &&view)
 {
-    return nullptr;
-}
-
-ObjectView *ViewableObject::get_view(TileMaterialManager &matman)
-{
-    if (!_view) {
-        _view = setup_view(matman);
-    }
-    return _view.get();
+    m_view = std::move(view);
 }
 
 /* GameObject */
@@ -103,6 +91,7 @@ GameObject::GameObject(const ObjectInfo &info,
     x(0),
     y(0),
     phi(0),
+    flip(false),
     movement(nullptr),
     phy(),
     heat_capacity(heat_capacity),
@@ -119,7 +108,7 @@ void GameObject::destruct_self()
 
 bool GameObject::handle_gravity()
 {
-    if (cell.y == level.get_height() - 1) {
+    if (cell.y == level.height() - 1) {
         return true;
     }
 
@@ -140,7 +129,7 @@ bool GameObject::handle_gravity()
         if (cell.x > 0) {
             level.get_fall_channel(cell.x-1, cell.y, left, left_below);
         }
-        if (cell.x < level.get_width() - 1) {
+        if (cell.x < level.width() - 1) {
             level.get_fall_channel(cell.x+1, cell.y, right, right_below);
         }
 
@@ -182,7 +171,7 @@ bool GameObject::after_movement(Movement *prev_movement)
 {
     // falling/downward movement while gravity affected
     if (prev_movement->offset_y > 0 && info.is_gravity_affected) {
-        if (cell.y < level.get_height() - 1)
+        if (cell.y < level.height() - 1)
         {
             // moving within normal space
             LevelCell *const below_cell = level.get_cell(
@@ -238,7 +227,7 @@ bool GameObject::idle()
 
     if (info.is_gravity_affected)
     {
-        if (cell.y < level.get_height())
+        if (cell.y < level.height())
         {
             if (!handle_gravity()) {
                 return false;
@@ -272,8 +261,8 @@ bool GameObject::move(MoveDirection dir, bool chain_move)
     const CoordInt neighy = static_cast<CoordInt>(offs.y + y);
 
     if ((offs.x != 0 || offs.y != 0)
-        && neighx >= 0 && neighx < level.get_width()
-        && neighy >= 0 && neighy < level.get_height())
+        && neighx >= 0 && neighx < level.width()
+        && neighy >= 0 && neighy < level.height())
     {
         LevelCell *neighbour = level.get_cell(neighx, neighy);
         if (!neighbour->reserved_by
@@ -304,6 +293,7 @@ void GameObject::update()
     }
     ticks = level.get_ticks();
 
+    visual_pos = Vector2f(x, y);
     if (movement) {
         if (!movement->update()) {
             return;

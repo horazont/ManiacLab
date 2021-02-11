@@ -72,7 +72,6 @@ Level::Level(CoordInt width, CoordInt height):
         m_height*subdivision_count,
         SimulationConfig{1.0, default_temperature, 0.0}
     ),
-    m_objects(),
     m_player(nullptr),
     m_physics_particles(*this),
     m_ticks(0)
@@ -232,7 +231,7 @@ void Level::cleanup_cell(LevelCell *cell)
     }
 
     if (obj.get() == m_player) {
-        m_on_player_death(this, obj.get());
+        m_on_player_death(*this, obj.get());
         m_player = nullptr;
     }
 
@@ -412,19 +411,13 @@ void Level::place_object(
     if (dest->reserved_by) {
         GameObject *reserver = dest->reserved_by;
         const CoordPair oldpos = reserver->phy;
-        std::cout << "pre-skip" << std::endl;
         reserver->movement->skip();
-        std::cout << "post-skip" << std::endl;
         assert(!reserver->movement);
         assert(!dest->reserved_by);
         const CoordPair newpos = get_physics_coords(
             reserver->x,
             reserver->y);
         assert(std::round(reserver->x) != x || std::round(reserver->y) != y);
-        level_log.log(io::LOG_DEBUG)
-                << "place_object: skipping movement for place_object. "
-                << "old phy: " << oldpos << " new phy: " << newpos
-                << io::submit;
         m_physics.move_stamp(
             oldpos.x, oldpos.y,
             newpos.x, newpos.y,
@@ -433,9 +426,6 @@ void Level::place_object(
         // otherwise attempt the move we just did, which will lead to awful
         // things happening
         reserver->phy = newpos;
-        level_log.log(io::LOG_DEBUG)
-                << "place_object: movement skipped"
-                << io::submit;
     }
     cleanup_cell(dest);
 
@@ -448,6 +438,7 @@ void Level::place_object(
         obj.get(), initial_temperature, obj->heat_capacity);
 
     dest->here = std::move(obj);
+    m_on_object_spawn.emit(*this, *dest->here);
 }
 
 void Level::place_player(
@@ -463,12 +454,11 @@ void Level::place_player(
     place_object(std::move(player), x, y, 1.0);
 }
 
-void Level::update()
+void Level::step_singlebuffered_simulation()
 {
+    assert(!m_physics.running());
     m_ticks += 1;
     // level_log.logf(io::LOG_DEBUG, "tick %u", m_ticks);
-
-    m_physics.wait_for_frame();
 
     while (!m_timers.empty() && m_timers.top().trigger_at <= m_ticks)
     {
@@ -481,6 +471,7 @@ void Level::update()
         timer.func(*this, cell);
     }
 
+    /* we do the update from bottom to top for better use of graaavity */
     for (CoordInt y = m_height-1; y >= 0; y--)
     {
         LevelCell *cell = get_cell(0, y);
@@ -500,6 +491,9 @@ void Level::update()
 
     //debug_output(31.5, 21.5);
 
-    m_physics.start_frame();
+}
+
+LevelOperator::~LevelOperator()
+{
 
 }

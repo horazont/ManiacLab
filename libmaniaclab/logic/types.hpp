@@ -42,8 +42,8 @@ static inline uint32_t coord_int_to_unsigned(CoordInt i) {
 typedef uint32_t TickCounter;
 
 struct CoordPair {
-    CoordPair(): x(-1), y(-1) {};
-    CoordPair(const CoordInt x, const CoordInt y): x(x), y(y) {};
+    CoordPair(): x(-1), y(-1) {}
+    CoordPair(const CoordInt x, const CoordInt y): x(x), y(y) {}
     CoordPair(const CoordPair &ref) = default;
     CoordPair& operator=(const CoordPair &ref) = default;
 

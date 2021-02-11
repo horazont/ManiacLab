@@ -12,6 +12,14 @@
 #include "logic/fog_object.hpp"
 #include "logic/bomb_object.hpp"
 #include "logic/fan_object.hpp"
+#include "logic/dirt_object.hpp"
+#include "logic/player_object.hpp"
+#include "logic/rock_object.hpp"
+#include "render/visual_object.hpp"
+
+#include "materials.hpp"
+
+static io::Logger &logger = io::logging().get_logger("maniaclab.ingame");
 
 
 class PhysicsDebugNode: public ffe::scenegraph::Node
@@ -46,10 +54,10 @@ public:
         auto positions = ffe::VBOSlice<Vector3f>(m_vbo_alloc, 0);
         auto tc0 = ffe::VBOSlice<Vector2f>(m_vbo_alloc, 1);
 
-        positions[0] = Vector3f(-level_width/2, -level_height/2, 0);
-        positions[1] = Vector3f(level_width/2, -level_height/2, 0);
-        positions[2] = Vector3f(-level_width/2, level_height/2, 0);
-        positions[3] = Vector3f(level_width/2, level_height/2, 0);
+        positions[0] = Vector3f(0.f, 0.f, 0);
+        positions[1] = Vector3f(level_width, 0.f, 0);
+        positions[2] = Vector3f(0.f, level_height, 0);
+        positions[3] = Vector3f(level_width, level_height, 0);
 
         float width = level_width * subdivision_count;
         float height = level_height * subdivision_count;
@@ -198,8 +206,8 @@ public:
 
     void sync() override
     {
-        const float offx = -level_width / 2.f;
-        const float offy = -level_height / 2.f;
+        const float offx = 0.f;
+        const float offy = 0.f;
 
         for (CoordInt y = 0; y < level_height*subdivision_count; ++y) {
             const float yf = (y + 0.5f) / subdivision_count;
@@ -235,6 +243,140 @@ public:
 };
 
 
+class BackgroundNode: public ffe::scenegraph::Node
+{
+public:
+    BackgroundNode(ffe::Material &mat):
+        m_mat(mat),
+        m_vbo_alloc(mat.vbo().allocate(4)),
+        m_ibo_alloc(mat.ibo().allocate(4))
+    {
+        auto positions = ffe::VBOSlice<Vector4f>(m_vbo_alloc, 0);
+        auto tc0 = ffe::VBOSlice<Vector2f>(m_vbo_alloc, 1);
+
+        const float z = -0.995f;
+        const float w = 4.f;
+        positions[0] = Vector4f(-10.f, -10.f, z, w);
+        tc0[0] = Vector2f(0.f, 0.f);
+        positions[1] = Vector4f(62.f, -10.f, z, w);
+        tc0[1] = Vector2f(6.f, 0.f);
+        positions[2] = Vector4f(-10.f, 62.f, z, w);
+        tc0[2] = Vector2f(0.f, 6.f);
+        positions[3] = Vector4f(62.f, 62.f, z, w);
+        tc0[3] = Vector2f(6.f, 6.f);
+
+        std::uint16_t *ibo_ptr = m_ibo_alloc.get();
+        *ibo_ptr++ = 0;
+        *ibo_ptr++ = 2;
+        *ibo_ptr++ = 1;
+        *ibo_ptr++ = 3;
+
+        m_ibo_alloc.mark_dirty();
+        m_vbo_alloc.mark_dirty();
+    }
+
+private:
+    ffe::Material &m_mat;
+    ffe::VBOAllocation m_vbo_alloc;
+    ffe::IBOAllocation m_ibo_alloc;
+
+    // Node interface
+public:
+    void prepare(ffe::RenderContext &context) override;
+    void render(ffe::RenderContext &context) override;
+    void sync() override;
+};
+
+void BackgroundNode::prepare(ffe::RenderContext &context)
+{
+}
+
+void BackgroundNode::render(ffe::RenderContext &context)
+{
+    context.render_all(AABB(), GL_TRIANGLE_STRIP, m_mat, m_ibo_alloc, m_vbo_alloc);
+}
+
+void BackgroundNode::sync()
+{
+    m_mat.sync_buffers();
+}
+
+
+class FogNode: public ffe::scenegraph::Node
+{
+public:
+    FogNode(ffe::Material &mat):
+        m_mat(mat),
+        m_vbo_alloc(mat.vbo().allocate(4)),
+        m_ibo_alloc(mat.ibo().allocate(4)),
+        m_t(0)
+    {
+        auto positions = ffe::VBOSlice<Vector4f>(m_vbo_alloc, 0);
+        auto tc0 = ffe::VBOSlice<Vector2f>(m_vbo_alloc, 1);
+
+        const float z = 0.005f;
+        const float w = 1.f;
+        positions[0] = Vector4f(0.f, 0.f, z, w);
+        tc0[0] = Vector2f(0.f, 0.f);
+        positions[1] = Vector4f(level_width, 0.f, z, w);
+        tc0[1] = Vector2f(1.f, 0.f);
+        positions[2] = Vector4f(0, level_height, z, w);
+        tc0[2] = Vector2f(0.f, 1.f);
+        positions[3] = Vector4f(level_width, level_height, z, w);
+        tc0[3] = Vector2f(1.f, 1.f);
+
+        std::uint16_t *ibo_ptr = m_ibo_alloc.get();
+        *ibo_ptr++ = 0;
+        *ibo_ptr++ = 2;
+        *ibo_ptr++ = 1;
+        *ibo_ptr++ = 3;
+
+        m_ibo_alloc.mark_dirty();
+        m_vbo_alloc.mark_dirty();
+    }
+
+private:
+    ffe::Material &m_mat;
+    ffe::VBOAllocation m_vbo_alloc;
+    ffe::IBOAllocation m_ibo_alloc;
+
+    float m_t;
+
+    // Node interface
+public:
+    void prepare(ffe::RenderContext &context) override;
+    void render(ffe::RenderContext &context) override;
+    void sync() override;
+
+    // Node interface
+public:
+    void advance(ffe::TimeInterval seconds) override;
+};
+
+void FogNode::advance(ffe::TimeInterval seconds)
+{
+    m_t += seconds;
+}
+
+void FogNode::prepare(ffe::RenderContext &context)
+{
+}
+
+void FogNode::render(ffe::RenderContext &context)
+{
+    const float t = m_t;
+    context.render_all(AABB(), GL_TRIANGLE_STRIP, m_mat, m_ibo_alloc, m_vbo_alloc,
+                       [t](ffe::MaterialPass &pass){
+        glUniform1f(pass.shader().uniform_location("t"), t);
+    });
+}
+
+void FogNode::sync()
+{
+    m_mat.sync_buffers();
+}
+
+
 struct InGameScene
 {
     ffe::GLResourceManager m_resources;
@@ -247,6 +389,8 @@ struct InGameScene
     ffe::RenderPass &m_main_pass;
 
     ffe::Texture2D &m_physics;
+    ffe::Texture2D &m_fog_data;
+    ffe::Texture2D &m_fog_noise;
 
     ffe::VBO m_physics_debug_vbo;
     ffe::IBO m_physics_debug_ibo;
@@ -263,6 +407,8 @@ struct InGameScene
 
     ffe::Material &m_physics_flow_debug_mat;
 
+    ffe::Material &m_fog_material;
+
     InGameScene(Level &level):
         m_scene(m_scenegraph, m_camera),
         m_rendergraph(m_scene),
@@ -271,6 +417,13 @@ struct InGameScene
                       "tex/physics_debug", GL_RGBA32F,
                       level_width*subdivision_count,
                       level_height*subdivision_count)),
+        m_fog_data(m_resources.emplace<ffe::Texture2D>(
+                       "tex/fog_data", GL_RGBA32F,
+                       level_width*subdivision_count,
+                       level_height*subdivision_count)),
+        m_fog_noise(load_simple_texture(m_resources,
+                                        ":/tileset/fog_noise.png",
+                                        true)),
         m_physics_debug_vbo(ffe::VBOFormat({ffe::VBOAttribute(3), ffe::VBOAttribute(2)})),
         m_physics_debug_mat(m_resources.emplace<ffe::Material>(
                                 "mat/physics_debug",
@@ -288,18 +441,26 @@ struct InGameScene
                                 "mat/physics_flow_debug",
                                 m_physics_flow_debug_vbo,
                                 m_physics_flow_debug_ibo
-                                ))
+                                )),
+        m_fog_material(m_resources.emplace<ffe::Material>(
+                           "mat/fog",
+                           ensure_generic_object_vbo(m_resources),
+                           ensure_generic_object_ibo(m_resources)))
     {
-        m_camera.controller().set_distance(level_width);
+        m_camera.controller().set_distance(8.f);
         m_camera.controller().set_rot(Vector2f(0, 0));
         m_camera.controller().set_pos(Vector3f(0, 0, 0));
 
         m_main_pass.set_clear_mask(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-        m_main_pass.set_clear_colour(Vector4f(0.5, 0.4, 0.3, 1.0));
+        m_main_pass.set_clear_colour(Vector4f(0.f, 0.f, 0.f, 1.0));
 
         m_physics.bind();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        m_fog_data.bind();
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         {
             spp::EvaluationContext ctx(m_resources.shader_library());
@@ -380,15 +541,73 @@ struct InGameScene
             pass.set_depth_test(false);
         }
 
+        {
+            spp::EvaluationContext ctx(m_resources.shader_library());
+            ctx.define1ull("GRID_SIZE", level_width * subdivision_count);
+
+            ffe::MaterialPass &pass = m_fog_material.make_pass_material(m_main_pass);
+            bool success = true;
+
+            success = success && pass.shader().attach(
+                        m_resources.load_shader_checked(":/shaders/objects/object.vert"),
+                        ctx,
+                        GL_VERTEX_SHADER);
+            success = success && pass.shader().attach(
+                        m_resources.load_shader_checked(":/shaders/effects/fog.frag"),
+                        ctx,
+                        GL_FRAGMENT_SHADER);
+
+            m_fog_material.declare_attribute("position", 0);
+            m_fog_material.declare_attribute("tc0_in", 1);
+
+            success = success && m_fog_material.link();
+
+            if (!success) {
+                throw std::runtime_error("failed to compile or link fog material");
+            }
+
+            m_fog_material.attach_texture("fog_data", &m_fog_data);
+            m_fog_material.attach_texture("fog_noise", &m_fog_noise);
+
+            pass.set_depth_test(false);
+        }
+
         m_rendergraph.resort();
 
-        m_scenegraph.root().emplace<PhysicsDebugNode>(m_physics_debug_mat);
+        create_fallback_material(m_resources, m_main_pass);
+        create_simple_material(m_resources, m_main_pass, "safe_wall",
+                               ":/tileset/wall_pillar.png");
+        create_simple_material(m_resources, m_main_pass, "rock",
+                               ":/tileset/rock.png");
+        create_simple_material(m_resources, m_main_pass, "player",
+                               ":/tileset/player.png").make_pass_material(m_main_pass);
+        {
+            ffe::Material &mat = create_simple_material(
+                        m_resources, m_main_pass, "dirt",
+                        ":/tileset/dirt.png",
+                        ":/shaders/objects/dirt.frag");
+            ffe::ShaderProgram &shader = mat.make_pass_material(m_main_pass).shader();
+            shader.bind();
+            glUniform1f(
+                        shader.uniform_location("texture_scale"),
+                        1.f/3.f);
+        }
+
+        {
+            ffe::Material &bg_mat = create_simple_material(m_resources, m_main_pass, "background", ":/tileset/bg4.png");
+            bg_mat.make_pass_material(m_main_pass).set_order(-1);
+            m_scenegraph.root().emplace<BackgroundNode>(bg_mat);
+        }
+        m_scenegraph.root().emplace<LevelView>(m_resources, level, false);
+        m_scenegraph.root().emplace<FogNode>(m_fog_material);
+
+        /* m_scenegraph.root().emplace<PhysicsDebugNode>(m_physics_debug_mat);
         m_scenegraph.root().emplace<PhysicsParticlesDebugNode>(
                     m_physics_particles_debug_mat,
-                    level.particles());
-        m_scenegraph.root().emplace<PhysicsFlowDebugNode>(
+                    level.particles()); */
+        /* m_scenegraph.root().emplace<PhysicsFlowDebugNode>(
                     m_physics_flow_debug_mat,
-                    level.physics());
+                    level.physics()); */
     }
 
     void update_size(const QSize &new_size)
@@ -458,7 +677,7 @@ void InGame::update_probe(const CoordPair phy_probe_pos)
                 QString("%1,%2 (%3,%4)").arg(phy_probe_pos.x).arg(phy_probe_pos.y).arg(phy_probe_pos.x / subdivision_count).arg(phy_probe_pos.y / subdivision_count)
                 );
 
-    const auto &physics = m_level->physics();
+    const auto &physics = m_server->state().physics();
     const LabCell *cell = physics.safe_front_cell_at(phy_probe_pos.x, phy_probe_pos.y);
     if (!cell) {
         m_ui->probe_temperature->setText("??");
@@ -496,20 +715,8 @@ void InGame::update_probe(const CoordPair phy_probe_pos)
 
 void InGame::advance(ffe::TimeInterval dt)
 {
-    const ffe::TimeInterval time_slice = Level::time_slice;
-    if (!m_single_step) {
-        m_time_buffer += dt;
-    }
-    while (m_time_buffer >= time_slice) {
-        m_level->update();
-        m_time_buffer -= time_slice;
-    }
-
-    Vector2f probe_pos = widget_pos_to_level_pos(m_mouse_pos_x, m_mouse_pos_y);
-    if (!std::isnan(probe_pos[eX])) {
-        update_probe(CoordPair(static_cast<int>(probe_pos[eX] * subdivision_count) ,
-                               static_cast<int>(probe_pos[eY] * subdivision_count)));
-    }
+    /* TODO: figure out if this breaks things w.r.t. physics */
+    m_scene->m_scenegraph.advance(dt);
 }
 
 void InGame::after_gl_sync()
@@ -520,15 +727,32 @@ void InGame::after_gl_sync()
 void InGame::before_gl_sync()
 {
     if (!m_scene) {
-        m_scene = std::make_unique<InGameScene>(*m_level);
+        m_scene = std::make_unique<InGameScene>(m_server->state());
     }
     m_scene->m_window.set_fbo_id(m_gl_scene->defaultFramebufferObject());
 
     const QSize size = window()->size() * window()->devicePixelRatioF();
     m_scene->update_size(size);
 
-    m_scene->m_physics.bind();
-    m_level->physics().data_to_gl_texture();
+    m_scene->m_camera.controller().set_pos(Vector3f(
+                                               m_player->x + 0.5f,
+                                               m_player->y + 0.5f,
+                                               0.f
+                                               ));
+
+    auto sync_point = m_server->sync_safe_point();
+
+    Vector2f probe_pos = widget_pos_to_level_pos(m_mouse_pos_x, m_mouse_pos_y);
+    if (!std::isnan(probe_pos[eX])) {
+        update_probe(CoordPair(static_cast<int>(probe_pos[eX] * subdivision_count) ,
+                               static_cast<int>(probe_pos[eY] * subdivision_count)));
+    }
+
+    /* m_scene->m_physics.bind();
+    m_server->state().physics().data_to_gl_texture(); */
+    m_scene->m_fog_data.bind();
+    m_server->state().physics().fog_data_to_gl_texture();
+    m_player->controller() = m_player_controller;
 
     m_scene->m_camera.sync();
     m_scene->m_scenegraph.sync();
@@ -541,7 +765,7 @@ void InGame::activate(QWidget &parent)
 {
     ApplicationMode::activate(parent);
 
-    m_level = std::make_unique<Level>(level_width, level_height);
+    m_server = std::make_unique<Server>();
 
     /*for (CoordInt y = 0; y < physics.height(); ++y) {
         if (y <= 20*5 || y >= 30*5) {
@@ -575,38 +799,53 @@ void InGame::activate(QWidget &parent)
         }
     }*/
 
-    /* for (CoordInt x = 0; x < level_width; ++x) {
-        m_level->emplace_object<SafeWallObject>(x, 0, default_temperature);
-        m_level->emplace_object<SafeWallObject>(x, level_height-1, default_temperature);
+    auto sync = m_server->sync_safe_point();
+
+    for (CoordInt x = 0; x < level_width; ++x) {
+        m_server->state().emplace_object<SafeWallObject>(x, 0, default_temperature);
+        m_server->state().emplace_object<SafeWallObject>(x, level_height-1, default_temperature);
     }
 
     for (CoordInt y = 0; y < level_height; ++y) {
-        m_level->emplace_object<SafeWallObject>(0, y, default_temperature);
-        m_level->emplace_object<SafeWallObject>(level_width-1, y, default_temperature);
-    } */
+        m_server->state().emplace_object<SafeWallObject>(0, y, default_temperature);
+        m_server->state().emplace_object<SafeWallObject>(level_width-1, y, default_temperature);
+    }
 
-    /* m_level->emplace_object<FogObject>(30, 21, default_temperature, 0.6, 1.0);
-    m_level->emplace_object<VertFanObject>(24, 20, default_temperature, 1.f, 0.8f);
-    m_level->emplace_object<VertFanObject>(24, 22, default_temperature, 1.f, 0.8f);
-    m_level->emplace_object<HorizFanObject>(19, 21, default_temperature, -3.0, 0.8);
-    m_level->emplace_object<HorizFanObject>(29, 21, default_temperature, -3.0, 0.8);
+    /* m_server->state().emplace_object<FogObject>(30, 21, default_temperature, 0.6, default_temperature);
+    m_server->state().emplace_object<HorizFanObject>(19, 21, default_temperature, -3.f, 0.8f);
+    m_server->state().emplace_object<HorizFanObject>(29, 21, default_temperature, -3.f, 0.8f);
+    m_server->state().emplace_object<SafeWallObject>(30, 20, default_temperature);
+    m_server->state().emplace_object<SafeWallObject>(30, 22, default_temperature); */
+
+    for (CoordInt y = 17; y < 25; ++y) {
+        for (CoordInt x = 20; x < 29; ++x) {
+            m_server->state().emplace_object<DirtObject>(x, y, default_temperature);
+        }
+    }
+
+    m_server->state().emplace_object<BombObject>(24, 23, default_temperature);
 
     for (CoordInt y = 16; y < 26; ++y) {
         if (y == 21) {
             continue;
         }
-        m_level->emplace_object<SafeWallObject>(19, y, default_temperature);
-        m_level->emplace_object<SafeWallObject>(29, y, default_temperature);
+        m_server->state().emplace_object<SafeWallObject>(19, y, default_temperature);
+        m_server->state().emplace_object<SafeWallObject>(29, y, default_temperature);
     }
 
     for (CoordInt x = 20; x < 29; ++x) {
         if (x == 24) {
             continue;
         }
-        m_level->emplace_object<SafeWallObject>(x, 16, default_temperature);
+        m_server->state().emplace_object<RockObject>(x, 15, default_temperature);
+        m_server->state().emplace_object<SafeWallObject>(x, 16, default_temperature);
     }
 
-    {
+    for (CoordInt y = 9; y < 15; ++y) {
+        m_server->state().emplace_object<RockObject>(22, y, default_temperature);
+    }
+
+    /* {
         const float heater_temp = 1.2f;
         const float cooler_temp = 0.5f;
         const float heater_rate = 5e-4f;
@@ -620,8 +859,8 @@ void InGame::activate(QWidget &parent)
 
     {
         /* const float heater_temp = 400;
-        const float heater_rate = 5e-15f;
-        m_level->emplace_object<SafeWallObject>(25, 20, heater_temp)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp); */
+        const float heater_rate = 1.f;
+        m_level->emplace_object<SafeWallObject>(25, 20, heater_temp - 10)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp); */
         /* m_level->emplace_object<SafeWallObject>(26, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp); */
 
         /*const float cooler_temp = 0.5f;
@@ -631,18 +870,18 @@ void InGame::activate(QWidget &parent)
     }
 
     /* m_level->emplace_object<BombObject>(25, 19, default_temperature);
-    m_level->emplace_object<HorizFanObject>(27, 19, default_temperature, -0.6f, 0.4f);
+    m_level->emplace_object<HorizFanObject>(27, 19, default_temperature, -1.6f, 0.4f);
 
     for (CoordInt y = 15; y < 25; ++y) {
-        const float cooler_temp = 270;
-        const float cooler_rate = 5e-15f;
+        const float cooler_temp = default_temperature - 36.f;
+        const float cooler_rate = 1.f;
 
         m_level->emplace_object<SafeWallObject>(29, y, cooler_temp)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
         if (y == 19) {
             continue;
         }
-        m_level->emplace_object<SafeWallObject>(27, y, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(1e-6f).set_heater_target_temperature(1.f);
-    }*/
+        m_level->emplace_object<SafeWallObject>(27, y, default_temperature);
+    } */
 
     /* m_level->emplace_object<FogObject>(25, 25, default_temperature, 0.6, 1.0);
     m_level->emplace_object<FogObject>(25, 26, default_temperature, 0.6, 1.0);
@@ -654,13 +893,15 @@ void InGame::activate(QWidget &parent)
     m_level->emplace_object<SafeWallObject>(24, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(3e-4).set_heater_target_temperature(0.8);
     m_level->emplace_object<SafeWallObject>(26, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.4); */
 
-    for (CoordInt y = 0; y < level_height; ++y) {
+    /* for (CoordInt y = 0; y < level_height; ++y) {
         for (CoordInt x = 0; x < level_width; ++x) {
             m_level->emplace_object<SafeWallObject>(x, y, default_temperature);
         }
-    }
+    } */
 
-    m_level->physics().reset_unblocked_cells();
+    m_player = m_server->state().emplace_player<PlayerObject>(19, 15);
+
+    m_server->state().physics().reset_unblocked_cells();
 
     m_advance_conn = connect(
                 m_gl_scene,
@@ -695,7 +936,7 @@ void InGame::deactivate()
     disconnect(m_before_gl_sync_conn);
 
     m_scene = nullptr;
-    m_level = nullptr;
+    m_server = nullptr;
 
     ApplicationMode::deactivate();
 }
@@ -715,14 +956,33 @@ void InGame::keyPressEvent(QKeyEvent *event)
     } else if (event->key() == Qt::Key_Space) {
         m_single_step = !m_single_step;
     } else if (event->key() == Qt::Key_R) {
-        m_level->physics().wait_for_frame();
-        m_level->physics().reset_unblocked_cells();
+        /* m_level->physics().wait_for_frame();
+        m_level->physics().reset_unblocked_cells(); */
     } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
-        if (!m_level->get_cell(18, 18)->here) {
-            m_level->emplace_object<BombObject>(25, 15, default_temperature);
-        }
+        /* if (!m_level->get_cell(24, 15)->here) {
+            m_level->emplace_object<BombObject>(24, 15, default_temperature);
+        } */
+    } else if (event->key() == Qt::Key_Up) {
+        m_player_controller.action_request = PlayerController::AR_MOVE_UP;
+    } else if (event->key() == Qt::Key_Down) {
+        m_player_controller.action_request = PlayerController::AR_MOVE_DOWN;
+    } else if (event->key() == Qt::Key_Left) {
+        m_player_controller.action_request = PlayerController::AR_MOVE_LEFT;
+    } else if (event->key() == Qt::Key_Right) {
+        m_player_controller.action_request = PlayerController::AR_MOVE_RIGHT;
     } else {
         ApplicationMode::keyPressEvent(event);
     }
 
+}
+
+void InGame::keyReleaseEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Up ||
+            event->key() == Qt::Key_Down ||
+            event->key() == Qt::Key_Right ||
+            event->key() == Qt::Key_Left)
+    {
+        m_player_controller.action_request = PlayerController::AR_NONE;
+    }
 }

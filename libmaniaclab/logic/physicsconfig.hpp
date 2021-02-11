@@ -9,8 +9,8 @@ const CoordInt cell_stamp_length = subdivision_count*subdivision_count;
 const CoordInt level_width = 52;
 const CoordInt level_height = 52;
 
-static constexpr TickCounter EXPLOSION_TRIGGER_TIMEOUT = 50;
-static constexpr TickCounter EXPLOSION_BLOCK_LIFETIME = 150;
+static constexpr TickCounter EXPLOSION_TRIGGER_TIMEOUT = 10;
+static constexpr TickCounter EXPLOSION_BLOCK_LIFETIME = EXPLOSION_TRIGGER_TIMEOUT * 3;
 
 static constexpr SimFloat FIRE_PARTICLE_TEMPERATURE_RISE = 1.;
 static constexpr SimFloat KELVIN_TO_CELSIUS = 273.15;
@@ -44,7 +44,7 @@ static inline float air_thermal_conductivity(const SimFloat pressure) {
  */
 static inline SimFloat air_thermal_capacity(const SimFloat pressure)
 {
-    return 1e-3f * pressure;
+    return 1.e1f * pressure;
 
     // this is mostly accurate for low pressures (<10 bar)
     static constexpr SimFloat air_specific_heat = 1.07e-3;  // J/(K kg)

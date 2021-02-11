@@ -7,33 +7,25 @@
 
 class Level;
 
-class BuiltInTileset: public Tileset
+class BuiltInTile: public TilesetTile
 {
+public:
+    explicit BuiltInTile(
+            std::function<std::unique_ptr<GameObject>(Level&)> ctor,
+            QUuid id,
+            std::string_view display_name
+            );
+
 private:
-    using TileConstructor = std::function<std::unique_ptr<GameObject>(Level &level, const TileArgv &argv)>;
-
-protected:
-    BuiltInTileset();
-
-private:
-    std::unordered_map<QUuid, TileConstructor> m_constructors;
-
-    template <typename... arg_ts>
-    TilesetTileInfo &emplace_tile(QUuid id, TileConstructor constructor, arg_ts... args)
-    {
-        TilesetTileInfo &tile = Tileset::emplace_tile<TilesetTileInfo>(id, std::forward<arg_ts>(args)...);
-        m_constructors.emplace(id, std::move(constructor));
-        return tile;
-    }
-
-protected:
-    std::unique_ptr<GameObject> construct_tile(const TilesetTileInfo &tile,
-                                               Level &level,
-                                               const TileArgv &argv) override;
+    std::function<std::unique_ptr<GameObject>(Level&)> m_ctor;
 
 public:
-    static const BuiltInTileset &instance();
-
+    std::unique_ptr<GameObject> instantiate(
+                Level &level,
+                const TileArgv &argv) const override;
 };
+
+
+std::unique_ptr<SimpleTileset> make_builtin_tileset();
 
 #endif

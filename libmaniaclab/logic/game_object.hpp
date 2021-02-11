@@ -1,5 +1,5 @@
-#ifndef _ML_GAME_OBJECT_H
-#define _ML_GAME_OBJECT_H
+#ifndef ML_GAME_OBJECT_H
+#define ML_GAME_OBJECT_H
 
 #include <ffengine/common/types.hpp>
 
@@ -81,19 +81,15 @@ struct ObjectView
 {
 public:
     ObjectView();
-    ObjectView(const ObjectView &ref) = delete;
-    ObjectView &operator=(const ObjectView &ref) = delete;
+    ObjectView(const ObjectView &ref) = default;
+    ObjectView &operator=(const ObjectView &ref) = default;
     virtual ~ObjectView();
 
-private:
-    bool _invalidated;
+protected:
+    bool m_object_view_invalidated;
 
 public:
     void invalidate();
-
-    virtual void update(
-        GameObject &object,
-        ffe::TimeInterval deltaT);
 
 };
 
@@ -106,30 +102,15 @@ public:
     virtual ~ViewableObject();
 
 private:
-    std::unique_ptr<ObjectView> _view;
-
-protected:
-    /**
-     * Implementations should override _view with a new view object, using the
-     * given material manager.
-     *
-     * @param matman Material manager to use
-     */
-    virtual std::unique_ptr<ObjectView> setup_view(
-        TileMaterialManager &matman);
+    std::unique_ptr<ObjectView> m_view;
 
 public:
-    /**
-     * Return the existing view or create a new one if no view exists yet.
-     *
-     * @param matman Material manager to use if creating a new view
-     */
-    ObjectView *get_view(TileMaterialManager &matman);
+    void set_view(std::unique_ptr<ObjectView> &&view);
 
     inline void invalidate_view() const
     {
-        if (_view) {
-            _view->invalidate();
+        if (m_view) {
+            m_view->invalidate();
         }
     }
 
@@ -156,7 +137,9 @@ public:
     FrameState frame_state;
     const ObjectInfo &info;
     CoordPair cell;
-    double x, y, phi;
+    SimFloat x, y, phi;
+    Vector2f visual_pos;
+    bool flip;
     std::unique_ptr<Movement> movement;
     CoordPair phy;
     SimFloat heat_capacity;

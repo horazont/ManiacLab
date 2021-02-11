@@ -1,5 +1,7 @@
 #include "fog_object.hpp"
 
+#include "level.hpp"
+
 static const CellStamp fog_object_stamp(
     {
         false, false, false, false, false,

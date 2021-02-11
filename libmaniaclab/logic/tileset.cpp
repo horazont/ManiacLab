@@ -4,38 +4,44 @@
 
 #include "game_object.hpp"
 
-/* TilesetTileInfo */
-
-TilesetTileInfo::TilesetTileInfo(
-        QUuid id,
-        const std::string &display_name,
-        const std::string &description):
-    id(id),
-    display_name(display_name),
-    description(description)
+TilesetTile::TilesetTile(QUuid id, std::string_view display_name):
+    m_id(id),
+    m_display_name(display_name)
 {
 
 }
 
-TilesetTileInfo::~TilesetTileInfo()
+TilesetTile::~TilesetTile()
 {
 
 }
+
 
 Tileset::~Tileset()
 {
 
 }
 
-std::unique_ptr<GameObject> Tileset::construct_tile(
-        const QUuid &id,
-        Level &level,
-        const TileArgv &argv)
+std::unique_ptr<GameObject> Tileset::make_tile(const QUuid &id, Level &level, const TileArgv &argv) const
+{
+    for (auto &tiledef: tiles()) {
+        if (tiledef->id() == id) {
+            return tiledef->instantiate(level, argv);
+        }
+    }
+    return nullptr;
+}
+
+std::unique_ptr<GameObject> SimpleTileset::make_tile(const QUuid &id, Level &level, const TileArgv &argv) const
 {
     auto iter = m_tile_map.find(id);
     if (iter == m_tile_map.end()) {
         return nullptr;
     }
+    return iter->second->instantiate(level, argv);
+}
 
-    return construct_tile(*iter->second, level, argv);
+const TilesetTileContainer &SimpleTileset::tiles() const
+{
+    return m_tiles;
 }

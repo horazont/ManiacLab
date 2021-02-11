@@ -19,7 +19,12 @@ set(GAME_SRC
   openglscene.cpp
   actionbutton.cpp
   ingame.cpp
-  editor.cpp
+  materials.cpp
+  intro/intro.cpp
+  intro/scene.cpp
+  editor/editor.cpp
+  editor/tools.cpp
+  editor/drag.cpp
   )
 
 set(GAME_HEADERS
@@ -30,11 +35,17 @@ set(GAME_HEADERS
   openglscene.hpp
   actionbutton.hpp
   ingame.hpp
-  editor.hpp
+  materials.hpp
+  intro/intro.hpp
+  intro/scene.hpp
+  editor/editor.hpp
+  editor/tools.hpp
+  editor/drag.hpp
   )
 
 set(GAME_UIS
     ui/ingame.ui
+    ui/intro.ui
     ui/application.ui
     ui/openglscene.ui
     ui/mainmenu.ui
@@ -56,55 +67,86 @@ set(GAME_SHADER_RESOURCES
     resources/shaders/editor/grid.frag
     resources/shaders/effects/fullscreenquad.vert
     resources/shaders/effects/ghostplane.frag
+    resources/shaders/effects/lightcone.frag
+    resources/shaders/effects/gameplane.vert
+    resources/shaders/effects/fog.frag
+    resources/shaders/intro/simple.vert
+    resources/shaders/intro/simple.frag
+    resources/shaders/intro/lightning-effect.frag
+    resources/shaders/intro/mixable.frag
+    resources/shaders/intro/rain-overlay.frag
     resources/shaders/lib/matrix_block.glsl
     resources/shaders/lib/inv_matrix_block.glsl
+    resources/shaders/lib/model_matrix_block.glsl
     resources/shaders/lib/unproject.glsl
+    resources/shaders/objects/object.vert
+    resources/shaders/objects/dirt.frag
+    resources/shaders/objects/fallback.frag
+    resources/shaders/objects/simple.frag
   )
 
 set(GAME_STYLESHEET_RESOURCES
   )
 
 set(GAME_TILESET_CORE_RESOURCES
-    resources/tileset/core/bomb-diffuse.png
-    resources/tileset/core/player-diffuse.png
-    resources/tileset/core/rock-diffuse.png
+    resources/tileset/wall_pillar_v.png
+    resources/tileset/wall_pillar_h.png
+    resources/tileset/player.png
+    resources/tileset/bg4.png
+    resources/tileset/fog_noise.png
+    resources/tileset/dirt.png
+    resources/tileset/rock.png
     )
 
-set(SCENEPATH resources/blender)
-set(TILESETPATH resources/tileset/core)
-set(BLENDER blender)
-set(TILE_RENDER_BLEND_DEPS
-    ${SCENEPATH}/library.blend
-    ${SCENEPATH}/explosive.png)
+set(GAME_INTRO_RESOURCES
+    resources/intro/c/lightcone.png
+    resources/intro/s0/i0.png
+    resources/intro/s0/i1.png
+    resources/intro/s0/lightning-mask.png
+    resources/intro/s1/bg.png
+    resources/intro/s1/lcat-head.png
+    resources/intro/s1/lcat-tail.png
+    resources/intro/s1/lcat-torso.png
+    resources/intro/s1/rcat-head.png
+    resources/intro/s1/rcat-tail.png
+    resources/intro/s1/rcat-torso.png
+    )
 
-function(add_tile_render BLENDFILE SCENE PNG)
-  add_custom_command(
-    OUTPUT "${TILESETPATH}/${PNG}.png"
-    COMMAND "${BLENDER}" ARGS -b "${CMAKE_CURRENT_SOURCE_DIR}/${SCENEPATH}/${BLENDFILE}.blend" -S "${SCENE}" -o "${TILESETPATH}/${PNG}.png" -f 1
-    COMMAND mv ARGS "${TILESETPATH}/${PNG}.png0001.png" "${TILESETPATH}/${PNG}.png"
-    DEPENDS ${TILE_RENDER_BLEND_DEPS} "${SCENEPATH}/${BLENDFILE}.blend"
-    COMMENT Build tile image "${TILESETPATH}/${PNG}")
-endfunction(add_tile_render)
+# set(SCENEPATH resources/blender)
+# set(TILESETPATH resources/tileset/core)
+# set(BLENDER blender)
+# set(TILE_RENDER_BLEND_DEPS
+#     ${SCENEPATH}/library.blend
+#     ${SCENEPATH}/explosive.png)
 
-add_tile_render(safewallsq0 Diffuse safewallsq0-diffuse)
-add_tile_render(safewallsq0 Emission wall0-emission)
-add_tile_render(safewallsq1 Diffuse safewallsq1-diffuse)
-add_tile_render(safewallsq1 Emission wall1-emission)
-add_tile_render(safewallsq3 Diffuse safewallsq3-diffuse)
-add_tile_render(safewallsq3 Emission wall3-emission)
-add_tile_render(safewallrd0 Diffuse safewallrd0-diffuse)
-add_tile_render(safewallrd1 Diffuse safewallrd1-diffuse)
-add_tile_render(safewallrd3 Diffuse safewallrd3-diffuse)
-add_tile_render(safewall5 Diffuse safewall5-diffuse)
-add_tile_render(safewall5 Emission wall5-emission)
-add_tile_render(safewall7 Diffuse safewall7-diffuse)
-add_tile_render(safewall7 Emission wall7-emission)
-add_tile_render(safewallf Diffuse safewallf-diffuse)
-add_tile_render(safewallf Emission wallf-emission)
-add_tile_render(rock Diffuse rock-diffuse)
-add_tile_render(player Diffuse player-diffuse)
-add_tile_render(player Emission player-emission)
-add_tile_render(bomb Diffuse bomb-diffuse)
+# function(add_tile_render BLENDFILE SCENE PNG)
+#   add_custom_command(
+#     OUTPUT "${TILESETPATH}/${PNG}.png"
+#     COMMAND "${BLENDER}" ARGS -b "${CMAKE_CURRENT_SOURCE_DIR}/${SCENEPATH}/${BLENDFILE}.blend" -S "${SCENE}" -o "${TILESETPATH}/${PNG}.png" -f 1
+#     COMMAND mv ARGS "${TILESETPATH}/${PNG}.png0001.png" "${TILESETPATH}/${PNG}.png"
+#     DEPENDS ${TILE_RENDER_BLEND_DEPS} "${SCENEPATH}/${BLENDFILE}.blend"
+#     COMMENT Build tile image "${TILESETPATH}/${PNG}")
+# endfunction(add_tile_render)
+
+# add_tile_render(safewallsq0 Diffuse safewallsq0-diffuse)
+# add_tile_render(safewallsq0 Emission wall0-emission)
+# add_tile_render(safewallsq1 Diffuse safewallsq1-diffuse)
+# add_tile_render(safewallsq1 Emission wall1-emission)
+# add_tile_render(safewallsq3 Diffuse safewallsq3-diffuse)
+# add_tile_render(safewallsq3 Emission wall3-emission)
+# add_tile_render(safewallrd0 Diffuse safewallrd0-diffuse)
+# add_tile_render(safewallrd1 Diffuse safewallrd1-diffuse)
+# add_tile_render(safewallrd3 Diffuse safewallrd3-diffuse)
+# add_tile_render(safewall5 Diffuse safewall5-diffuse)
+# add_tile_render(safewall5 Emission wall5-emission)
+# add_tile_render(safewall7 Diffuse safewall7-diffuse)
+# add_tile_render(safewall7 Emission wall7-emission)
+# add_tile_render(safewallf Diffuse safewallf-diffuse)
+# add_tile_render(safewallf Emission wallf-emission)
+# add_tile_render(rock Diffuse rock-diffuse)
+# add_tile_render(player Diffuse player-diffuse)
+# add_tile_render(player Emission player-emission)
+# add_tile_render(bomb Diffuse bomb-diffuse)
 
 add_custom_target(
     game-resources
@@ -113,6 +155,7 @@ add_custom_target(
     ${CMAKE_CURRENT_BINARY_DIR}/textures.rcc
     ${CMAKE_CURRENT_BINARY_DIR}/stylesheets.rcc
     ${CMAKE_CURRENT_BINARY_DIR}/tileset-core.rcc
+    ${CMAKE_CURRENT_BINARY_DIR}/intro.rcc
     SOURCES
     resources/shaders.qrc
     ${GAME_SHADER_RESOURCES}
@@ -122,6 +165,8 @@ add_custom_target(
     ${GAME_STYLESHEET_RESOURCES}
     resources/tileset-core.qrc
     ${GAME_TILESET_CORE_RESOURCES}
+    resources/intro.qrc
+    ${GAME_INTRO_RESOURCES}
     ${GAME_UIS})
 
 function(add_resource_pack PACKNAME QRC SOURCES)
@@ -151,7 +196,8 @@ endfunction(add_built_resource_pack)
 add_resource_pack("textures" "resources/textures.qrc" "${GAME_TEXTURE_RESOURCES}")
 add_resource_pack("shaders" "resources/shaders.qrc" "${GAME_SHADER_RESOURCES}")
 add_resource_pack("stylesheets" "resources/stylesheets.qrc" "${GAME_STYLESHEET_RESOURCES}")
-add_built_resource_pack("tileset-core" "resources/tileset-core.qrc" "${GAME_TILESET_CORE_RESOURCES}")
+add_resource_pack("tileset-core" "resources/tileset-core.qrc" "${GAME_TILESET_CORE_RESOURCES}")
+add_resource_pack("intro" "resources/intro.qrc" "${GAME_INTRO_RESOURCES}")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

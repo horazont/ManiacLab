@@ -37,67 +37,97 @@ struct hash<::mlio::TileArgType> {
 
 }
 
-struct TilesetTileInfo
-{
-    TilesetTileInfo() = default;
-    TilesetTileInfo(QUuid id,
-                    const std::string &display_name,
-                    const std::string &description);
-    TilesetTileInfo(const TilesetTileInfo &ref) = delete;
-    TilesetTileInfo& operator=(const TilesetTileInfo &ref) = delete;
-    TilesetTileInfo(TilesetTileInfo &&src) = default;
-    TilesetTileInfo& operator=(TilesetTileInfo &&src) = default;
-    virtual ~TilesetTileInfo();
+using TileArgv = std::unordered_multimap<mlio::TileArgType, QVariant>;
 
-    QUuid id;
-    // TODO: i18n
-    std::string display_name;
-    std::string description;
+
+class TilesetTile
+{
+public:
+    TilesetTile() = delete;
+    explicit TilesetTile(
+            QUuid id,
+            std::string_view display_name);
+    virtual ~TilesetTile();
+
+private:
+    QUuid m_id;
+    std::string m_display_name;
+
+public:
+    inline const QUuid &id() const {
+        return m_id;
+    }
+
+    inline std::string_view display_name() const {
+        return m_display_name;
+    }
+
+    virtual std::unique_ptr<GameObject> instantiate(
+            Level &level,
+            const TileArgv &argv) const = 0;
+
 };
 
-using TilesetTileHandle = std::unique_ptr<TilesetTileInfo>;
+using TilesetTileHandle = std::unique_ptr<TilesetTile>;
 using TilesetTileContainer = std::vector<TilesetTileHandle>;
 
-using TileArgv = std::unordered_multimap<mlio::TileArgType, QVariant>;
 
 class Tileset
 {
 public:
+    Tileset() = default;
+    Tileset(const Tileset &ref) = default;
+    Tileset(Tileset &&src) = default;
+    Tileset& operator=(const Tileset &ref) = default;
+    Tileset& operator=(Tileset &&src) = default;
     virtual ~Tileset();
+
+public:
+    virtual std::unique_ptr<GameObject> make_tile(
+            const QUuid &id,
+            Level &level,
+            const TileArgv &argv) const;
+
+    virtual const TilesetTileContainer &tiles() const = 0;
+};
+
+
+class SimpleTileset: public Tileset
+{
+public:
+    using Tileset::Tileset;
 
 private:
     TilesetTileContainer m_tiles;
-    std::unordered_map<QUuid, TilesetTileHandle> m_tile_map;
-
-protected:
-    void register_tile(std::unique_ptr<TilesetTileInfo> &&tile) {
-        if (m_tile_map.find(tile->id) != m_tile_map.end()) {
-            throw std::invalid_argument("duplicate tile UUID: "+tile->id.toString().toStdString());
-        }
-        m_tiles.emplace_back(std::move(tile));
-    }
-
-    template <typename T, typename... arg_ts>
-    T &emplace_tile(arg_ts... args) {
-        auto tile_specific = std::make_unique<T>(std::forward<arg_ts>(args)...);
-        T &result = *tile_specific;
-        TilesetTileHandle tile = std::move(tile_specific);
-        register_tile(std::move(tile));
-        return result;
-    }
-
-    virtual std::unique_ptr<GameObject> construct_tile(const TilesetTileInfo &info,
-                                                       Level &level,
-                                                       const TileArgv &argv) = 0;
+    std::unordered_map<QUuid, TilesetTile*> m_tile_map;
 
 public:
-    inline const TilesetTileContainer &tiles() const {
-        return m_tiles;
+    template <typename T, typename... arg_ts>
+    T &emplace_tile(arg_ts&&... args)
+    {
+        std::unique_ptr<T> result = std::make_unique<T>(std::forward<arg_ts>(args)...);
+        return register_tile(std::move(result));
     }
 
-    std::unique_ptr<GameObject> construct_tile(const QUuid &id,
-                                               Level &level,
-                                               const TileArgv &argv);
+    template <typename T>
+    T &register_tile(std::unique_ptr<T> &&src)
+    {
+        auto iter = m_tile_map.find(src->id());
+        if (iter != m_tile_map.end()) {
+            throw std::runtime_error("uuid already in use");
+        }
+        T &result_ref = *src;
+        m_tiles.emplace_back(std::move(src));
+        m_tile_map[result_ref.id()] = &result_ref;
+        return result_ref;
+    }
+
+    std::unique_ptr<GameObject> make_tile(
+                const QUuid &id,
+                Level &level,
+                const TileArgv &argv) const override;
+    const TilesetTileContainer &tiles() const override;
 };
+
 
 #endif

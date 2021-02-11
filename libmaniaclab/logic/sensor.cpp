@@ -2,6 +2,8 @@
 
 #include "game_object.hpp"
 
+#include "level.hpp"
+
 /* Trigger */
 
 Trigger::Trigger():

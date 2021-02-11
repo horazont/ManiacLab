@@ -1,5 +1,7 @@
 #include "explosion_object.hpp"
 
+#include "level.hpp"
+
 static constexpr float EXPLOSION_PRESSURE = 1.5f;
 static constexpr float EXPLOSION_TEMPERATURE = 1000.f;
 static constexpr float EXPLOSION_FLOW_INTENSITY = 10.f;

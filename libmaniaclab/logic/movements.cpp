@@ -1,7 +1,15 @@
 #include "movements.hpp"
 
+#include <ffengine/io/log.hpp>
+#include <ffengine/math/algo.hpp>
+
 #include <cassert>
 #include <iostream>
+
+#include "game_object.hpp"
+#include "level.hpp"
+
+static io::Logger &logger = io::logging().get_logger("maniaclab.movement");
 
 /* Movement */
 
@@ -117,7 +125,7 @@ bool MovementStraight::update()
     }
 }
 
-const double MovementStraight::duration = 1.0;
+const double MovementStraight::duration = 0.5;
 const TickCounter MovementStraight::duration_ticks = MovementStraight::duration / Level::time_slice;
 
 /* MovementRoll */
@@ -132,6 +140,9 @@ MovementRoll::MovementRoll(
     m_to(to),
     m_start_x(m_obj->x),
     m_start_y(m_obj->y),
+    m_start_phi(m_obj->phi),
+    m_midpoint(m_obj->x, m_obj->y + offset_y),
+    m_radius(1.f),
     m_cleared_from(false)
 {
     if (abs(offset_x) != 1 || offset_y != 1) {
@@ -172,6 +183,11 @@ void MovementRoll::skip()
 bool MovementRoll::update()
 {
     m_time += 1;
+    const float m_time_rel = static_cast<float>(m_time) / (half_duration_ticks * 2);
+
+    m_obj->visual_pos = m_midpoint + Vector2f(std::sin(m_time_rel * M_PI_2f32) * offset_x,
+                                              -std::cos(m_time_rel * M_PI_2f32) * offset_y);
+    m_obj->phi = m_start_phi + m_time_rel * M_PI_2f32 * sgn(offset_x);
 
     if (m_time >= half_duration_ticks*2) {
         m_obj->x = m_start_x + offset_x;
@@ -189,6 +205,11 @@ bool MovementRoll::update()
         m_obj->x = m_start_x + offset_x * (m_time * Level::time_slice * 2);
         m_obj->y = m_start_y;
     }
+
+    logger.log(io::LOG_DEBUG) << "MovementRoll; x = "
+                              << m_obj->x << " y = " << m_obj->y << " "
+                              << " visual = " << m_obj->visual_pos
+                              << " midpoint = " << m_midpoint << io::submit;
 
     m_obj->invalidate_view();
     return true;

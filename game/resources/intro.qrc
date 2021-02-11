@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/">
+        <file>intro/c/lightcone.png</file>
+        <file>intro/s0/i0.png</file>
+        <file>intro/s0/i1.png</file>
+        <file>intro/s0/lightning-mask.png</file>
+        <file>intro/s1/bg.png</file>
+        <file>intro/s1/lcat-head.png</file>
+        <file>intro/s1/lcat-tail.png</file>
+        <file>intro/s1/lcat-torso.png</file>
+        <file>intro/s1/rcat-head.png</file>
+        <file>intro/s1/rcat-tail.png</file>
+        <file>intro/s1/rcat-torso.png</file>
+    </qresource>
+</RCC>

@@ -3,6 +3,7 @@
         <file>shaders/debug/physics.frag</file>
         <file>shaders/debug/physics.vert</file>
         <file>shaders/lib/inv_matrix_block.glsl</file>
+        <file>shaders/lib/model_matrix_block.glsl</file>
         <file>shaders/lib/hsluv.glsl</file>
         <file>shaders/lib/matrix_block.glsl</file>
         <file>shaders/lib/unproject.glsl</file>
@@ -14,5 +15,17 @@
         <file>shaders/editor/grid.frag</file>
         <file>shaders/effects/fullscreenquad.vert</file>
         <file>shaders/effects/ghostplane.frag</file>
+        <file>shaders/effects/lightcone.frag</file>
+        <file>shaders/effects/gameplane.vert</file>
+        <file>shaders/effects/fog.frag</file>
+        <file>shaders/objects/object.vert</file>
+        <file>shaders/objects/fallback.frag</file>
+        <file>shaders/objects/simple.frag</file>
+        <file>shaders/objects/dirt.frag</file>
+        <file>shaders/intro/simple.frag</file>
+        <file>shaders/intro/mixable.frag</file>
+        <file>shaders/intro/rain-overlay.frag</file>
+        <file>shaders/intro/simple.vert</file>
+        <file>shaders/intro/lightning-effect.frag</file>
     </qresource>
 </RCC>

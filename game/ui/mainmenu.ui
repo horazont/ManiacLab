@@ -160,6 +160,13 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="ActionButton" name="btn_intro">
+          <property name="text">
+           <string>PushButton</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>
@@ -228,6 +235,11 @@
    </property>
    <property name="shortcutContext">
     <enum>Qt::WidgetWithChildrenShortcut</enum>
+   </property>
+  </action>
+  <action name="action_mainmenu_intro">
+   <property name="text">
+    <string>Replay intro</string>
    </property>
   </action>
  </widget>

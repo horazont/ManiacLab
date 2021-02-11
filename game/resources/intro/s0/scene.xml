@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<scene>
+  <resources>
+    <texture id="bg" path=":/intro/s0/i0.png"/>
+    <texture id="wall" path=":/intro/s0/i1.png"/>
+    <texture id="lightning-mask" path=":/intro/s0/lightning-mask.png"/>
+  </resources>
+  <camera>
+    <pos x="0" y="0" z="0" distance=""/>
+  </camera>
+  <root>
+    <layer>
+      <transform>
+        <scale all="30"/>
+        <translate z="-20"/>
+      </transform>
+      <use-texture id="bg"/>
+    </layer>
+    <layer>
+      <transform>
+        <scale all="15"/>
+        <translate x="-1" y="-4.5"/>
+      </transform>
+    </layer>
+  </root>
+</scene>

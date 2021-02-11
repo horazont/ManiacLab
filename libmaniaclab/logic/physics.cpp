@@ -15,6 +15,7 @@
 #include <GL/glew.h>
 
 #include <ffengine/io/log.hpp>
+#include <ffengine/math/algo.hpp>
 
 #include "logic/game_object.hpp"
 
@@ -22,8 +23,7 @@
 
 #ifdef TIMELOG_LABSIM
 #include <chrono>
-typedef std::chrono::steady_clock timelog_clock;
-
+using timelog_clock = std::chrono::steady_clock;
 #define TIMELOG_ms(x) std::chrono::duration_cast<std::chrono::duration<float, std::ratio<1, 1000> > >(x).count()
 #endif
 
@@ -44,6 +44,9 @@ const SimFloat ILabSim::air_flow_factor = 0.8f;
 const SimFloat ILabSim::fog_diffusion_factor = 0.05f;
 const SimFloat ILabSim::heat_diffusion_factor = 0.05f;
 
+const SimFloat ILabSim::fog_density_filter = 0.8f;
+const SimFloat ILabSim::flow_filter = 0.9999f;
+
 template <typename T>
 T first(T v1, T v2)
 {
@@ -60,18 +63,6 @@ enum SimNeighbours {
     Bottom = 2,
     Left = 3,
 };
-
-
-template <typename T>
-inline T clamp(const T value, const T min, const T max)
-{
-    if (value > max)
-        return max;
-    else if (value < min)
-        return min;
-    else
-        return value;
-}
 
 inline double max(const double a, const double b)
 {
@@ -136,6 +127,9 @@ void *NativeLabSim::coordinator_impl()
     logger.logf(io::LOG_INFO, "labsim: %u cells in %u blocks",
                 m_width*m_height,
                 m_block_count);
+#ifdef TIMELOG_LABSIM
+    timelog_clock::time_point t_last = timelog_clock::now();
+#endif
     while (!m_terminated) {
         {
             std::unique_lock<std::mutex> control_lock(m_control_mutex);
@@ -153,12 +147,10 @@ void *NativeLabSim::coordinator_impl()
 
 #ifdef TIMELOG_LABSIM
         const timelog_clock::time_point t0 = timelog_clock::now();
-        timelog_clock::time_point t_sync, t_sim;
+        timelog_clock::time_point t_sim;
+        logger.logf(io::LOG_DEBUG, "fluid: idle time: %.2f ms", TIMELOG_ms(t0 - t_last));
 #endif
 
-#ifdef TIMELOG_LABSIM
-        t_sync = timelog_clock::now();
-#endif
         coordinator_run_workers();
 
         {
@@ -170,10 +162,9 @@ void *NativeLabSim::coordinator_impl()
 
 #ifdef TIMELOG_LABSIM
         t_sim = timelog_clock::now();
-        logger.logf(io::LOG_DEBUG, "fluid: sync time: %.2f ms",
-                    TIMELOG_ms(t_sync - t0));
         logger.logf(io::LOG_DEBUG, "fluid: sim time: %.2f ms",
-                    TIMELOG_ms(t_sim - t_sync));
+                    TIMELOG_ms(t_sim - t0));
+        t_last = t_sim;
 #endif
     }
     {
@@ -520,6 +511,13 @@ void NativeLabSim::update_cell(const CoordInt x, const CoordInt y)
                     *right, *right_meta);
     }
 
+    back.fog_density_ma = interp_linear(back.fog_density, front.fog_density_ma,
+                                        fog_density_filter);
+    back.flow_ma = interp_linear(back.flow, front.flow_ma,
+                                 flow_filter);
+    const float max_ma_flow = 0.01f;
+    back.flow_ma[0] = clamp(back.flow_ma[0], -max_ma_flow, max_ma_flow);
+    back.flow_ma[1] = clamp(back.flow_ma[1], -max_ma_flow, max_ma_flow);
     back.update_caches(meta);
 }
 
@@ -602,11 +600,11 @@ void NativeLabSim::init_cell(
         SimFloat fog_density)
 {
     LabCell &cell = buffer[x+m_width*y];
-    cell.air_pressure = air_pressure;
-    cell.heat_energy = temperature * air_thermal_capacity(cell.air_pressure);
-    cell.flow = Vector2f(0, 0);
-    cell.fog_density = fog_density;
-    cell.update_caches(nullptr);
+    cell = LabCell(
+                air_pressure,
+                temperature * air_thermal_capacity(cell.air_pressure),
+                fog_density,
+                nullptr);
 }
 
 void NativeLabSim::clear_cells(
@@ -1127,13 +1125,21 @@ void NativeLabSim::set_blocked(CoordInt x, CoordInt y, bool blocked)
 void NativeLabSim::wait_for_frame()
 {
     if (!m_running) {
+        logger.logf(io::LOG_DEBUG, "wait_for_frame: frame was already done");
         return;
     }
 
+#ifdef TIMELOG_LABSIM
+    const timelog_clock::time_point t0 = timelog_clock::now();
+#endif
     std::unique_lock<std::mutex> lock(m_done_mutex);
     while (!m_done) {
         m_done_wakeup.wait(lock);
     }
+#ifdef TIMELOG_LABSIM
+    const timelog_clock::time_point t1 = timelog_clock::now();
+    logger.logf(io::LOG_DEBUG, "wait_for_frame: waited for %.1fms", TIMELOG_ms(t1 - t0));
+#endif
     m_done = false;
     m_running = false;
 }
@@ -1220,6 +1226,59 @@ void NativeLabSim::data_to_gl_texture()
                 (const GLvoid*)m_data_buffer.data());
 }
 
+void NativeLabSim::fog_data_to_gl_texture()
+{
+    static const std::array<std::pair<CoordInt, CoordInt>, 4> neighbour_map = {{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
+
+    m_data_buffer.resize(m_width*m_height);
+    const LabCell *source = &m_front_cells[0];
+    const LabCellMeta *meta = &m_meta_cells[0];
+    Vector4f *dest = &m_data_buffer[0];
+    for (CoordInt y = 0; y < m_height; ++y) {
+        for (CoordInt x = 0; x < m_width; ++x) {
+            float density = source->fog_density_ma;
+            if (meta->blocked) {
+                /* try to mix fog from neighbors */
+                density = 0.f;
+                float factor = 0.f;
+                for (auto p: neighbour_map) {
+                    const CoordInt xn = x + std::get<0>(p);
+                    const CoordInt yn = y + std::get<1>(p);
+                    const LabCell *neigh = safe_front_cell_at(xn, yn);
+                    if (!neigh) {
+                        continue;
+                    }
+                    const LabCellMeta &neigh_meta = meta_at(xn, yn);
+                    if (neigh_meta.blocked) {
+                        continue;
+                    }
+                    density += neigh->fog_density_ma;
+                    factor += 1;
+                }
+                if (factor > 0.5f) {
+                    density /= factor;
+                }
+            }
+            *dest++ = Vector4f(
+                        density,
+                        source->flow_ma[0],
+                        source->flow_ma[1],
+                        meta->blocked ? 0.f : source->air_pressure);
+            ++source;
+            ++meta;
+        }
+    }
+
+    glTexSubImage2D(
+                GL_TEXTURE_2D,
+                0,
+                0, 0,
+                m_width, m_height,
+                GL_RGBA,
+                GL_FLOAT,
+                (const GLvoid*)m_data_buffer.data());
+}
+
 
 LabCellMeta::LabCellMeta():
     blocked(false),
@@ -1229,12 +1288,7 @@ LabCellMeta::LabCellMeta():
 }
 
 LabCell::LabCell():
-    air_pressure(0),
-    heat_energy(0),
-    heat_capacity_cache(NAN),
-    temperature_cache(NAN),
-    flow{0, 0},
-    fog_density(0)
+    LabCell(0, 0, 0, nullptr)
 {
 
 }
@@ -1248,7 +1302,9 @@ LabCell::LabCell(const SimFloat air_pressure,
     heat_capacity_cache(NAN),
     temperature_cache(NAN),
     flow{0, 0},
-    fog_density(fog_density)
+    flow_ma{0, 0},
+    fog_density(fog_density),
+    fog_density_ma(fog_density)
 {
     update_caches(obj);
 }

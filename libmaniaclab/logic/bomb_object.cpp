@@ -1,5 +1,7 @@
 #include "bomb_object.hpp"
 
+#include "level.hpp"
+
 #include <iostream>
 
 static const CellStamp bomb_object_stamp(

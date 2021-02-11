@@ -24,6 +24,8 @@ private slots:
 
     void on_action_mainmenu_map_editor_triggered();
 
+    void on_action_mainmenu_intro_triggered();
+
 private:
     Ui::MainMenu *m_ui;
 

@@ -1,5 +1,5 @@
-#ifndef _ML_SAFE_WALL_OBJECT_H
-#define _ML_SAFE_WALL_OBJECT_H
+#ifndef ML_SAFE_WALL_OBJECT_H
+#define ML_SAFE_WALL_OBJECT_H
 
 #include "logic/game_object.hpp"
 

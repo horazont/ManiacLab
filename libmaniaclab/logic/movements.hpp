@@ -2,7 +2,6 @@
 #define _ML_MOVEMENTS_H
 
 #include "logic/physics.hpp"
-#include "logic/level.hpp"
 
 struct LevelCell;
 struct GameObject;
@@ -69,6 +68,9 @@ public:
 private:
     LevelCell *m_from, *m_via, *m_to;
     CoordInt m_start_x, m_start_y;
+    SimFloat m_start_phi;
+    const Vector2f m_midpoint;
+    const float m_radius;
     bool m_cleared_from;
 
 public:

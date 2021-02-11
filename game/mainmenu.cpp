@@ -13,6 +13,7 @@ MainMenu::MainMenu(Application &app, QWidget *parent) :
     m_ui->btn_singleplayer->set_action(m_ui->action_mainmenu_singleplayer);
     m_ui->btn_map_editor->set_action(m_ui->action_mainmenu_map_editor);
     m_ui->btn_settings->set_action(m_ui->action_mainmenu_settings);
+    m_ui->btn_intro->set_action(m_ui->action_mainmenu_intro);
     m_ui->btn_quit->set_action(m_ui->action_mainmenu_quit);
 }
 
@@ -39,4 +40,9 @@ void MainMenu::on_action_mainmenu_singleplayer_triggered()
 void MainMenu::on_action_mainmenu_map_editor_triggered()
 {
     m_app.enter_mode(Application::EDITOR);
+}
+
+void MainMenu::on_action_mainmenu_intro_triggered()
+{
+    m_app.enter_mode(Application::INTRO);
 }

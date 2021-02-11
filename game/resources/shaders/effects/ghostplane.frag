@@ -9,6 +9,7 @@ uniform float mix_factor;
 uniform float distort_t;
 
 in vec2 coord;
+in vec2 fetch_coord;
 
 vec3 rgbToHsv(vec3 c)
 {
@@ -49,20 +50,22 @@ vec2 distort_lookup(float t)
 #else
     vec2 dir = vec2(0.f, 1.f);
 #endif
-    return dir * t + sin(distort_t + cos(coord) * 30.f - cos(coord + distort_t / 10.f) / 4.f) * 0.05f;
+    return dir * t + sin(distort_t * 0.3f + cos(coord) * 30.f - cos(coord + distort_t / 10.f) / 4.f) * 0.05f;
 }
 
 void main()
 {
     vec3 colour = vec3(0.f);
-    for (int i = 0; i < BLUR_SIZE; ++i) {
-        float t = float(i - BLUR_SIZE / 2) / (BLUR_SIZE / 2);
-        float g = float(i) / (BLUR_SIZE - 1);
-        vec2 read_offset = distort_lookup(t);
-        colour += preprocess(texture(scene_colour, coord + read_offset * scale).rgb) * texture(gauss, g).r * BLUR_AMPLIFY;
+    if (mix_factor >= 1e-5) {
+        for (int i = 0; i < BLUR_SIZE; ++i) {
+            float t = float(i - BLUR_SIZE / 2) / (BLUR_SIZE / 2);
+            float g = float(i) / (BLUR_SIZE - 1);
+            vec2 read_offset = distort_lookup(t);
+            colour += preprocess(texture(scene_colour, coord + read_offset * scale).rgb) * texture(gauss, g).r * BLUR_AMPLIFY;
+        }
     }
     /* we use an unfiltered fetch here to avoid ugly artifacts */
-    vec3 orig = texelFetch(scene_colour, ivec2(coord * textureSize(scene_colour, 0)), 0).rgb;
-    gl_FragColor = vec4(colour * mix_factor + orig * (1.f - mix_factor), 1);
+    vec3 orig = texelFetch(scene_colour, ivec2(gl_FragCoord.xy), 0).rgb;
+    gl_FragColor = vec4(mix(orig, colour, mix_factor), 1);
     /* gl_FragColor = vec4(texture(scene_colour, coord + distort_lookup(0.f) * scale).rgb, 1.f); */
 }

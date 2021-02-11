@@ -1,5 +1,7 @@
 #include "logic/fan_object.hpp"
 
+#include "level.hpp"
+
 static const CellStamp horiz_fan_stamp(
         {
             false, true, true, true, false,

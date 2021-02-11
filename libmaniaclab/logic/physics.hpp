@@ -1,5 +1,5 @@
-#ifndef _ML_PHYSICS_H
-#define _ML_PHYSICS_H
+#ifndef ML_PHYSICS_H
+#define ML_PHYSICS_H
 
 #include <atomic>
 #include <condition_variable>
@@ -15,7 +15,7 @@
 #include "logic/physicsconfig.hpp"
 #include "logic/stamp.hpp"
 
-class GameObject;
+struct GameObject;
 
 class ILabSim {
 public:
@@ -24,6 +24,9 @@ public:
     static const SimFloat convection_factor;
     static const SimFloat heat_diffusion_factor;
     static const SimFloat fog_diffusion_factor;
+
+    static const SimFloat fog_density_filter;
+    static const SimFloat flow_filter;
 
 public:
     virtual ~ILabSim();
@@ -57,7 +60,9 @@ struct LabCell {
     SimFloat temperature_cache;
 
     Vector<SimFloat, 2> flow;
+    Vector<SimFloat, 2> flow_ma;
     SimFloat fog_density;
+    SimFloat fog_density_ma;
 
     void update_caches(const GameObject *obj);
 
@@ -118,7 +123,7 @@ public:
     NativeLabSim(
             CoordInt width, CoordInt height,
             const SimulationConfig &config);
-    ~NativeLabSim();
+    ~NativeLabSim() override;
 
 private:
     const CoordInt m_width, m_height;
@@ -310,6 +315,10 @@ public:
      * If the automaton is already suspended, return immediately.
      */
     void wait_for_frame() override;
+
+    inline bool running() const {
+        return m_running;
+    }
 public:
     /**
      * Convert the data in the physics cells to a human-interpretable
@@ -323,6 +332,8 @@ public:
     void to_gl_texture(const double min, const double max, bool thread_regions);
 
     void data_to_gl_texture();
+
+    void fog_data_to_gl_texture();
 
     friend class NativeSimWorker;
 };

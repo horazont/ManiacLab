@@ -165,8 +165,8 @@ void ParticleSystem::update(ffe::TimeInterval deltaT)
 
         CoordPair phy = _level.get_physics_coords(part->x, part->y);
         if (phy.x < 0 || phy.y < 0
-            || phy.x >= _level.get_width()*subdivision_count
-            || phy.y >= _level.get_height()*subdivision_count)
+            || phy.x >= _level.width()*subdivision_count
+            || phy.y >= _level.height()*subdivision_count)
         {
             continue;
         }
