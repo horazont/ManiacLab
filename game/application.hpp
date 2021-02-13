@@ -66,7 +66,7 @@ public:
     OpenGLScene &scene();
     void show_dialog(QDialog &window);
     void show_preferences_dialog();
-    void show_widget_as_window(QWidget &window, Qt::WindowFlags flags = 0);
+    void show_widget_as_window(QWidget &window, Qt::WindowFlags flags = Qt::WindowFlags());
     void quit();
 
 };
