@@ -12,6 +12,7 @@
 
 #include "logic/types.hpp"
 #include "logic/tileset.hpp"
+#include "logic/editor_level.hpp"
 
 #include "drag.hpp"
 
@@ -70,7 +71,7 @@ private:
     Qt::MouseButton m_drag_button;
     std::unique_ptr<AbstractToolDrag> m_active_mouse_drag;
 
-    std::unique_ptr<Level> m_level;
+    std::unique_ptr<EditorLevel> m_level;
     std::unique_ptr<EditorScene> m_scene;
 
     Vector2f m_viewport_size;
@@ -85,6 +86,9 @@ public slots:
     void advance(ffe::TimeInterval dt);
     void after_gl_sync();
     void before_gl_sync();
+
+    void loadClicked(bool checked);
+    void saveClicked(bool checked);
 
 
     // ApplicationMode interface

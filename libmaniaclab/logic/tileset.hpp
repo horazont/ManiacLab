@@ -11,6 +11,8 @@
 #include <QVariant>
 #include <QUuid>
 
+#include "types.hpp"
+
 #include "maniaclab.pb.h"
 
 class Level;
@@ -37,7 +39,8 @@ struct hash<::mlio::TileArgType> {
 
 }
 
-using TileArgv = std::unordered_multimap<mlio::TileArgType, QVariant>;
+using TileArgValue = std::variant<float, std::uint64_t, std::int64_t, std::string, std::basic_string<std::byte>, bool, CoordPair, double>;
+using TileArgv = std::unordered_multimap<mlio::TileArgType, TileArgValue>;
 
 
 class TilesetTile

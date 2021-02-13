@@ -29,6 +29,7 @@ set(MANIACLIB_HEADERS
     logic/wall_object.hpp
 
     logic/server.hpp
+    logic/editor_level.hpp
 
     render/visual_object.hpp
   )
@@ -54,6 +55,7 @@ set(MANIACLIB_SRC
     logic/wall_object.cpp
 
     logic/server.cpp
+    logic/editor_level.cpp
 
     render/visual_object.cpp
     )

@@ -78,6 +78,20 @@ struct CoordPair {
     CoordInt x, y;
 };
 
+template<>
+struct std::hash<CoordPair> {
+    typedef std::size_t result_type;
+    typedef CoordPair argument_type;
+
+private:
+    std::hash<CoordInt> m_int_hash;
+
+public:
+    result_type operator()(CoordPair v) const {
+        return m_int_hash(v.x) ^ m_int_hash(v.y ^ 0x739174);
+    }
+};
+
 inline std::ostream& operator<<(std::ostream &dest, const CoordPair &cp) {
     return dest << "CoordPair{" << cp.x << ", " << cp.y << "}";
 }

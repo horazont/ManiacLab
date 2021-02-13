@@ -13,6 +13,7 @@
 #include "logic/particles.hpp"
 
 class Level;
+class Tileset;
 
 struct LevelCell {
     LevelCell();
@@ -250,6 +251,8 @@ public:
 
     void step_singlebuffered_simulation();
 
+    void clear();
+
 public:
     inline PlayerDeathEvent &on_player_death()
     {
@@ -262,5 +265,7 @@ public:
     }
 
 };
+
+bool load_level(Level &dest, const Tileset &tileset, std::istream &in);
 
 #endif

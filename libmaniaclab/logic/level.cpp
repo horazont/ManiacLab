@@ -1,3 +1,5 @@
+#define QT_NO_EMIT
+
 #include "level.hpp"
 
 #include <iostream>
@@ -9,6 +11,8 @@
 #include "ffengine/io/log.hpp"
 
 #include "logic/explosion_object.hpp"
+#include "logic/tileset.hpp"
+
 
 static io::Logger &level_log = io::logging().get_logger("maniaclab.level");
 
@@ -493,7 +497,96 @@ void Level::step_singlebuffered_simulation()
 
 }
 
+void Level::clear()
+{
+    assert(!m_physics.running());
+    for (auto &cell: m_cells) {
+        cleanup_cell(&cell);
+    }
+    m_physics.reset_unblocked_cells();
+}
+
+
 LevelOperator::~LevelOperator()
 {
 
+}
+
+/* FIXME: deduplicate code with editor_level.cpp */
+
+static std::tuple<bool, TileArgValue> deprotobufferize_arg_value(
+        const mlio::TileArg &arg)
+{
+    switch (arg.value_case()) {
+    case mlio::TileArg::kSval:
+        return std::make_tuple(true, TileArgValue(arg.sval()));
+    case mlio::TileArg::kFval:
+        return std::make_tuple(true, TileArgValue(arg.fval()));
+    case mlio::TileArg::kDval:
+        return std::make_tuple(true, TileArgValue(arg.dval()));
+    case mlio::TileArg::kIval:
+        return std::make_tuple(true, TileArgValue(arg.ival()));
+    case mlio::TileArg::kUival:
+        return std::make_tuple(true, TileArgValue(arg.uival()));
+    case mlio::TileArg::kBval:
+        return std::make_tuple(true, TileArgValue(arg.bval()));
+    case mlio::TileArg::kBinval:
+        return std::make_tuple(true, TileArgValue(arg.binval()));
+    case mlio::TileArg::kPval:
+    {
+        const auto pval = arg.pval();
+        return std::make_tuple(
+                    true,
+                    TileArgValue(CoordPair(pval.x(), pval.y()))
+                    );
+    }
+    default:
+        return std::make_tuple(false, TileArgValue(0));
+    }
+}
+
+bool load_level(Level &dest, const Tileset &tileset, std::istream &in)
+{
+    mlio::Level level;
+    if (!level.ParseFromIstream(&in)) {
+        level_log.logf(io::LOG_ERROR, "protobuf failed to parse");
+        return false;
+    }
+
+    dest.clear();
+    TileArgv argv;
+    for (int i = 0; i < level.cells_size(); ++i) {
+        const CoordInt y = i / level_width;
+        const CoordInt x = i % level_width;
+        if (y >= level_height || x >= level_width) {
+            level_log.logf(io::LOG_ERROR, "level size out of bounds");
+            dest.clear();
+            return false;
+        }
+
+        const auto cell = level.cells(i);
+        if (!cell.tile().size()) {
+            // empty cell
+            continue;
+        }
+
+        const QUuid id(cell.tile().c_str());
+        argv.clear();
+        for (const auto &arg: cell.argv()) {
+            auto [ok, value] = deprotobufferize_arg_value(arg);
+            if (ok) {
+                argv.emplace(arg.type(), std::move(value));
+            }
+        }
+        auto tile = tileset.make_tile(id, dest, argv);
+        if (tile == nullptr) {
+            level_log.logf(io::LOG_ERROR, "failed to instantiate tile %s from saved file", id.toString().data());
+            dest.clear();
+            return false;
+        }
+        // FIXME: adhere to initial temperature from level.
+        dest.place_object(std::move(tile), x, y, 1.0f);
+    }
+
+    return true;
 }

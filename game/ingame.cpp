@@ -2,6 +2,8 @@
 
 #include "ui_ingame.h"
 
+#include <fstream>
+
 #include <ffengine/gl/resource.hpp>
 
 #include <QKeyEvent>
@@ -15,6 +17,7 @@
 #include "logic/dirt_object.hpp"
 #include "logic/player_object.hpp"
 #include "logic/rock_object.hpp"
+#include "logic/builtin_tileset.hpp"
 #include "render/visual_object.hpp"
 
 #include "materials.hpp"
@@ -800,106 +803,15 @@ void InGame::activate(QWidget &parent)
     }*/
 
     auto sync = m_server->sync_safe_point();
-
-    for (CoordInt x = 0; x < level_width; ++x) {
-        m_server->state().emplace_object<SafeWallObject>(x, 0, default_temperature);
-        m_server->state().emplace_object<SafeWallObject>(x, level_height-1, default_temperature);
-    }
-
-    for (CoordInt y = 0; y < level_height; ++y) {
-        m_server->state().emplace_object<SafeWallObject>(0, y, default_temperature);
-        m_server->state().emplace_object<SafeWallObject>(level_width-1, y, default_temperature);
-    }
-
-    /* m_server->state().emplace_object<FogObject>(30, 21, default_temperature, 0.6, default_temperature);
-    m_server->state().emplace_object<HorizFanObject>(19, 21, default_temperature, -3.f, 0.8f);
-    m_server->state().emplace_object<HorizFanObject>(29, 21, default_temperature, -3.f, 0.8f);
-    m_server->state().emplace_object<SafeWallObject>(30, 20, default_temperature);
-    m_server->state().emplace_object<SafeWallObject>(30, 22, default_temperature); */
-
-    for (CoordInt y = 17; y < 25; ++y) {
-        for (CoordInt x = 20; x < 29; ++x) {
-            m_server->state().emplace_object<DirtObject>(x, y, default_temperature);
-        }
-    }
-
-    m_server->state().emplace_object<BombObject>(24, 23, default_temperature);
-
-    for (CoordInt y = 16; y < 26; ++y) {
-        if (y == 21) {
-            continue;
-        }
-        m_server->state().emplace_object<SafeWallObject>(19, y, default_temperature);
-        m_server->state().emplace_object<SafeWallObject>(29, y, default_temperature);
-    }
-
-    for (CoordInt x = 20; x < 29; ++x) {
-        if (x == 24) {
-            continue;
-        }
-        m_server->state().emplace_object<RockObject>(x, 15, default_temperature);
-        m_server->state().emplace_object<SafeWallObject>(x, 16, default_temperature);
-    }
-
-    for (CoordInt y = 9; y < 15; ++y) {
-        m_server->state().emplace_object<RockObject>(22, y, default_temperature);
-    }
-
-    /* {
-        const float heater_temp = 1.2f;
-        const float cooler_temp = 0.5f;
-        const float heater_rate = 5e-4f;
-        const float cooler_rate = 5e-4f;
-        m_level->emplace_object<SafeWallObject>(25, 45, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp);
-        m_level->emplace_object<SafeWallObject>(26, 45, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp);
-
-        m_level->emplace_object<SafeWallObject>(25, 47, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
-        m_level->emplace_object<SafeWallObject>(26, 47, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
-    } */
-
+    auto tileset = make_builtin_tileset();
     {
-        /* const float heater_temp = 400;
-        const float heater_rate = 1.f;
-        m_level->emplace_object<SafeWallObject>(25, 20, heater_temp - 10)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp); */
-        /* m_level->emplace_object<SafeWallObject>(26, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(heater_rate).set_heater_target_temperature(heater_temp); */
-
-        /*const float cooler_temp = 0.5f;
-        const float cooler_rate = 5e-4f;
-        m_level->emplace_object<SafeWallObject>(25, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
-        m_level->emplace_object<SafeWallObject>(26, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp); */
+        std::ifstream in("./test.lvl", std::ios::binary);
+        if (!in.bad()) {
+            load_level(m_server->state(), *tileset, in);
+        }
     }
 
-    /* m_level->emplace_object<BombObject>(25, 19, default_temperature);
-    m_level->emplace_object<HorizFanObject>(27, 19, default_temperature, -1.6f, 0.4f);
-
-    for (CoordInt y = 15; y < 25; ++y) {
-        const float cooler_temp = default_temperature - 36.f;
-        const float cooler_rate = 1.f;
-
-        m_level->emplace_object<SafeWallObject>(29, y, cooler_temp)->set_heater_enabled(true).set_heater_energy_rate(cooler_rate).set_heater_target_temperature(cooler_temp);
-        if (y == 19) {
-            continue;
-        }
-        m_level->emplace_object<SafeWallObject>(27, y, default_temperature);
-    } */
-
-    /* m_level->emplace_object<FogObject>(25, 25, default_temperature, 0.6, 1.0);
-    m_level->emplace_object<FogObject>(25, 26, default_temperature, 0.6, 1.0);
-    m_level->emplace_object<FogObject>(26, 26, default_temperature, 0.6, 1.0);
-    m_level->emplace_object<FogObject>(26, 25, default_temperature, 0.6, 1.0); */
-
-    /* m_level->emplace_object<BombObject>(25, 19, default_temperature);
-    m_level->emplace_object<RoundSafeWallObject>(25, 20, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.6);
-    m_level->emplace_object<SafeWallObject>(24, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(3e-4).set_heater_target_temperature(0.8);
-    m_level->emplace_object<SafeWallObject>(26, 18, default_temperature)->set_heater_enabled(true).set_heater_energy_rate(5e-4).set_heater_target_temperature(1.4); */
-
-    /* for (CoordInt y = 0; y < level_height; ++y) {
-        for (CoordInt x = 0; x < level_width; ++x) {
-            m_level->emplace_object<SafeWallObject>(x, y, default_temperature);
-        }
-    } */
-
-    m_player = m_server->state().emplace_player<PlayerObject>(19, 15);
+    m_player = m_server->state().emplace_player<PlayerObject>(0, 0);
 
     m_server->state().physics().reset_unblocked_cells();
 

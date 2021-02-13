@@ -1,7 +1,11 @@
 #include "editor.hpp"
 
+#include <fstream>
+#include <iostream>
+
 #include "ui_editor.h"
 
+#include <QAction>
 #include <QMouseEvent>
 
 #include "logic/builtin_tileset.hpp"
@@ -24,6 +28,8 @@
 
 #include "materials.hpp"
 
+
+static io::Logger &logger = io::logging().get_logger("maniaclab.editor");
 
 class GridNode: public ffe::scenegraph::Node
 {
@@ -460,6 +466,10 @@ Editor::Editor(Application &app, QWidget *parent):
 {
     m_ui->setupUi(this);
     m_ui->listView->setModel(m_model.get());
+    connect(m_ui->btnSave, &QToolButton::clicked,
+            this, &Editor::saveClicked);
+    connect(m_ui->btnLoad, &QToolButton::clicked,
+            this, &Editor::loadClicked);
     setMouseTracking(true);
 }
 
@@ -514,7 +524,7 @@ void Editor::before_gl_sync()
 {
     const QSize size = window()->size() * window()->devicePixelRatioF();
     if (!m_scene) {
-        m_scene = std::make_unique<EditorScene>(*m_level, size);
+        m_scene = std::make_unique<EditorScene>(m_level->level(), size);
     }
     m_scene->update_size(size);
     m_scene->m_window.set_fbo_id(m_gl_scene->defaultFramebufferObject());
@@ -553,13 +563,38 @@ void Editor::before_gl_sync()
     ffe::raise_last_gl_error();
 }
 
+void Editor::loadClicked(bool checked)
+{
+    logger.logf(io::LOG_INFO, "loading from ./test.lvl");
+    std::ifstream in("./test.lvl", std::ios::binary);
+    if (in.bad()) {
+        logger.logf(io::LOG_ERROR, "failed to open input stream");
+        return;
+    }
+
+    m_level->load(*m_tileset, in);
+}
+
+void Editor::saveClicked(bool checked)
+{
+    std::cout << "this needs to appear" << std::endl;
+    logger.logf(io::LOG_INFO, "saving to ./test.lvl");
+    std::ofstream out("./test.lvl", std::ios::binary);
+    if (out.bad()) {
+        logger.logf(io::LOG_ERROR, "failed to open output stream");
+        return;
+    }
+
+    m_level->save(out);
+}
+
 
 void Editor::activate(QWidget &parent)
 {
     ApplicationMode::activate(parent);
 
-    m_level = std::make_unique<Level>(level_width, level_height);
-    m_level->physics().reset_unblocked_cells();
+    m_level = std::make_unique<EditorLevel>();
+    m_level->level().physics().reset_unblocked_cells();
 
     m_advance_conn = connect(
                 m_gl_scene,
@@ -641,8 +676,7 @@ void Editor::mousePressEvent(QMouseEvent *event)
             return;
         }
         QUuid id = current.data(ROLE_TILE_UUID).toUuid();
-        auto tile = m_tileset->make_tile(id, *m_level, TileArgv());
-        m_level->place_object(std::move(tile), p.x, p.y, 1.0f);
+        m_level->place_object(*m_tileset, id, TileArgv(), p.x, p.y);
     }
 }
 
